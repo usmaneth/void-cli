@@ -1,0 +1,21 @@
+// Auto-generated stub for missing module
+export type createCacheEditsBlock = any
+export const createCacheEditsBlock: any = undefined as any
+export type createCachedMCState = any
+export const createCachedMCState: any = undefined as any
+export type getCachedMCConfig = any
+export const getCachedMCConfig: any = undefined as any
+export type getToolResultsToDelete = any
+export const getToolResultsToDelete: any = undefined as any
+export type isCachedMicrocompactEnabled = any
+export const isCachedMicrocompactEnabled: any = undefined as any
+export type isModelSupportedForCacheEditing = any
+export const isModelSupportedForCacheEditing: any = undefined as any
+export type markToolsSentToAPI = any
+export const markToolsSentToAPI: any = undefined as any
+export type registerToolMessage = any
+export const registerToolMessage: any = undefined as any
+export type registerToolResult = any
+export const registerToolResult: any = undefined as any
+export type resetCachedMCState = any
+export const resetCachedMCState: any = undefined as any

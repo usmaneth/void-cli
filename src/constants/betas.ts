@@ -1,4 +1,4 @@
-import { feature } from 'bun:bundle'
+import { feature } from '../bun-bundle-shim.js'
 
 export const VOID_20250219_BETA_HEADER = 'claude-code-20250219'
 export const INTERLEAVED_THINKING_BETA_HEADER =

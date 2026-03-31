@@ -1,4 +1,4 @@
-import { feature } from 'bun:bundle'
+import { feature } from '../bun-bundle-shim.js'
 import chalk from 'chalk'
 import { spawnSync } from 'child_process'
 import {

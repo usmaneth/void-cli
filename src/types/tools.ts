@@ -1,0 +1,23 @@
+// Auto-generated stub for missing module
+export type AgentToolProgress = any
+export const AgentToolProgress: any = undefined as any
+export type BashProgress = any
+export const BashProgress: any = undefined as any
+export type MCPProgress = any
+export const MCPProgress: any = undefined as any
+export type PowerShellProgress = any
+export const PowerShellProgress: any = undefined as any
+export type REPLToolProgress = any
+export const REPLToolProgress: any = undefined as any
+export type SdkWorkflowProgress = any
+export const SdkWorkflowProgress: any = undefined as any
+export type ShellProgress = any
+export const ShellProgress: any = undefined as any
+export type SkillToolProgress = any
+export const SkillToolProgress: any = undefined as any
+export type TaskOutputProgress = any
+export const TaskOutputProgress: any = undefined as any
+export type ToolProgressData = any
+export const ToolProgressData: any = undefined as any
+export type WebSearchProgress = any
+export const WebSearchProgress: any = undefined as any
