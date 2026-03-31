@@ -1,45 +1,37 @@
 /**
- * Denial tracking infrastructure for permission classifiers.
- * Tracks consecutive denials and total denials to determine
- * when to fall back to prompting.
+ * Denial tracking - stubbed (telemetry stripped)
  */
 
 export type DenialTrackingState = {
-  consecutiveDenials: number
-  totalDenials: number
+  denials: Map<string, number>
+  successes: Map<string, number>
 }
 
 export const DENIAL_LIMITS = {
-  maxConsecutive: 3,
-  maxTotal: 20,
+  maxDenials: 3,
+  fallbackThreshold: 2,
 } as const
 
 export function createDenialTrackingState(): DenialTrackingState {
   return {
-    consecutiveDenials: 0,
-    totalDenials: 0,
+    denials: new Map(),
+    successes: new Map(),
   }
 }
 
-export function recordDenial(state: DenialTrackingState): DenialTrackingState {
-  return {
-    ...state,
-    consecutiveDenials: state.consecutiveDenials + 1,
-    totalDenials: state.totalDenials + 1,
-  }
-}
+export function recordDenial(
+  _state: DenialTrackingState,
+  _toolName: string,
+): void {}
 
-export function recordSuccess(state: DenialTrackingState): DenialTrackingState {
-  if (state.consecutiveDenials === 0) return state // No change needed
-  return {
-    ...state,
-    consecutiveDenials: 0,
-  }
-}
+export function recordSuccess(
+  _state: DenialTrackingState,
+  _toolName: string,
+): void {}
 
-export function shouldFallbackToPrompting(state: DenialTrackingState): boolean {
-  return (
-    state.consecutiveDenials >= DENIAL_LIMITS.maxConsecutive ||
-    state.totalDenials >= DENIAL_LIMITS.maxTotal
-  )
+export function shouldFallbackToPrompting(
+  _state: DenialTrackingState,
+  _toolName: string,
+): boolean {
+  return false
 }
