@@ -13,6 +13,7 @@ import { KeyboardEvent } from '../ink/events/keyboard-event.js';
 import { useInput } from '../ink.js';
 import { useOptionalKeybindingContext, useRegisterKeybindingContext } from '../keybindings/KeybindingContext.js';
 import { useKeybindings } from '../keybindings/useKeybinding.js';
+import { NODE_ENV } from '../buildConstants.js'
 import { useShortcutDisplay } from '../keybindings/useShortcutDisplay.js';
 import { useAppState, useAppStateStore } from '../state/AppState.js';
 import type { AgentDefinition } from '../tools/AgentTool/loadAgentsDir.js';
@@ -492,7 +493,7 @@ export function useTypeahead({
   // subsequent tests in the shard. The subscriber still registers so
   // fileSuggestions tests that trigger a refresh directly work correctly.
   useEffect(() => {
-    if ("production" !== 'test') {
+    if (NODE_ENV !== 'test') {
       startBackgroundCacheRefresh();
     }
     return onIndexBuildComplete(() => {

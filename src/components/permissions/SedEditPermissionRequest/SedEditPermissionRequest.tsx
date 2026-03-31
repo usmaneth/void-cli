@@ -76,11 +76,11 @@ function _temp(e) {
     fileExists: false
   };
 }
-function SedEditPermissionRequestInner(t0) {
+function SedEditPermissionRequestInner(t0: any) {
   const $ = _c(35);
-  let contentPromise;
-  let props;
-  let sedInfo;
+  let contentPromise: Promise<{ oldContent: string; fileExists: boolean }>;
+  let props: any;
+  let sedInfo: any;
   if ($[0] !== t0) {
     ({
       sedInfo,

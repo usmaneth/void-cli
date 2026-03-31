@@ -1,6 +1,16 @@
 // Auto-generated stub for missing module
-export type WizardContextValue = any
-export const WizardContextValue: any = undefined as any
+export type WizardContextValue<T = any> = {
+  wizardData: T
+  updateWizardData: (data: Partial<T>) => void
+  currentStepIndex: number
+  totalSteps: number
+  goNext: () => void
+  goBack: () => void
+  goToStep: (step: number) => void
+  cancel: () => void
+  title?: string
+  showStepCounter?: boolean
+}
 export type WizardProviderProps = any
 export const WizardProviderProps: any = undefined as any
 export type WizardStepComponent = any

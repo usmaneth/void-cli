@@ -52,6 +52,8 @@ export const HOOK_EVENTS = [
   'FileChanged',
 ] as const
 
+export type HookEvent = (typeof HOOK_EVENTS)[number]
+
 export const EXIT_REASONS = [
   'clear',
   'resume',

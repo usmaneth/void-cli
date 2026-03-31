@@ -36,6 +36,7 @@ import { getCurrentTurnTokenBudget, getTurnOutputTokens } from '../bootstrap/sta
 import { TeammateSpinnerTree } from './Spinner/TeammateSpinnerTree.js';
 import { useAnimationFrame } from '../ink.js';
 import { getGlobalConfig } from '../utils/config.js';
+import { USER_TYPE } from '../buildConstants.js'
 export type { SpinnerMode } from './Spinner/index.js';
 const DEFAULT_CHARACTERS = getDefaultCharacters();
 const SPINNER_FRAMES = [...DEFAULT_CHARACTERS, ...[...DEFAULT_CHARACTERS].reverse()];
@@ -219,7 +220,7 @@ function SpinnerWithVerbInner({
   // doesn't trigger re-renders; we pick up updates on the parent's ~25x/turn
   // re-render cadence, same as the old ApiMetricsLine did.
   let ttftText: string | null = null;
-  if ("external" === 'ant' && apiMetricsRef?.current && apiMetricsRef.current.length > 0) {
+  if (USER_TYPE === 'ant' && apiMetricsRef?.current && apiMetricsRef.current.length > 0) {
     ttftText = computeTtftText(apiMetricsRef.current);
   }
 

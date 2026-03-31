@@ -5,6 +5,8 @@
 export type DenialTrackingState = {
   denials: Map<string, number>
   successes: Map<string, number>
+  consecutiveDenials: number
+  totalDenials: number
 }
 
 export const DENIAL_LIMITS = {
@@ -16,6 +18,8 @@ export function createDenialTrackingState(): DenialTrackingState {
   return {
     denials: new Map(),
     successes: new Map(),
+    consecutiveDenials: 0,
+    totalDenials: 0,
   }
 }
 

@@ -113,6 +113,7 @@ async function removeRemoteAgentMetadata(taskId: string): Promise<void> {
 // Precondition error result
 export type RemoteAgentPreconditionResult = {
   eligible: true;
+  errors?: undefined;
 } | {
   eligible: false;
   errors: BackgroundRemoteSessionPrecondition[];

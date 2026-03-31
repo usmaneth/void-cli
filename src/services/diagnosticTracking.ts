@@ -4,7 +4,9 @@
 
 export type DiagnosticFile = {
   path: string
-  diagnostics: unknown[]
+  uri: string
+  diagnostics: any[]
+  [key: string]: any
 }
 
 export class DiagnosticTrackingService {
@@ -13,6 +15,18 @@ export class DiagnosticTrackingService {
     return []
   }
   clear(): void {}
+  handleQueryStart(): void {}
+  shutdown(): void {}
+  beforeFileEdited(_path: string): void {}
+  getNewDiagnostics(): DiagnosticFile[] {
+    return []
+  }
+  static formatDiagnosticsSummary(_files: DiagnosticFile[]): string {
+    return ''
+  }
+  static getSeveritySymbol(_severity: any): string {
+    return ''
+  }
 }
 
 export const diagnosticTracker = new DiagnosticTrackingService()

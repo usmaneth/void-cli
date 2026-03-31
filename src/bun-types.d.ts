@@ -5,8 +5,19 @@ declare namespace Bun {
   function write(path: string, data: any): Promise<number>
   function file(path: string): any
   function sleep(ms: number): Promise<void>
+  function hash(data: any, seed?: number): number
+  function gc(full?: boolean): void
+  function listen(opts: any): any
+  function stringWidth(str: string): number
+  function wrapAnsi(str: string, width: number, opts?: any): string
   const env: Record<string, string | undefined>
   const version: string
+  const embeddedFiles: any[]
+  const semver: {
+    satisfies(version: string, range: string): boolean
+    order(a: string, b: string): number
+    [key: string]: any
+  }
 }
 
 // Bun-specific modules

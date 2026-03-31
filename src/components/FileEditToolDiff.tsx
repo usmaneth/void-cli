@@ -20,7 +20,7 @@ type DiffData = {
   firstLine: string | null;
   fileContent: string | undefined;
 };
-export function FileEditToolDiff(props) {
+export function FileEditToolDiff(props: Props) {
   const $ = _c(7);
   let t0;
   if ($[0] !== props.edits || $[1] !== props.file_path) {
@@ -50,7 +50,7 @@ export function FileEditToolDiff(props) {
   }
   return t2;
 }
-function DiffBody(t0) {
+function DiffBody(t0: { promise: Promise<DiffData>; file_path: string }) {
   const $ = _c(6);
   const {
     promise,
