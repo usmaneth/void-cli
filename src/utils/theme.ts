@@ -4,8 +4,8 @@ import { env } from './env.js'
 export type Theme = {
   autoAccept: string
   bashBorder: string
-  claude: string
-  claudeShimmer: string // Lighter version of claude color for shimmer effect
+  claude: string // Void primary accent
+  claudeShimmer: string // Void primary accent shimmer — lighter version for shimmer effect
   claudeBlue_FOR_SYSTEM_SPINNER: string
   claudeBlueShimmer_FOR_SYSTEM_SPINNER: string
   permission: string
@@ -50,7 +50,7 @@ export type Theme = {
   // Chrome colors
   chromeYellow: string
   // TUI V2 colors
-  clawd_body: string
+  clawd_body: string // Legacy name — Void mascot body color
   clawd_background: string
   userMessageBackground: string
   userMessageBackgroundHover: string
@@ -95,6 +95,8 @@ export const THEME_NAMES = [
   'dark-daltonized',
   'light-ansi',
   'dark-ansi',
+  'void-cyber',
+  'void-mono',
 ] as const
 
 /** A renderable theme. Always resolvable to a concrete color palette. */
@@ -595,6 +597,166 @@ const darkDaltonizedTheme: Theme = {
   rainbow_violet_shimmer: 'rgb(230,180,210)',
 }
 
+/**
+ * Void Cyber theme — neon green on black, hacker vibes.
+ * Primary accent #00FF88, errors #FF0055, warnings #FFD600.
+ */
+const voidCyberTheme: Theme = {
+  autoAccept: 'rgb(0,255,136)', // Neon green
+  bashBorder: 'rgb(0,255,136)', // Neon green
+  claude: 'rgb(0,255,136)', // Void primary accent
+  claudeShimmer: 'rgb(102,255,178)', // Void primary accent shimmer
+  claudeBlue_FOR_SYSTEM_SPINNER: 'rgb(0,255,136)', // Neon green for spinner
+  claudeBlueShimmer_FOR_SYSTEM_SPINNER: 'rgb(102,255,178)', // Lighter neon green
+  permission: 'rgb(0,200,255)', // Cyan
+  permissionShimmer: 'rgb(102,220,255)', // Light cyan
+  planMode: 'rgb(0,180,120)', // Muted green
+  ide: 'rgb(0,200,255)', // Cyan
+  promptBorder: 'rgb(60,60,60)', // Dark gray
+  promptBorderShimmer: 'rgb(90,90,90)', // Medium gray
+  text: 'rgb(0,255,136)', // Neon green
+  inverseText: 'rgb(0,0,0)', // Black
+  inactive: 'rgb(80,80,80)', // Dark gray
+  inactiveShimmer: 'rgb(110,110,110)', // Medium gray
+  subtle: 'rgb(50,50,50)', // Very dark gray
+  suggestion: 'rgb(0,200,255)', // Cyan
+  remember: 'rgb(0,200,255)', // Cyan
+  background: 'rgb(0,0,0)', // Black
+  success: 'rgb(0,255,136)', // Neon green
+  error: 'rgb(255,0,85)', // #FF0055
+  warning: 'rgb(255,214,0)', // #FFD600
+  merged: 'rgb(0,255,136)', // Neon green
+  warningShimmer: 'rgb(255,234,80)', // Lighter yellow
+  diffAdded: 'rgb(0,80,44)', // Dark neon green
+  diffRemoved: 'rgb(100,0,33)', // Dark red
+  diffAddedDimmed: 'rgb(30,60,40)', // Very dark green
+  diffRemovedDimmed: 'rgb(60,30,35)', // Very dark red
+  diffAddedWord: 'rgb(0,200,106)', // Medium neon green
+  diffRemovedWord: 'rgb(200,0,67)', // Medium red
+  // Agent colors
+  red_FOR_SUBAGENTS_ONLY: 'rgb(255,0,85)', // Neon red
+  blue_FOR_SUBAGENTS_ONLY: 'rgb(0,200,255)', // Cyan
+  green_FOR_SUBAGENTS_ONLY: 'rgb(0,255,136)', // Neon green
+  yellow_FOR_SUBAGENTS_ONLY: 'rgb(255,214,0)', // Yellow
+  purple_FOR_SUBAGENTS_ONLY: 'rgb(180,0,255)', // Neon purple
+  orange_FOR_SUBAGENTS_ONLY: 'rgb(255,140,0)', // Orange
+  pink_FOR_SUBAGENTS_ONLY: 'rgb(255,0,170)', // Neon pink
+  cyan_FOR_SUBAGENTS_ONLY: 'rgb(0,255,255)', // Neon cyan
+  // Grove colors
+  professionalBlue: 'rgb(0,200,255)',
+  // Chrome colors
+  chromeYellow: 'rgb(255,214,0)', // Yellow
+  // TUI V2 colors
+  clawd_body: 'rgb(0,255,136)', // Legacy name — Void mascot body color
+  clawd_background: 'rgb(0,0,0)',
+  userMessageBackground: 'rgb(15,15,15)',
+  userMessageBackgroundHover: 'rgb(25,25,25)',
+  messageActionsBackground: 'rgb(10,20,15)',
+  selectionBg: 'rgb(0,60,40)',
+  bashMessageBackgroundColor: 'rgb(10,10,10)',
+  memoryBackgroundColor: 'rgb(10,20,15)',
+  rate_limit_fill: 'rgb(0,255,136)', // Neon green
+  rate_limit_empty: 'rgb(0,60,40)', // Dark green
+  fastMode: 'rgb(255,0,85)', // Neon red
+  fastModeShimmer: 'rgb(255,80,130)', // Lighter red
+  briefLabelYou: 'rgb(0,200,255)', // Cyan
+  briefLabelClaude: 'rgb(0,255,136)', // Neon green
+  rainbow_red: 'rgb(255,0,85)',
+  rainbow_orange: 'rgb(255,140,0)',
+  rainbow_yellow: 'rgb(255,214,0)',
+  rainbow_green: 'rgb(0,255,136)',
+  rainbow_blue: 'rgb(0,200,255)',
+  rainbow_indigo: 'rgb(100,0,255)',
+  rainbow_violet: 'rgb(180,0,255)',
+  rainbow_red_shimmer: 'rgb(255,80,130)',
+  rainbow_orange_shimmer: 'rgb(255,180,60)',
+  rainbow_yellow_shimmer: 'rgb(255,234,80)',
+  rainbow_green_shimmer: 'rgb(102,255,178)',
+  rainbow_blue_shimmer: 'rgb(102,220,255)',
+  rainbow_indigo_shimmer: 'rgb(150,80,255)',
+  rainbow_violet_shimmer: 'rgb(210,80,255)',
+}
+
+/**
+ * Void Mono theme — pure monochrome, white on black.
+ * Primary #FFFFFF, dim #A1A1AA, borders #52525B.
+ */
+const voidMonoTheme: Theme = {
+  autoAccept: 'rgb(255,255,255)', // White
+  bashBorder: 'rgb(82,82,91)', // #52525B
+  claude: 'rgb(255,255,255)', // Void primary accent
+  claudeShimmer: 'rgb(200,200,200)', // Void primary accent shimmer
+  claudeBlue_FOR_SYSTEM_SPINNER: 'rgb(161,161,170)', // #A1A1AA
+  claudeBlueShimmer_FOR_SYSTEM_SPINNER: 'rgb(200,200,200)', // Lighter gray
+  permission: 'rgb(161,161,170)', // #A1A1AA
+  permissionShimmer: 'rgb(200,200,200)', // Lighter gray
+  planMode: 'rgb(113,113,122)', // Zinc 500
+  ide: 'rgb(161,161,170)', // #A1A1AA
+  promptBorder: 'rgb(82,82,91)', // #52525B
+  promptBorderShimmer: 'rgb(113,113,122)', // Zinc 500
+  text: 'rgb(255,255,255)', // White
+  inverseText: 'rgb(0,0,0)', // Black
+  inactive: 'rgb(113,113,122)', // Zinc 500
+  inactiveShimmer: 'rgb(161,161,170)', // #A1A1AA
+  subtle: 'rgb(63,63,70)', // Zinc 700
+  suggestion: 'rgb(161,161,170)', // #A1A1AA
+  remember: 'rgb(200,200,200)', // Light gray
+  background: 'rgb(0,0,0)', // Black
+  success: 'rgb(255,255,255)', // White
+  error: 'rgb(200,200,200)', // Light gray
+  warning: 'rgb(161,161,170)', // #A1A1AA
+  merged: 'rgb(200,200,200)', // Light gray
+  warningShimmer: 'rgb(200,200,200)', // Lighter gray
+  diffAdded: 'rgb(50,50,55)', // Dark gray
+  diffRemoved: 'rgb(70,50,55)', // Slightly warm dark gray
+  diffAddedDimmed: 'rgb(40,40,45)', // Very dark gray
+  diffRemovedDimmed: 'rgb(50,40,42)', // Slightly warm very dark gray
+  diffAddedWord: 'rgb(200,200,200)', // Light gray
+  diffRemovedWord: 'rgb(140,140,140)', // Medium gray
+  // Agent colors — monochrome shades
+  red_FOR_SUBAGENTS_ONLY: 'rgb(200,200,200)',
+  blue_FOR_SUBAGENTS_ONLY: 'rgb(161,161,170)',
+  green_FOR_SUBAGENTS_ONLY: 'rgb(220,220,220)',
+  yellow_FOR_SUBAGENTS_ONLY: 'rgb(180,180,180)',
+  purple_FOR_SUBAGENTS_ONLY: 'rgb(140,140,140)',
+  orange_FOR_SUBAGENTS_ONLY: 'rgb(190,190,190)',
+  pink_FOR_SUBAGENTS_ONLY: 'rgb(170,170,170)',
+  cyan_FOR_SUBAGENTS_ONLY: 'rgb(210,210,210)',
+  // Grove colors
+  professionalBlue: 'rgb(161,161,170)',
+  // Chrome colors
+  chromeYellow: 'rgb(200,200,200)',
+  // TUI V2 colors
+  clawd_body: 'rgb(255,255,255)', // Legacy name — Void mascot body color
+  clawd_background: 'rgb(0,0,0)',
+  userMessageBackground: 'rgb(25,25,25)',
+  userMessageBackgroundHover: 'rgb(35,35,35)',
+  messageActionsBackground: 'rgb(30,30,35)',
+  selectionBg: 'rgb(50,50,55)',
+  bashMessageBackgroundColor: 'rgb(15,15,15)',
+  memoryBackgroundColor: 'rgb(20,20,25)',
+  rate_limit_fill: 'rgb(255,255,255)', // White
+  rate_limit_empty: 'rgb(63,63,70)', // Zinc 700
+  fastMode: 'rgb(200,200,200)', // Light gray
+  fastModeShimmer: 'rgb(230,230,230)', // Lighter gray
+  briefLabelYou: 'rgb(161,161,170)', // #A1A1AA
+  briefLabelClaude: 'rgb(255,255,255)', // White
+  rainbow_red: 'rgb(220,220,220)',
+  rainbow_orange: 'rgb(200,200,200)',
+  rainbow_yellow: 'rgb(240,240,240)',
+  rainbow_green: 'rgb(210,210,210)',
+  rainbow_blue: 'rgb(180,180,180)',
+  rainbow_indigo: 'rgb(160,160,160)',
+  rainbow_violet: 'rgb(190,190,190)',
+  rainbow_red_shimmer: 'rgb(240,240,240)',
+  rainbow_orange_shimmer: 'rgb(220,220,220)',
+  rainbow_yellow_shimmer: 'rgb(255,255,255)',
+  rainbow_green_shimmer: 'rgb(230,230,230)',
+  rainbow_blue_shimmer: 'rgb(200,200,200)',
+  rainbow_indigo_shimmer: 'rgb(180,180,180)',
+  rainbow_violet_shimmer: 'rgb(210,210,210)',
+}
+
 export function getTheme(themeName: ThemeName): Theme {
   switch (themeName) {
     case 'light':
@@ -607,6 +769,10 @@ export function getTheme(themeName: ThemeName): Theme {
       return lightDaltonizedTheme
     case 'dark-daltonized':
       return darkDaltonizedTheme
+    case 'void-cyber':
+      return voidCyberTheme
+    case 'void-mono':
+      return voidMonoTheme
     default:
       return darkTheme
   }
