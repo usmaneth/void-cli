@@ -34,7 +34,7 @@ export function registerMcpAddCommand(mcp: Command): void {
   mcp
     .command('add <name> <commandOrUrl> [args...]')
     .description(
-      'Add an MCP server to Claude Code.\n\n' +
+      'Add an MCP server to Void.\n\n' +
         'Examples:\n' +
         '  # Add HTTP server:\n' +
         '  claude mcp add --transport http sentry https://mcp.sentry.dev/mcp\n\n' +
@@ -75,7 +75,7 @@ export function registerMcpAddCommand(mcp: Command): void {
     .addOption(
       new Option(
         '--xaa',
-        "Enable XAA (SEP-990) for this server. Requires 'claude mcp xaa setup' first. Also requires --client-id and --client-secret (for the MCP server's AS).",
+        "Enable XAA (SEP-990) for this server. Requires 'void mcp xaa setup' first. Also requires --client-id and --client-secret (for the MCP server's AS).",
       ).hideHelp(!isXaaEnabled()),
     )
     .action(async (name, commandOrUrl, args, options) => {
@@ -103,7 +103,7 @@ export function registerMcpAddCommand(mcp: Command): void {
         // XAA fail-fast: validate at add-time, not auth-time.
         if (options.xaa && !isXaaEnabled()) {
           cliError(
-            'Error: --xaa requires CLAUDE_CODE_ENABLE_XAA=1 in your environment',
+            'Error: --xaa requires VOID_ENABLE_XAA=1 in your environment',
           )
         }
         const xaa = Boolean(options.xaa)
@@ -113,7 +113,7 @@ export function registerMcpAddCommand(mcp: Command): void {
           if (!options.clientSecret) missing.push('--client-secret')
           if (!getXaaIdpSettings()) {
             missing.push(
-              "'claude mcp xaa setup' (settings.xaaIdp not configured)",
+              "'void mcp xaa setup' (settings.xaaIdp not configured)",
             )
           }
           if (missing.length) {

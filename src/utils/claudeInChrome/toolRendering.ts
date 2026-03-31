@@ -1,5 +1,5 @@
 /**
- * Stub: Claude in Chrome tool rendering removed in Void CLI rebrand.
+ * Stub: Void in Chrome tool rendering removed in Void CLI rebrand.
  */
 
 export function getClaudeInChromeMCPToolOverrides(

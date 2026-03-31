@@ -1,5 +1,5 @@
 /**
- * Stub: Claude in Chrome onboarding removed in Void CLI rebrand.
+ * Stub: Void in Chrome onboarding removed in Void CLI rebrand.
  */
 
 export function ClaudeInChromeOnboarding({

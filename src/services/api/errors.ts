@@ -195,7 +195,7 @@ export function getRequestTooLargeErrorMessage(): string {
     : `Request too large (${limits}). Double press esc to go back and try with a smaller file.`
 }
 export const OAUTH_ORG_NOT_ALLOWED_ERROR_MESSAGE =
-  'Your account does not have access to Claude Code. Please run /login.'
+  'Your account does not have access to Void. Please run /login.'
 
 export function getTokenRevokedErrorMessage(): string {
   return getIsNonInteractiveSession()
@@ -210,12 +210,12 @@ export function getOauthOrgNotAllowedErrorMessage(): string {
 }
 
 /**
- * Check if we're in CCR (Claude Code Remote) mode.
+ * Check if we're in CCR (Void Remote) mode.
  * In CCR mode, auth is handled via JWTs provided by the infrastructure,
  * not via /login. Transient auth errors should suggest retrying, not logging in.
  */
 function isCCRMode(): boolean {
-  return isEnvTruthy(process.env.CLAUDE_CODE_REMOTE)
+  return isEnvTruthy(process.env.VOID_REMOTE)
 }
 
 // Temp helper to log tool_use/tool_result mismatch errors
@@ -747,7 +747,7 @@ export function getAssistantMessageFromError(
     })
   }
 
-  // Check for invalid model name error for Ant users. Claude Code may be
+  // Check for invalid model name error for Ant users. Void may be
   // defaulting to a custom internal-only model for Ants, and there might be
   // Ants using new or unknown org IDs that haven't been gated in.
   if (
@@ -758,7 +758,7 @@ export function getAssistantMessageFromError(
   ) {
     // Get organization ID from config - only use OAuth account data when actively using OAuth
     const orgId = getOauthAccountInfo()?.organizationUuid
-    const baseMsg = `[ANT-ONLY] Your org isn't gated into the \`${model}\` model. Either run \`claude\` with \`ANTHROPIC_MODEL=${getDefaultMainLoopModelSetting()}\``
+    const baseMsg = `[ANT-ONLY] Your org isn't gated into the \`${model}\` model. Either run \`void\` with \`ANTHROPIC_MODEL=${getDefaultMainLoopModelSetting()}\``
     const msg = orgId
       ? `${baseMsg} or share your orgId (${orgId}) in ${MACRO.FEEDBACK_CHANNEL} for help getting access.`
       : `${baseMsg} or reach out in ${MACRO.FEEDBACK_CHANNEL} for help getting access.`
@@ -885,7 +885,7 @@ export function getAssistantMessageFromError(
   // Bedrock errors like "403 You don't have access to the model with the specified model ID."
   // don't contain the actual model ID
   if (
-    isEnvTruthy(process.env.CLAUDE_CODE_USE_BEDROCK) &&
+    isEnvTruthy(process.env.VOID_USE_BEDROCK) &&
     error instanceof Error &&
     error.message.toLowerCase().includes('model id')
   ) {
@@ -1134,7 +1134,7 @@ export function classifyAPIError(error: unknown): string {
 
   // Bedrock-specific errors
   if (
-    isEnvTruthy(process.env.CLAUDE_CODE_USE_BEDROCK) &&
+    isEnvTruthy(process.env.VOID_USE_BEDROCK) &&
     error instanceof Error &&
     error.message.toLowerCase().includes('model id')
   ) {
@@ -1192,8 +1192,8 @@ export function getErrorMessageIfRefusal(
   logEvent('tengu_refusal_api_response', {})
 
   const baseMessage = getIsNonInteractiveSession()
-    ? `${API_ERROR_MESSAGE_PREFIX}: Claude Code is unable to respond to this request, which appears to violate our Usage Policy (https://www.anthropic.com/legal/aup). Try rephrasing the request or attempting a different approach.`
-    : `${API_ERROR_MESSAGE_PREFIX}: Claude Code is unable to respond to this request, which appears to violate our Usage Policy (https://www.anthropic.com/legal/aup). Please double press esc to edit your last message or start a new session for Claude Code to assist with a different task.`
+    ? `${API_ERROR_MESSAGE_PREFIX}: Void is unable to respond to this request, which appears to violate our Usage Policy (https://www.anthropic.com/legal/aup). Try rephrasing the request or attempting a different approach.`
+    : `${API_ERROR_MESSAGE_PREFIX}: Void is unable to respond to this request, which appears to violate our Usage Policy (https://www.anthropic.com/legal/aup). Please double press esc to edit your last message or start a new session for Void to assist with a different task.`
 
   const modelSuggestion =
     model !== 'claude-sonnet-4-20250514'

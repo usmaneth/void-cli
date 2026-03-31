@@ -6,9 +6,9 @@
  * across all authenticated org members.
  *
  * API contract (anthropic/anthropic#250711 + #283027):
- *   GET  /api/claude_code/team_memory?repo={owner/repo}            → TeamMemoryData (includes entryChecksums)
- *   GET  /api/claude_code/team_memory?repo={owner/repo}&view=hashes → metadata + entryChecksums only (no entry bodies)
- *   PUT  /api/claude_code/team_memory?repo={owner/repo}            → upload entries (upsert semantics)
+ *   GET  /api/void_code/team_memory?repo={owner/repo}            → TeamMemoryData (includes entryChecksums)
+ *   GET  /api/void_code/team_memory?repo={owner/repo}&view=hashes → metadata + entryChecksums only (no entry bodies)
+ *   PUT  /api/void_code/team_memory?repo={owner/repo}            → upload entries (upsert semantics)
  *   404 = no data exists yet
  *
  * Sync semantics:
@@ -163,7 +163,7 @@ function isUsingOAuth(): boolean {
 function getTeamMemorySyncEndpoint(repoSlug: string): string {
   const baseUrl =
     process.env.TEAM_MEMORY_SYNC_URL || getOauthConfig().BASE_API_URL
-  return `${baseUrl}/api/claude_code/team_memory?repo=${encodeURIComponent(repoSlug)}`
+  return `${baseUrl}/api/void_code/team_memory?repo=${encodeURIComponent(repoSlug)}`
 }
 
 function getAuthHeaders(): {
@@ -850,7 +850,7 @@ export async function pullTeamMemory(
 
   const filesWritten = await writeRemoteEntriesToLocal(entries)
   if (filesWritten > 0) {
-    const { clearMemoryFileCaches } = await import('../../utils/claudemd.js')
+    const { clearMemoryFileCaches } = await import('../../utils/voidmd.js')
     clearMemoryFileCaches()
   }
   logForDebugging(`team-memory-sync: pulled ${filesWritten} files`, {

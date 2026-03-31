@@ -5,7 +5,7 @@ export const DEFAULT_SESSION_TIMEOUT_MS = 24 * 60 * 60 * 1000
 export const BRIDGE_LOGIN_INSTRUCTION =
   'Remote Control is only available with claude.ai subscriptions. Please use `/login` to sign in with your claude.ai account.'
 
-/** Full error printed when `claude remote-control` is run without auth. */
+/** Full error printed when `void remote-control` is run without auth. */
 export const BRIDGE_LOGIN_ERROR =
   'Error: You must be logged in to use Remote Control.\n\n' +
   BRIDGE_LOGIN_INSTRUCTION
@@ -61,7 +61,7 @@ export type SessionActivity = {
 }
 
 /**
- * How `claude remote-control` chooses session working directories.
+ * How `void remote-control` chooses session working directories.
  * - `single-session`: one session in cwd, bridge tears down when it ends
  * - `worktree`: persistent server, every session gets an isolated git worktree
  * - `same-dir`: persistent server, every session shares cwd (can stomp each other)

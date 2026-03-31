@@ -336,14 +336,14 @@ export const FileWriteTool = buildTool({
       limit: undefined,
     })
 
-    // Log when writing to CLAUDE.md
-    if (fullFilePath.endsWith(`${sep}CLAUDE.md`)) {
+    // Log when writing to VOID.md
+    if (fullFilePath.endsWith(`${sep}VOID.md`)) {
       logEvent('tengu_write_claudemd', {})
     }
 
     let gitDiff: ToolUseDiff | undefined
     if (
-      isEnvTruthy(process.env.CLAUDE_CODE_REMOTE) &&
+      isEnvTruthy(process.env.VOID_REMOTE) &&
       getFeatureValue_CACHED_MAY_BE_STALE('tengu_quartz_lantern', false)
     ) {
       const startTime = Date.now()

@@ -1,5 +1,5 @@
 /**
- * Stub: Claude in Chrome prompts hook removed in Void CLI rebrand.
+ * Stub: Void in Chrome prompts hook removed in Void CLI rebrand.
  */
 
 export function usePromptsFromClaudeInChrome(

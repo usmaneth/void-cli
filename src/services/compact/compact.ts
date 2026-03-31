@@ -99,7 +99,7 @@ import {
 import {
   getMaxOutputTokensForModel,
   queryModelWithStreaming,
-} from '../api/claude.js'
+} from '../api/void.js'
 import {
   getPromptTooLongTokenGap,
   PROMPT_TOO_LONG_ERROR_MESSAGE,
@@ -1688,7 +1688,7 @@ function shouldExcludeFromPostCompactRestore(
 
   // Exclude all types of claude.md files
   // TODO: Refactor to use isMemoryFilePath() from claudemd.ts for consistency
-  // and to also match child directory memory files (.claude/rules/*.md, etc.)
+  // and to also match child directory memory files (.void/rules/*.md, etc.)
   try {
     const normalizedMemoryPaths = new Set(
       MEMORY_TYPE_VALUES.map(type => expandPath(getMemoryPath(type))),

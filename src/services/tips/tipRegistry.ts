@@ -239,11 +239,11 @@ const externalTips: Tip[] = [
   {
     id: 'powershell-tool-env',
     content: async () =>
-      'Set CLAUDE_CODE_USE_POWERSHELL_TOOL=1 to enable the PowerShell tool (preview)',
+      'Set VOID_USE_POWERSHELL_TOOL=1 to enable the PowerShell tool (preview)',
     cooldownSessions: 10,
     isRelevant: async () =>
       getPlatform() === 'windows' &&
-      process.env.CLAUDE_CODE_USE_POWERSHELL_TOOL === undefined,
+      process.env.VOID_USE_POWERSHELL_TOOL === undefined,
   },
   {
     id: 'status-line',
@@ -272,7 +272,7 @@ const externalTips: Tip[] = [
   {
     id: 'todo-list',
     content: async () =>
-      'Ask Claude to create a todo list when working on complex tasks to track progress and remain on track',
+      'Ask Void to create a todo list when working on complex tasks to track progress and remain on track',
     cooldownSessions: 20,
     isRelevant: async () => true,
   },
@@ -355,7 +355,7 @@ const externalTips: Tip[] = [
   {
     id: 'paste-images-mac',
     content: async () =>
-      'Paste images into Claude Code using control+v (not cmd+v!)',
+      'Paste images into Void using control+v (not cmd+v!)',
     cooldownSessions: 10,
     isRelevant: async () => getPlatform() === 'macos',
   },
@@ -391,7 +391,7 @@ const externalTips: Tip[] = [
   {
     id: 'custom-commands',
     content: async () =>
-      'Create skills by adding .md files to .claude/skills/ in your project or ~/.claude/skills/ for skills that work in any project',
+      'Create skills by adding .md files to .void/skills/ in your project or ~/.void/skills/ for skills that work in any project',
     cooldownSessions: 15,
     async isRelevant() {
       const config = getGlobalConfig()
@@ -437,7 +437,7 @@ const externalTips: Tip[] = [
   {
     id: 'desktop-app',
     content: async () =>
-      'Run Claude Code locally or remotely using the Claude desktop app: clau.de/desktop',
+      'Run Void locally or remotely using the Claude desktop app: clau.de/desktop',
     cooldownSessions: 15,
     isRelevant: async () => getPlatform() !== 'linux',
   },
@@ -445,7 +445,7 @@ const externalTips: Tip[] = [
     id: 'desktop-shortcut',
     content: async ctx => {
       const blue = color('suggestion', ctx.theme)
-      return `Continue your session in Claude Code Desktop with ${blue('/desktop')}`
+      return `Continue your session in Void Desktop with ${blue('/desktop')}`
     },
     cooldownSessions: 15,
     isRelevant: async () => {
@@ -466,7 +466,7 @@ const externalTips: Tip[] = [
   {
     id: 'mobile-app',
     content: async () =>
-      '/mobile to use Claude Code from the Claude app on your phone',
+      '/mobile to use Void from the Claude app on your phone',
     cooldownSessions: 15,
     isRelevant: async () => true,
   },
@@ -593,7 +593,7 @@ const externalTips: Tip[] = [
       const claude = color('claude', ctx.theme)
       const reward = getCachedReferrerReward()
       return reward
-        ? `Share Claude Code and earn ${claude(formatCreditAmount(reward))} of extra usage · ${claude('/passes')}`
+        ? `Share Void and earn ${claude(formatCreditAmount(reward))} of extra usage · ${claude('/passes')}`
         : `You have free guest passes to share · ${claude('/passes')}`
     },
     cooldownSessions: 3,
@@ -638,7 +638,7 @@ const internalOnlyTips: Tip[] =
         {
           id: 'important-claudemd',
           content: async () =>
-            '[ANT-ONLY] Use "IMPORTANT:" prefix for must-follow CLAUDE.md rules',
+            '[ANT-ONLY] Use "IMPORTANT:" prefix for must-follow VOID.md rules',
           cooldownSessions: 30,
           isRelevant: async () => true,
         },

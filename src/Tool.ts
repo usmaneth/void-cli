@@ -214,10 +214,10 @@ export type ToolUseContext = {
   }) => void
   nestedMemoryAttachmentTriggers?: Set<string>
   /**
-   * CLAUDE.md paths already injected as nested_memory attachments this
+   * VOID.md paths already injected as nested_memory attachments this
    * session. Dedup for memoryFilesToAttachments — readFileState is an LRU
    * that evicts entries in busy sessions, so its .has() check alone can
-   * re-inject the same CLAUDE.md dozens of times.
+   * re-inject the same VOID.md dozens of times.
    */
   loadedNestedMemoryPaths?: Set<string>
   dynamicSkillDirTriggers?: Set<string>
@@ -456,7 +456,7 @@ export type Tool<
   readonly name: string
   /**
    * Maximum size in characters for tool result before it gets persisted to disk.
-   * When exceeded, the result is saved to a file and Claude receives a preview
+   * When exceeded, the result is saved to a file and Void receives a preview
    * with the file path instead of the full content.
    *
    * Set to Infinity for tools whose output must never be persisted (e.g. Read,

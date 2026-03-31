@@ -150,7 +150,7 @@ export function Doctor(t0) {
       default: TASK_MAX_OUTPUT_DEFAULT,
       upperLimit: TASK_MAX_OUTPUT_UPPER_LIMIT
     }, {
-      name: "CLAUDE_CODE_MAX_OUTPUT_TOKENS",
+      name: "VOID_MAX_OUTPUT_TOKENS",
       ...getModelMaxOutputTokens("claude-opus-4-6")
     }];
     t4 = envVars.map(_temp8).filter(_temp9);
@@ -189,7 +189,7 @@ export function Doctor(t0) {
         }, async () => toolPermissionContext);
         setContextWarnings(warnings);
         if (isPidBasedLockingEnabled()) {
-          const locksDir = join(getXDGStateHome(), "claude", "locks");
+          const locksDir = join(getXDGStateHome(), "void", "locks");
           const staleLocksCleaned = cleanupStaleLocks(locksDir);
           const locks = getAllLockInfo(locksDir);
           setVersionLockInfo({
@@ -222,7 +222,7 @@ export function Doctor(t0) {
   let t7;
   if ($[11] !== onDone) {
     t7 = () => {
-      onDone("Claude Code diagnostics dismissed", {
+      onDone("Void diagnostics dismissed", {
         display: "system"
       });
     };

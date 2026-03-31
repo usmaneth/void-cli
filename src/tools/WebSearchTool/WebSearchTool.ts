@@ -6,7 +6,7 @@ import { getAPIProvider } from 'src/utils/model/providers.js'
 import type { PermissionResult } from 'src/utils/permissions/PermissionResult.js'
 import { z } from 'zod/v4'
 import { getFeatureValue_CACHED_MAY_BE_STALE } from '../../services/analytics/growthbook.js'
-import { queryModelWithStreaming } from '../../services/api/claude.js'
+import { queryModelWithStreaming } from '../../services/api/void.js'
 import { buildTool, type ToolDef } from '../../Tool.js'
 import { lazySchema } from '../../utils/lazySchema.js'
 import { logError } from '../../utils/log.js'
@@ -155,7 +155,7 @@ export const WebSearchTool = buildTool({
   maxResultSizeChars: 100_000,
   shouldDefer: true,
   async description(input) {
-    return `Claude wants to search the web for: ${input.query}`
+    return `Void wants to search the web for: ${input.query}`
   },
   userFacingName() {
     return 'Web Search'

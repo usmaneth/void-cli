@@ -85,7 +85,7 @@ export function getSkillsPath(
     case 'userSettings':
       return join(getClaudeConfigHomeDir(), dir)
     case 'projectSettings':
-      return `.claude/${dir}`
+      return `.void/${dir}`
     case 'plugin':
       return 'plugin'
     default:
@@ -153,7 +153,7 @@ function parseHooksFromFrontmatter(
 }
 
 /**
- * Parse paths frontmatter from a skill, using the same format as CLAUDE.md rules.
+ * Parse paths frontmatter from a skill, using the same format as VOID.md rules.
  * Returns undefined if no paths are specified or if all patterns are match-all.
  */
 function parseSkillPaths(frontmatter: FrontmatterData): string[] | undefined {
@@ -683,7 +683,7 @@ export const getSkillDirCommands = memoize(
       additionalSkillsNested,
       legacyCommands,
     ] = await Promise.all([
-      isEnvTruthy(process.env.CLAUDE_CODE_DISABLE_POLICY_SKILLS)
+      isEnvTruthy(process.env.VOID_DISABLE_POLICY_SKILLS)
         ? Promise.resolve([])
         : loadSkillsFromSkillsDir(managedSkillsDir, 'policySettings'),
       isSettingSourceEnabled('userSettings') && !skillsLocked
@@ -884,7 +884,7 @@ export async function discoverSkillDirsForPaths(
         try {
           await fs.stat(skillDir)
           // Skills dir exists. Before loading, check if the containing dir
-          // is gitignored — blocks e.g. node_modules/pkg/.claude/skills from
+          // is gitignored — blocks e.g. node_modules/pkg/.void/skills from
           // loading silently. `git check-ignore` handles nested .gitignore,
           // .git/info/exclude, and global gitignore. Fails open outside a
           // git repo (exit 128 → false); the invocation-time trust dialog
@@ -988,7 +988,7 @@ export function getDynamicSkills(): Command[] {
  * dynamic skills map, making them available to the model.
  *
  * Uses the `ignore` library (gitignore-style matching), matching the behavior
- * of CLAUDE.md conditional rules.
+ * of VOID.md conditional rules.
  *
  * @param filePaths Array of file paths being operated on
  * @param cwd Current working directory (paths are matched relative to cwd)

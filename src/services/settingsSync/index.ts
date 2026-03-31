@@ -1,7 +1,7 @@
 /**
  * Settings Sync Service
  *
- * Syncs user settings and memory files across Claude Code environments.
+ * Syncs user settings and memory files across Void environments.
  *
  * - Interactive CLI: Uploads local settings to remote (incremental, only changed entries)
  * - CCR: Downloads remote settings to local before plugin installation
@@ -24,7 +24,7 @@ import {
   checkAndRefreshOAuthTokenIfNeeded,
   getClaudeAIOAuthTokens,
 } from '../../utils/auth.js'
-import { clearMemoryFileCaches } from '../../utils/claudemd.js'
+import { clearMemoryFileCaches } from '../../utils/voidmd.js'
 import { getMemoryPath } from '../../utils/config.js'
 import { logForDiagnosticsNoPII } from '../../utils/diagLogs.js'
 import { classifyAxiosError } from '../../utils/errors.js'
@@ -221,7 +221,7 @@ function isUsingOAuth(): boolean {
 }
 
 function getSettingsSyncEndpoint(): string {
-  return `${getOauthConfig().BASE_API_URL}/api/claude_code/user_settings`
+  return `${getOauthConfig().BASE_API_URL}/api/void_code/user_settings`
 }
 
 function getSettingsSyncAuthHeaders(): {
@@ -483,7 +483,7 @@ async function writeFileForSync(
  *
  * After writing, invalidates relevant caches:
  * - resetSettingsCache() for settings files
- * - clearMemoryFileCaches() for memory files (CLAUDE.md)
+ * - clearMemoryFileCaches() for memory files (VOID.md)
  */
 async function applyRemoteEntriesToLocal(
   entries: Record<string, string>,

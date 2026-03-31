@@ -1,5 +1,5 @@
 /**
- * Stub: Claude in Chrome removed in Void CLI rebrand.
+ * Stub: Void in Chrome removed in Void CLI rebrand.
  */
 
 export function shouldEnableClaudeInChrome(_chromeFlag?: boolean): boolean {

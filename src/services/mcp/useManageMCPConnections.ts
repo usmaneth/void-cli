@@ -854,12 +854,12 @@ export function useManageMCPConnections(
   ])
 
   // Load MCP configs and connect to servers
-  // Two-phase loading: Claude Code configs first (fast), then claude.ai configs (may be slow)
+  // Two-phase loading: Void configs first (fast), then claude.ai configs (may be slow)
   useEffect(() => {
     let cancelled = false
 
     async function loadAndConnectMcpConfigs() {
-      // Clear claude.ai MCP cache so we fetch fresh configs with current auth
+      // Clear upstream MCP cache so we fetch fresh configs with current auth
       // state. This is important when authVersion changes (e.g., after login/
       // logout). Kick off the fetch now so it overlaps with loadAllPlugins()
       // inside getClaudeCodeMcpConfigs; it's awaited only at the dedup step.
@@ -872,7 +872,7 @@ export function useManageMCPConnections(
         claudeaiPromise = fetchClaudeAIMcpConfigsIfEligible()
       }
 
-      // Phase 1: Load Claude Code configs. Plugin MCP servers that duplicate a
+      // Phase 1: Load Void configs. Plugin MCP servers that duplicate a
       // --mcp-config entry or a claude.ai connector are suppressed here so they
       // don't connect alongside the connector in Phase 2.
       const { servers: claudeCodeConfigs, errors: mcpErrors } =
@@ -886,7 +886,7 @@ export function useManageMCPConnections(
 
       const configs = { ...claudeCodeConfigs, ...dynamicMcpConfig }
 
-      // Start connecting to Claude Code servers (don't wait - runs concurrently with Phase 2)
+      // Start connecting to Void servers (don't wait - runs concurrently with Phase 2)
       // Filter out disabled servers to avoid unnecessary connection attempts
       const enabledConfigs = Object.fromEntries(
         Object.entries(configs).filter(([name]) => !isMcpServerDisabled(name)),
@@ -957,7 +957,7 @@ export function useManageMCPConnections(
           ).catch(error => {
             logMCPError(
               'useManageMcpConnections',
-              `Failed to get claude.ai MCP resources: ${errorMessage(error)}`,
+              `Failed to get upstream MCP resources: ${errorMessage(error)}`,
             )
           })
         }

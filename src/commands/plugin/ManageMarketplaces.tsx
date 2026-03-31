@@ -658,7 +658,7 @@ export function ManageMarketplaces({
         {/* Show explanatory text at the bottom when auto-update is enabled */}
         {!isUpdating && !shouldSkipPluginAutoupdate() && selectedMarketplace.autoUpdate && <Box marginTop={1}>
               <Text dimColor>
-                Auto-update enabled. Claude Code will automatically update this
+                Auto-update enabled. Void will automatically update this
                 marketplace and its installed plugins.
               </Text>
             </Box>}
@@ -711,9 +711,9 @@ export function ManageMarketplaces({
               <Box flexDirection="column" flexGrow={1}>
                 <Box flexDirection="row" gap={1}>
                   <Text bold strikethrough={state.pendingRemove} dimColor={state.pendingRemove}>
-                    {state.name === 'claude-plugins-official' && <Text color="claude">✻ </Text>}
+                    {state.name === 'void-plugins-official' && <Text color="claude">✻ </Text>}
                     {state.name}
-                    {state.name === 'claude-plugins-official' && <Text color="claude"> ✻</Text>}
+                    {state.name === 'void-plugins-official' && <Text color="claude"> ✻</Text>}
                   </Text>
                   {indicators.length > 0 && <Text color="warning">[{indicators.join(', ')}]</Text>}
                 </Box>

@@ -49,7 +49,7 @@ export function EnterPlanModePermissionRequest(t0) {
   const handleResponse = t1;
   let t2;
   if ($[5] === Symbol.for("react.memo_cache_sentinel")) {
-    t2 = <Text>Claude wants to enter plan mode to explore and design an implementation approach.</Text>;
+    t2 = <Text>Void wants to enter plan mode to explore and design an implementation approach.</Text>;
     $[5] = t2;
   } else {
     t2 = $[5];

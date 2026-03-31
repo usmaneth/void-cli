@@ -66,14 +66,14 @@ export function fileHistoryEnabled(): boolean {
   }
   return (
     getGlobalConfig().fileCheckpointingEnabled !== false &&
-    !isEnvTruthy(process.env.CLAUDE_CODE_DISABLE_FILE_CHECKPOINTING)
+    !isEnvTruthy(process.env.VOID_DISABLE_FILE_CHECKPOINTING)
   )
 }
 
 function fileHistoryEnabledSdk(): boolean {
   return (
-    isEnvTruthy(process.env.CLAUDE_CODE_ENABLE_SDK_FILE_CHECKPOINTING) &&
-    !isEnvTruthy(process.env.CLAUDE_CODE_DISABLE_FILE_CHECKPOINTING)
+    isEnvTruthy(process.env.VOID_ENABLE_SDK_FILE_CHECKPOINTING) &&
+    !isEnvTruthy(process.env.VOID_DISABLE_FILE_CHECKPOINTING)
   )
 }
 
@@ -207,7 +207,7 @@ export async function fileHistoryMakeSnapshot(
 
   // Phase 1: capture current state with a no-op updater so we know which
   // files to back up. Returning the same reference keeps this a true no-op
-  // for any wrapper that honors same-ref returns (src/CLAUDE.md wrapper
+  // for any wrapper that honors same-ref returns (src/VOID.md wrapper
   // rule). Wrappers that unconditionally spread will trigger one extra
   // re-render; acceptable for a once-per-turn call.
   let captured: FileHistoryState | undefined

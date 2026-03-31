@@ -30,7 +30,7 @@ function getSessionsDir(): string {
  */
 function envSessionKind(): SessionKind | undefined {
   if (feature('BG_SESSIONS')) {
-    const k = process.env.CLAUDE_CODE_SESSION_KIND
+    const k = process.env.VOID_SESSION_KIND
     if (k === 'bg' || k === 'daemon' || k === 'daemon-worker') return k
   }
   return undefined
@@ -49,7 +49,7 @@ export function isBgSession(): boolean {
  * Write a PID file for this session and register cleanup.
  *
  * Registers all top-level sessions — interactive CLI, SDK (vscode, desktop,
- * typescript, python, -p), bg/daemon spawns — so `claude ps` sees everything
+ * typescript, python, -p), bg/daemon spawns — so `void ps` sees everything
  * the user might be running. Skips only teammates/subagents, which would
  * conflate swarm usage with genuine concurrency and pollute ps with noise.
  *
@@ -82,21 +82,21 @@ export async function registerSession(): Promise<boolean> {
         cwd: getOriginalCwd(),
         startedAt: Date.now(),
         kind,
-        entrypoint: process.env.CLAUDE_CODE_ENTRYPOINT,
+        entrypoint: process.env.VOID_ENTRYPOINT,
         ...(feature('UDS_INBOX')
-          ? { messagingSocketPath: process.env.CLAUDE_CODE_MESSAGING_SOCKET }
+          ? { messagingSocketPath: process.env.VOID_MESSAGING_SOCKET }
           : {}),
         ...(feature('BG_SESSIONS')
           ? {
-              name: process.env.CLAUDE_CODE_SESSION_NAME,
-              logPath: process.env.CLAUDE_CODE_SESSION_LOG,
-              agent: process.env.CLAUDE_CODE_AGENT,
+              name: process.env.VOID_SESSION_NAME,
+              logPath: process.env.VOID_SESSION_LOG,
+              agent: process.env.VOID_AGENT,
             }
           : {}),
       }),
     )
     // --resume / /resume mutates getSessionId() via switchSession. Without
-    // this, the PID file's sessionId goes stale and `claude ps` sparkline
+    // this, the PID file's sessionId goes stale and `void ps` sparkline
     // reads the wrong transcript.
     onSessionSwitch(id => {
       void updatePidFile({ sessionId: id })
@@ -148,7 +148,7 @@ export async function updateSessionBridgeId(
 }
 
 /**
- * Push live activity state for `claude ps`. Fire-and-forget from REPL's
+ * Push live activity state for `void ps`. Fire-and-forget from REPL's
  * status-change effect — a dropped write just means ps falls back to
  * transcript-tail derivation for one refresh.
  */
@@ -193,7 +193,7 @@ export async function countConcurrentSessions(): Promise<number> {
       count++
     } else if (getPlatform() !== 'wsl') {
       // Stale file from a crashed session — sweep it. Skip on WSL: if
-      // ~/.claude/sessions/ is shared with Windows-native Claude (symlink
+      // ~/.void/sessions/ is shared with Windows-native Claude (symlink
       // or CLAUDE_CONFIG_DIR), a Windows PID won't be probeable from WSL
       // and we'd falsely delete a live session's file. This is just
       // telemetry so conservative undercount is acceptable.

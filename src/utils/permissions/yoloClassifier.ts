@@ -13,7 +13,7 @@ import {
 import { getFeatureValue_CACHED_MAY_BE_STALE } from '../../services/analytics/growthbook.js'
 import { logEvent } from '../../services/analytics/index.js'
 import type { AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS } from '../../services/analytics/metadata.js'
-import { getCacheControl } from '../../services/api/claude.js'
+import { getCacheControl } from '../../services/api/void.js'
 import { parsePromptTooLongTokenCounts } from '../../services/api/errors.js'
 import { getDefaultMaxRetries } from '../../services/api/withRetry.js'
 import type { Tool, ToolPermissionContext, Tools } from '../../Tool.js'
@@ -147,7 +147,7 @@ function getAutoModeDumpDir(): string {
 
 /**
  * Dump the auto mode classifier request and response bodies to the per-user
- * claude temp directory when CLAUDE_CODE_DUMP_AUTO_MODE is set. Files are
+ * claude temp directory when VOID_DUMP_AUTO_MODE is set. Files are
  * named by unix timestamp: {timestamp}[.{suffix}].req.json and .res.json
  */
 async function maybeDumpAutoMode(
@@ -157,7 +157,7 @@ async function maybeDumpAutoMode(
   suffix?: string,
 ): Promise<void> {
   if (process.env.USER_TYPE !== 'ant') return
-  if (!isEnvTruthy(process.env.CLAUDE_CODE_DUMP_AUTO_MODE)) return
+  if (!isEnvTruthy(process.env.VOID_DUMP_AUTO_MODE)) return
   const base = suffix ? `${timestamp}.${suffix}` : `${timestamp}`
   try {
     await mkdir(getAutoModeDumpDir(), { recursive: true })
@@ -442,19 +442,19 @@ export function buildTranscriptForClassifier(
 }
 
 /**
- * Build the CLAUDE.md prefix message for the classifier. Returns null when
- * CLAUDE.md is disabled or empty. The content is wrapped in a delimiter that
+ * Build the VOID.md prefix message for the classifier. Returns null when
+ * VOID.md is disabled or empty. The content is wrapped in a delimiter that
  * tells the classifier this is user-provided configuration — actions
  * described here reflect user intent. cache_control is set because the
- * content is static per-session, making the system + CLAUDE.md prefix a
+ * content is static per-session, making the system + VOID.md prefix a
  * stable cache prefix across classifier calls.
  *
  * Reads from bootstrap/state.ts cache (populated by context.ts) instead of
  * importing claudemd.ts directly — claudemd → permissions/filesystem →
  * permissions → yoloClassifier is a cycle. context.ts already gates on
- * CLAUDE_CODE_DISABLE_CLAUDE_MDS and normalizes '' to null before caching.
+ * VOID_DISABLE_CLAUDE_MDS and normalizes '' to null before caching.
  * If the cache is unpopulated (tests, or an entrypoint that never calls
- * getUserContext), the classifier proceeds without CLAUDE.md — same as
+ * getUserContext), the classifier proceeds without VOID.md — same as
  * pre-PR behavior.
  */
 function buildClaudeMdMessage(): Anthropic.MessageParam | null {
@@ -466,7 +466,7 @@ function buildClaudeMdMessage(): Anthropic.MessageParam | null {
       {
         type: 'text',
         text:
-          `The following is the user's CLAUDE.md configuration. These are ` +
+          `The following is the user's VOID.md configuration. These are ` +
           `instructions the user provided to the agent and should be treated ` +
           `as part of the user's intent when evaluating actions.\n\n` +
           `<user_claude_md>\n${claudeMd}\n</user_claude_md>`,
@@ -1097,7 +1097,7 @@ export async function classifyYoloAction(
   // Place cache_control on the action block. In the two-stage classifier,
   // stage 2 shares the same transcript+action prefix as stage 1 — the
   // breakpoint here gives stage 2 a guaranteed cache hit on the full prefix.
-  // Budget: system (1) + CLAUDE.md (0–1) + action (1) = 2–3, under the
+  // Budget: system (1) + VOID.md (0–1) + action (1) = 2–3, under the
   // API limit of 4 cache_control blocks.
   userContentBlocks.push({
     type: 'text' as const,
@@ -1333,7 +1333,7 @@ type AutoModeConfig = {
  */
 function getClassifierModel(): string {
   if (process.env.USER_TYPE === 'ant') {
-    const envModel = process.env.CLAUDE_CODE_AUTO_MODE_MODEL
+    const envModel = process.env.VOID_AUTO_MODE_MODEL
     if (envModel) return envModel
   }
   const config = getFeatureValue_CACHED_MAY_BE_STALE(
@@ -1356,7 +1356,7 @@ function resolveTwoStageClassifier():
   | 'thinking'
   | undefined {
   if (process.env.USER_TYPE === 'ant') {
-    const env = process.env.CLAUDE_CODE_TWO_STAGE_CLASSIFIER
+    const env = process.env.VOID_TWO_STAGE_CLASSIFIER
     if (env === 'fast' || env === 'thinking') return env
     if (isEnvTruthy(env)) return true
     if (isEnvDefinedFalsy(env)) return false
@@ -1378,7 +1378,7 @@ function isTwoStageClassifierEnabled(): boolean {
 
 function isJsonlTranscriptEnabled(): boolean {
   if (process.env.USER_TYPE === 'ant') {
-    const env = process.env.CLAUDE_CODE_JSONL_TRANSCRIPT
+    const env = process.env.VOID_JSONL_TRANSCRIPT
     if (isEnvTruthy(env)) return true
     if (isEnvDefinedFalsy(env)) return false
   }

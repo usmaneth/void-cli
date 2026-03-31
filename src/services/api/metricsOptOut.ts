@@ -23,7 +23,7 @@ const CACHE_TTL_MS = 60 * 60 * 1000
 
 // Disk TTL — org settings rarely change. When disk cache is fresher than this,
 // we skip the network entirely (no background refresh). This is what collapses
-// N `claude -p` invocations into ~1 API call/day.
+// N `void -p` invocations into ~1 API call/day.
 const DISK_CACHE_TTL_MS = 24 * 60 * 60 * 1000
 
 /**
@@ -42,7 +42,7 @@ async function _fetchMetricsEnabled(): Promise<MetricsEnabledResponse> {
     ...authResult.headers,
   }
 
-  const endpoint = `https://api.anthropic.com/api/claude_code/organizations/metrics_enabled`
+  const endpoint = `https://api.anthropic.com/api/void_code/organizations/metrics_enabled`
   const response = await axios.get<MetricsEnabledResponse>(endpoint, {
     headers,
     timeout: 5000,

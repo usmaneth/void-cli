@@ -4,11 +4,11 @@ import { isEnvTruthy } from '../envUtils.js'
 export type APIProvider = 'firstParty' | 'bedrock' | 'vertex' | 'foundry'
 
 export function getAPIProvider(): APIProvider {
-  return isEnvTruthy(process.env.CLAUDE_CODE_USE_BEDROCK)
+  return isEnvTruthy(process.env.VOID_USE_BEDROCK)
     ? 'bedrock'
-    : isEnvTruthy(process.env.CLAUDE_CODE_USE_VERTEX)
+    : isEnvTruthy(process.env.VOID_USE_VERTEX)
       ? 'vertex'
-      : isEnvTruthy(process.env.CLAUDE_CODE_USE_FOUNDRY)
+      : isEnvTruthy(process.env.VOID_USE_FOUNDRY)
         ? 'foundry'
         : 'firstParty'
 }

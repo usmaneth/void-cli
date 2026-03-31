@@ -1,5 +1,5 @@
 /**
- * Stub: Claude in Chrome removed in Void CLI rebrand.
+ * Stub: Void in Chrome removed in Void CLI rebrand.
  */
 
 export const CLAUDE_IN_CHROME_MCP_SERVER_NAME = 'claude-in-chrome'

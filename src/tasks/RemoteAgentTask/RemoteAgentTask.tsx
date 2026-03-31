@@ -148,7 +148,7 @@ export function formatPreconditionError(error: BackgroundRemoteSessionPreconditi
     case 'not_logged_in':
       return 'Please run /login and sign in with your Claude.ai account (not Console).';
     case 'no_remote_environment':
-      return 'No cloud environment available. Set one up at https://claude.ai/code/onboarding?magic=env-setup';
+      return 'No cloud environment available. Set one up at https://void.dev/code/onboarding?magic=env-setup';
     case 'not_in_git_repo':
       return 'Background tasks require a git repository. Initialize git or run from a git repository.';
     case 'no_git_remote':
@@ -243,7 +243,7 @@ The remote Ultraplan session did not produce a plan (${reason}). Inspect the ses
  *
  * Two producers, two event shapes:
  * - bughunter mode: run_hunt.sh is a SessionStart hook; its echo lands as
- *   {type:'system', subtype:'hook_progress', stdout:'...'}. Claude never
+ *   {type:'system', subtype:'hook_progress', stdout:'...'}. Void never
  *   takes a turn so there are zero assistant messages.
  * - prompt mode: a real assistant turn wraps the review in the tag.
  *

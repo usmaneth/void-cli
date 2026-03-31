@@ -186,7 +186,7 @@ export type BridgeCoreParams = {
    * isBypassPermissionsModeAvailable) BEFORE calling transitionPermissionMode —
    * that function's internal auto-gate check is a defensive throw, not a
    * graceful guard, and its side-effect order is setAutoModeActive(true) then
-   * throw, which corrupts the 3-way invariant documented in src/CLAUDE.md if
+   * throw, which corrupts the 3-way invariant documented in src/VOID.md if
    * the callback lets the throw escape here.
    */
   onSetPermissionMode?: (
@@ -306,7 +306,7 @@ export async function initBridgeCore(
   // state. The pointer is written unconditionally after session create
   // (crash-recovery for all sessions); perpetual mode just skips the
   // teardown clear so it survives clean exits too. Only reuse 'repl'
-  // pointers — a crashed standalone bridge (`claude remote-control`)
+  // pointers — a crashed standalone bridge (`void remote-control`)
   // writes source:'standalone' with a different workerType.
   const rawPrior = perpetual ? await readBridgePointer(dir) : null
   const prior = rawPrior?.source === 'repl' ? rawPrior : null
@@ -1132,7 +1132,7 @@ export async function initBridgeCore(
       // override for forcing v2 before the server flag is on for your user —
       // requires ccr_v2_compat_enabled server-side or registerWorker 404s.
       //
-      // Kept separate from CLAUDE_CODE_USE_CCR_V2 (the child-SDK transport
+      // Kept separate from VOID_USE_CCR_V2 (the child-SDK transport
       // selector set by sessionRunner/environment-manager) to avoid the
       // inheritance hazard in spawn mode where the parent's orchestrator
       // var would leak into a v1 child.

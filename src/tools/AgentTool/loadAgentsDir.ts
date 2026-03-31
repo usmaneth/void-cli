@@ -125,9 +125,9 @@ export type BaseAgentDefinition = {
   memory?: AgentMemoryScope // Persistent memory scope
   isolation?: 'worktree' | 'remote' // Run in an isolated git worktree, or remotely in CCR (ant-only)
   pendingSnapshotUpdate?: { snapshotTimestamp: string }
-  /** Omit CLAUDE.md hierarchy from the agent's userContext. Read-only agents
+  /** Omit VOID.md hierarchy from the agent's userContext. Read-only agents
    * (Explore, Plan) don't need commit/PR/lint guidelines — the main agent has
-   * full CLAUDE.md and interprets their output. Saves ~5-15 Gtok/week across
+   * full VOID.md and interprets their output. Saves ~5-15 Gtok/week across
    * 34M+ Explore spawns. Kill-switch: tengu_slim_subagent_claudemd. */
   omitClaudeMd?: boolean
 }
@@ -296,7 +296,7 @@ async function initializeAgentMemorySnapshots(
 export const getAgentDefinitionsWithOverrides = memoize(
   async (cwd: string): Promise<AgentDefinitionsResult> => {
     // Simple mode: skip custom agents, only return built-ins
-    if (isEnvTruthy(process.env.CLAUDE_CODE_SIMPLE)) {
+    if (isEnvTruthy(process.env.VOID_SIMPLE)) {
       const builtInAgents = getBuiltInAgents()
       return {
         activeAgents: builtInAgents,

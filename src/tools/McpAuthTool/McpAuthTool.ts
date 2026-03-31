@@ -90,7 +90,7 @@ export function createMcpAuthTool(
         return {
           data: {
             status: 'unsupported' as const,
-            message: `This is a claude.ai MCP connector. Ask the user to run /mcp and select "${serverName}" to authenticate.`,
+            message: `This is a upstream MCP connector. Ask the user to run /mcp and select "${serverName}" to authenticate.`,
           },
         }
       }

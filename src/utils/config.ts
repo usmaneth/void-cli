@@ -131,7 +131,7 @@ export type ProjectConfig = {
     sessionId: string
     hookBased?: boolean
   }
-  /** Spawn mode for `claude remote-control` multi-session. Set by first-run dialog or `w` toggle. */
+  /** Spawn mode for `void remote-control` multi-session. Set by first-run dialog or `w` toggle. */
   remoteControlSpawnMode?: 'same-dir' | 'worktree'
 }
 
@@ -200,12 +200,12 @@ export type GlobalConfig = {
   lastOnboardingVersion?: string
   // Tracks the last version for which release notes were seen, used for managing release notes
   lastReleaseNotesSeen?: string
-  // Timestamp when changelog was last fetched (content stored in ~/.claude/cache/changelog.md)
+  // Timestamp when changelog was last fetched (content stored in ~/.void/cache/changelog.md)
   changelogLastFetched?: number
-  // @deprecated - Migrated to ~/.claude/cache/changelog.md. Keep for migration support.
+  // @deprecated - Migrated to ~/.void/cache/changelog.md. Keep for migration support.
   cachedChangelog?: string
   mcpServers?: Record<string, McpServerConfig>
-  // claude.ai MCP connectors that have successfully connected at least once.
+  // upstream MCP connectors that have successfully connected at least once.
   // Used to gate "connector unavailable" / "needs auth" startup notifications:
   // a connector the user has actually used is worth flagging when it breaks,
   // but an org-configured connector that's been needs-auth since day one is
@@ -370,7 +370,7 @@ export type GlobalConfig = {
   showSpinnerTree?: boolean // Whether to show the teammate spinner tree instead of pills
 
   // First start time tracking
-  firstStartTime?: string // ISO timestamp when Claude Code was first started on this machine
+  firstStartTime?: string // ISO timestamp when Void was first started on this machine
 
   messageIdleNotifThresholdMs: number // How long the user has to have been idle to get a notification that Claude is done generating
 
@@ -393,8 +393,8 @@ export type GlobalConfig = {
   inputNeededNotifEnabled?: boolean
   agentPushNotifEnabled?: boolean
 
-  // Claude Code usage tracking
-  claudeCodeFirstTokenDate?: string // ISO timestamp of the user's first Claude Code OAuth token
+  // Void usage tracking
+  claudeCodeFirstTokenDate?: string // ISO timestamp of the user's first Void OAuth token
 
   // Model switch callout tracking (ant-only)
   modelSwitchCalloutDismissed?: boolean // Whether user chose "Don't show again"
@@ -491,9 +491,9 @@ export type GlobalConfig = {
   officialMarketplaceAutoInstallLastAttemptTime?: number // Timestamp of last attempt
   officialMarketplaceAutoInstallNextRetryTime?: number // Earliest time to retry again
 
-  // Claude in Chrome settings
-  hasCompletedClaudeInChromeOnboarding?: boolean // Whether Claude in Chrome onboarding has been shown
-  claudeInChromeDefaultEnabled?: boolean // Whether Claude in Chrome is enabled by default (undefined means platform default)
+  // Void in Chrome settings
+  hasCompletedClaudeInChromeOnboarding?: boolean // Whether Void in Chrome onboarding has been shown
+  claudeInChromeDefaultEnabled?: boolean // Whether Void in Chrome is enabled by default (undefined means platform default)
   cachedChromeExtensionInstalled?: boolean // Cached result of whether Chrome extension is installed
 
   // Chrome extension pairing state (persisted across sessions)
@@ -507,7 +507,7 @@ export type GlobalConfig = {
   lspRecommendationNeverPlugins?: string[] // Plugin IDs to never suggest
   lspRecommendationIgnoredCount?: number // Track ignored recommendations (stops after 5)
 
-  // Claude Code hint protocol state (<claude-code-hint /> tags from CLIs/SDKs).
+  // Void hint protocol state (<claude-code-hint /> tags from CLIs/SDKs).
   // Nested by hint type so future types (docs, mcp, ...) slot in without new
   // top-level keys.
   claudeCodeHints?: {
@@ -563,9 +563,9 @@ export type GlobalConfig = {
   // Additional model options for the model picker (fetched during bootstrap).
   additionalModelOptionsCache?: ModelOption[]
 
-  // Disk cache for /api/claude_code/organizations/metrics_enabled.
+  // Disk cache for /api/void_code/organizations/metrics_enabled.
   // Org-level settings change rarely; persisting across processes avoids a
-  // cold API call on every `claude -p` invocation.
+  // cold API call on every `void -p` invocation.
   metricsStatusCache?: {
     enabled: boolean
     timestamp: number
@@ -1240,7 +1240,7 @@ function saveConfigWithLock<A extends object>(
 
     // Create timestamped backup of existing config before writing
     // We keep multiple backups to prevent data loss if a reset/corrupted config
-    // overwrites a good backup. Backups are stored in ~/.claude/backups/ to
+    // overwrites a good backup. Backups are stored in ~/.void/backups/ to
     // keep the home directory clean.
     try {
       const fileBase = basename(file)
@@ -1357,7 +1357,7 @@ export function enableConfigs(): void {
 
 /**
  * Returns the directory where config backup files are stored.
- * Uses ~/.claude/backups/ to keep the home directory clean.
+ * Uses ~/.void/backups/ to keep the home directory clean.
  */
 function getConfigBackupDir(): string {
   return join(getClaudeConfigHomeDir(), 'backups')
@@ -1365,7 +1365,7 @@ function getConfigBackupDir(): string {
 
 /**
  * Find the most recent backup file for a given config file.
- * Checks ~/.claude/backups/ first, then falls back to the legacy location
+ * Checks ~/.void/backups/ first, then falls back to the legacy location
  * (next to the config file) for backwards compatibility.
  * Returns the full path to the most recent backup, or null if none exist.
  */
@@ -1781,13 +1781,13 @@ export function getMemoryPath(memoryType: MemoryType): string {
 
   switch (memoryType) {
     case 'User':
-      return join(getClaudeConfigHomeDir(), 'CLAUDE.md')
+      return join(getClaudeConfigHomeDir(), 'VOID.md')
     case 'Local':
       return join(cwd, 'CLAUDE.local.md')
     case 'Project':
-      return join(cwd, 'CLAUDE.md')
+      return join(cwd, 'VOID.md')
     case 'Managed':
-      return join(getManagedFilePath(), 'CLAUDE.md')
+      return join(getManagedFilePath(), 'VOID.md')
     case 'AutoMem':
       return getAutoMemEntrypoint()
   }

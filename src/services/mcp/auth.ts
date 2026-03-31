@@ -365,7 +365,7 @@ export function hasMcpDiscoveryButNoToken(
 /**
  * Revokes a single token on the OAuth server.
  *
- * Per RFC 7009, public clients (like Claude Code) should authenticate by including
+ * Per RFC 7009, public clients (like Void) should authenticate by including
  * client_id in the request body, NOT via an Authorization header. The Bearer token
  * in an Authorization header is meant for resource owner authentication, not client
  * authentication.
@@ -655,7 +655,7 @@ type XaaFailureStage =
  * 3. Save tokens to the same keychain slot as normal OAuth
  *
  * IdP connection details come from settings.xaaIdp (configured once via
- * `claude mcp xaa setup`). Per-server config is just `oauth.xaa: true`
+ * `void mcp xaa setup`). Per-server config is just `oauth.xaa: true`
  * plus the AS clientId/clientSecret.
  *
  * No silent fallback: if `oauth.xaa` is set, XAA is the only path.
@@ -676,7 +676,7 @@ async function performMCPXaaAuth(
   const idp = getXaaIdpSettings()
   if (!idp) {
     throw new Error(
-      "XAA: no IdP connection configured. Run 'claude mcp xaa setup --issuer <url> --client-id <id> --client-secret' to configure.",
+      "XAA: no IdP connection configured. Run 'void mcp xaa setup --issuer <url> --client-id <id> --client-secret' to configure.",
     )
   }
 
@@ -866,12 +866,12 @@ export async function performMCPOAuthFlow(
   // user explicitly asked for XAA) and security-relevant (consent flow may
   // have a different trust/scope posture than the org's IdP policy).
   //
-  // Servers with `oauth.xaa` but CLAUDE_CODE_ENABLE_XAA unset hard-fail with
+  // Servers with `oauth.xaa` but VOID_ENABLE_XAA unset hard-fail with
   // actionable copy rather than silently degrade to consent.
   if (serverConfig.oauth?.xaa) {
     if (!isXaaEnabled()) {
       throw new Error(
-        `XAA is not enabled (set CLAUDE_CODE_ENABLE_XAA=1). Remove 'oauth.xaa' from server '${serverName}' to use the standard consent flow.`,
+        `XAA is not enabled (set VOID_ENABLE_XAA=1). Remove 'oauth.xaa' from server '${serverName}' to use the standard consent flow.`,
       )
     }
     logEvent('tengu_mcp_oauth_flow_start', {
@@ -1142,7 +1142,7 @@ export async function performMCPOAuthFlow(
           if (code) {
             res.writeHead(200, { 'Content-Type': 'text/html' })
             res.end(
-              `<h1>Authentication Successful</h1><p>You can close this window. Return to Claude Code.</p>`,
+              `<h1>Authentication Successful</h1><p>You can close this window. Return to Void.</p>`,
             )
             cleanup()
             resolveOnce(code)
@@ -1416,7 +1416,7 @@ export class ClaudeAuthProvider implements OAuthClientProvider {
 
   get clientMetadata(): OAuthClientMetadata {
     const metadata: OAuthClientMetadata = {
-      client_name: `Claude Code (${this.serverName})`,
+      client_name: `Void (${this.serverName})`,
       redirect_uris: [this.redirectUri],
       grant_types: ['authorization_code', 'refresh_token'],
       response_types: ['code'],
@@ -1745,7 +1745,7 @@ export class ClaudeAuthProvider implements OAuthClientProvider {
    * both fire the full 4-request XAA chain and race on storage.update().
    * Unlike inc-4829 the id_token is not single-use so both access_tokens
    * stay valid (wasted round-trips + keychain write race, not brickage),
-   * but this is the shape CLAUDE.md flags under "Token/auth caching across
+   * but this is the shape VOID.md flags under "Token/auth caching across
    * process boundaries". Mirror refreshAuthorization()'s lockfile pattern.
    */
   private async xaaRefresh(): Promise<OAuthTokens | undefined> {
