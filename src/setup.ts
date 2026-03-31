@@ -18,6 +18,7 @@ import {
   setProjectRoot,
   switchSession,
 } from './bootstrap/state.js'
+import { ensureVoidConfigDir } from './utils/voidConfigInit.js'
 import { getCommands } from './commands.js'
 import { initSessionMemory } from './services/SessionMemory/sessionMemory.js'
 import { asSessionId } from './types/ids.js'
@@ -77,6 +78,9 @@ export async function setup(
     )
     process.exit(1)
   }
+
+  // Ensure ~/.void/ directory structure exists on first run
+  ensureVoidConfigDir()
 
   // Set custom session ID if provided
   if (customSessionId) {

@@ -110,7 +110,7 @@ export function getClaudeSkillScope(
       prefix: '/.void/skills/',
     },
     {
-      dir: expandPath(join(homedir(), '.claude', 'skills')),
+      dir: expandPath(join(homedir(), '.void', 'skills')),
       prefix: '~/.void/skills/',
     },
   ]
