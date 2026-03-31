@@ -4,12 +4,15 @@ import type { Root } from './ink.js';
 import type { Props as REPLProps } from './screens/REPL.js';
 import type { AppState } from './state/AppStateStore.js';
 import type { FpsMetrics } from './utils/fpsTracker.js';
+import { runVoidBootAnimation } from './utils/voidBoot.js';
 type AppWrapperProps = {
   getFpsMetrics: () => FpsMetrics | undefined;
   stats?: StatsStore;
   initialState: AppState;
 };
 export async function launchRepl(root: Root, appProps: AppWrapperProps, replProps: REPLProps, renderAndRun: (root: Root, element: React.ReactNode) => Promise<void>): Promise<void> {
+  // Show Void boot animation before the Ink app renders
+  await runVoidBootAnimation();
   const {
     App
   } = await import('./components/App.js');
