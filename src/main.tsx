@@ -2237,9 +2237,11 @@ async function run(): Promise<CommanderCommand> {
         event: 'startup' as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
         durationMs: Math.round(process.uptime() * 1000)
       });
+      process.stderr.write('[VOID] Before showSetupScreens\n');
       logForDebugging('[STARTUP] Running showSetupScreens()...');
       const setupScreensStart = Date.now();
       const onboardingShown = await showSetupScreens(root, permissionMode, allowDangerouslySkipPermissions, commands, enableClaudeInChrome, devChannels);
+      process.stderr.write('[VOID] After showSetupScreens\n');
       logForDebugging(`[STARTUP] showSetupScreens() completed in ${Date.now() - setupScreensStart}ms`);
 
       // Now that trust is established and GrowthBook has auth headers,
@@ -2297,13 +2299,7 @@ async function run(): Promise<CommanderCommand> {
         });
       }
 
-      // Validate that the active token's org matches forceLoginOrgUUID (if set
-      // in managed settings). Runs after onboarding so managed settings and
-      // login state are fully loaded.
-      const orgValidation = await validateForceLoginOrg();
-      if (!orgValidation.valid) {
-        await exitWithError(root, orgValidation.message);
-      }
+      // Void: skip org validation (Anthropic-specific)
     }
 
     // If gracefulShutdown was initiated (e.g., user rejected trust dialog),
@@ -2379,9 +2375,11 @@ async function run(): Promise<CommanderCommand> {
     }
 
     // Resolve MCP configs (started early, overlaps with setup/trust dialog work)
+    process.stderr.write('[VOID] Before mcpConfigPromise\n');
     const {
       servers: existingMcpConfigs
     } = await mcpConfigPromise;
+    process.stderr.write('[VOID] After mcpConfigPromise\n');
     logForDebugging(`[STARTUP] MCP configs resolved in ${mcpConfigResolvedMs}ms (awaited at +${Date.now() - mcpConfigStart}ms)`);
     // CLI flag (--mcp-config) should override file-based configs, matching settings precedence
     const allMcpConfigs = {
@@ -2455,6 +2453,7 @@ async function run(): Promise<CommanderCommand> {
     const mcpTools: Awaited<typeof mcpPromise>['tools'] = [];
     const mcpCommands: Awaited<typeof mcpPromise>['commands'] = [];
     let thinkingEnabled = shouldEnableThinkingByDefault();
+    process.stderr.write('[VOID] After MCP setup, before thinking config\n');
     let thinkingConfig: ThinkingConfig = thinkingEnabled !== false ? {
       type: 'adaptive'
     } : {
@@ -2542,6 +2541,7 @@ async function run(): Promise<CommanderCommand> {
       });
     });
 
+    process.stderr.write('[VOID] Before plugin init\n');
     // Initialize versioned plugins system (triggers V1→V2 migration if
     // needed). Then run orphan GC, THEN warm the Grep/Glob exclusion cache.
     // Sequencing matters: the warmup scans disk for .orphaned_at markers,
@@ -3765,6 +3765,7 @@ async function run(): Promise<CommanderCommand> {
       // the first API call so the model always sees hook context.
       const pendingHookMessages = hooksPromise && hookMessages.length === 0 ? hooksPromise : undefined;
       profileCheckpoint('action_after_hooks');
+      process.stderr.write('[VOID] About to launch REPL!\n');
       maybeActivateProactive(options);
       maybeActivateBrief(options);
       // Persist the current mode for fresh sessions so future resumes know what mode was used
