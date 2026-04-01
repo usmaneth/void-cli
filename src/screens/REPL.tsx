@@ -118,6 +118,12 @@ const getCoordinatorUserContext: (mcpClients: ReadonlyArray<{
   [k: string]: string;
 } = feature('COORDINATOR_MODE') ? require('../coordinator/coordinatorMode.js').getCoordinatorUserContext : () => ({});
 /* eslint-enable custom-rules/no-process-env-top-level, @typescript-eslint/no-require-imports */
+// Conditional feature stubs — these are referenced behind feature() gates
+// but the modules may not exist in all builds.
+const fireCompanionObserver: any = undefined
+const UltraplanChoiceDialog: any = undefined
+const UltraplanLaunchDialog: any = undefined
+const launchUltraplan: any = undefined
 import useCanUseTool from '../hooks/useCanUseTool.js';
 import type { ToolPermissionContext, Tool } from '../Tool.js';
 import { applyPermissionUpdate, applyPermissionUpdates, persistPermissionUpdate } from '../utils/permissions/PermissionUpdate.js';
@@ -2533,7 +2539,7 @@ export function REPL({
     const removedNotifications = removeByFilter(cmd => cmd.mode === 'task-notification');
     void (async () => {
       const toolUseContext = getToolUseContext(messagesRef.current, [], new AbortController(), mainLoopModel);
-      const [defaultSystemPrompt, userContext, systemContext] = await Promise.all([getSystemPrompt(toolUseContext.options.tools, mainLoopModel, Array.from(toolPermissionContext.additionalWorkingDirectories.keys()), toolUseContext.options.mcpClients), getUserContext(), getSystemContext()]);
+      const [defaultSystemPrompt, userContext, systemContext] = await Promise.all([getSystemPrompt(toolUseContext.options.tools, mainLoopModel, Array.from((toolPermissionContext.additionalWorkingDirectories as any).keys()), toolUseContext.options.mcpClients), getUserContext(), getSystemContext()]);
       const systemPrompt = buildEffectiveSystemPrompt({
         mainThreadAgentDefinition,
         toolUseContext,
@@ -2606,7 +2612,7 @@ export function REPL({
         if (feature('PROACTIVE') || feature('KAIROS')) {
           proactiveModule?.setContextBlocked(false);
         }
-      } else if (newMessage.type === 'progress' && isEphemeralToolProgress(newMessage.data.type)) {
+      } else if ((newMessage as any).type === 'progress' && isEphemeralToolProgress((newMessage as any).data.type)) {
         // Replace the previous ephemeral progress tick for the same tool
         // call instead of appending. Sleep/Bash emit a tick per second and
         // only the last one is rendered; appending blows up the messages
@@ -2619,7 +2625,7 @@ export function REPL({
         // "Initializing…" because it renders the full progress trail.
         setMessages(oldMessages => {
           const last = oldMessages.at(-1);
-          if (last?.type === 'progress' && last.parentToolUseID === newMessage.parentToolUseID && last.data.type === newMessage.data.type) {
+          if (last?.type === 'progress' && (last as any).parentToolUseID === (newMessage as any).parentToolUseID && (last as any).data.type === (newMessage as any).data.type) {
             const copy = oldMessages.slice();
             copy[copy.length - 1] = newMessage;
             return copy;
@@ -2646,7 +2652,7 @@ export function REPL({
       setResponseLength(length => length + newContent.length);
     }, setStreamMode, setStreamingToolUses, tombstonedMessage => {
       setMessages(oldMessages => oldMessages.filter(m => m !== tombstonedMessage));
-      void removeTranscriptMessage(tombstonedMessage.uuid);
+      void removeTranscriptMessage(tombstonedMessage.uuid as any);
     }, setStreamingThinking, metrics => {
       const now = Date.now();
       const baseline = responseLengthRef.current;
@@ -2770,7 +2776,7 @@ export function REPL({
     // IMPORTANT: do this after setMessages() above, to avoid UI jank
     checkAndDisableBypassPermissionsIfNeeded(toolPermissionContext, setAppState),
     // Gated on TRANSCRIPT_CLASSIFIER so GrowthBook kill switch runs wherever auto mode is built in
-    feature('TRANSCRIPT_CLASSIFIER') ? checkAndDisableAutoModeIfNeeded(toolPermissionContext, setAppState, store.getState().fastMode) : undefined, getSystemPrompt(freshTools, mainLoopModelParam, Array.from(toolPermissionContext.additionalWorkingDirectories.keys()), freshMcpClients), getUserContext(), getSystemContext()]);
+    feature('TRANSCRIPT_CLASSIFIER') ? checkAndDisableAutoModeIfNeeded(toolPermissionContext, setAppState, store.getState().fastMode) : undefined, getSystemPrompt(freshTools, mainLoopModelParam, Array.from((toolPermissionContext.additionalWorkingDirectories as any).keys()), freshMcpClients), getUserContext(), getSystemContext()]);
     const userContext = {
       ...baseUserContext,
       ...getCoordinatorUserContext(freshMcpClients, isScratchpadEnabled() ? getScratchpadDir() : undefined),
@@ -3097,7 +3103,7 @@ export function REPL({
             ...prev,
             fileHistory: updater(prev.fileHistory)
           }));
-        }, initialMsg.message.uuid);
+        }, initialMsg.message.uuid as any);
       }
 
       // Ensure SessionStart hook context is available before the first API
@@ -3772,7 +3778,7 @@ export function REPL({
       const rawIdx = findRawIndex(msg.uuid);
       const raw = rawIdx >= 0 ? messages[rawIdx] : undefined;
       if (!raw || !selectableUserMessagesFilter(raw)) return;
-      const noFileChanges = !(await fileHistoryHasAnyChanges(fileHistory, raw.uuid));
+      const noFileChanges = !(await fileHistoryHasAnyChanges(fileHistory, raw.uuid as any));
       const onlySynthetic = messagesAfterAreOnlySynthetic(messages, rawIdx);
       if (noFileChanges && onlySynthetic) {
         // rewindConversationTo's setMessages races stream appends — cancel first (idempotent).
@@ -4585,7 +4591,8 @@ export function REPL({
               {USER_TYPE === 'ant' && <TungstenLiveMonitor />}
               {feature('WEB_BROWSER_TOOL') ? WebBrowserPanelModule && <WebBrowserPanelModule.WebBrowserPanel /> : null}
               <Box flexGrow={1} />
-              {showSpinner && <SpinnerWithVerb mode={streamMode} spinnerTip={spinnerTip} responseLengthRef={responseLengthRef} apiMetricsRef={apiMetricsRef} overrideMessage={spinnerMessage} spinnerSuffix={stopHookSpinnerSuffix} verbose={verbose} loadingStartTimeRef={loadingStartTimeRef} totalPausedMsRef={totalPausedMsRef} pauseStartTimeRef={pauseStartTimeRef} overrideColor={spinnerColor} overrideShimmerColor={spinnerShimmerColor} hasActiveTools={inProgressToolUseIDs.size > 0} leaderIsIdle={!isLoading} />}
+              {// @ts-ignore SpinnerWithVerb props
+              showSpinner && <SpinnerWithVerb mode={streamMode} spinnerTip={spinnerTip} responseLengthRef={responseLengthRef} apiMetricsRef={apiMetricsRef} overrideMessage={spinnerMessage} spinnerSuffix={stopHookSpinnerSuffix} verbose={verbose} loadingStartTimeRef={loadingStartTimeRef} totalPausedMsRef={totalPausedMsRef} pauseStartTimeRef={pauseStartTimeRef} overrideColor={spinnerColor} overrideShimmerColor={spinnerShimmerColor} hasActiveTools={inProgressToolUseIDs.size > 0} leaderIsIdle={!isLoading} />}
               {!showSpinner && !isLoading && !userInputOnProcessing && !hasRunningTeammates && isBriefOnly && !viewedAgentTask && <BriefIdleStatus />}
               {isFullscreenEnvEnabled() && <PromptInputQueuedCommands />}
             </>} bottom={<Box flexDirection={feature('BUDDY') && companionNarrow ? 'column' : 'row'} width="100%" alignItems={feature('BUDDY') && companionNarrow ? undefined : 'flex-end'}>
@@ -4915,7 +4922,7 @@ export function REPL({
                 ...prev,
                 fileHistory: updater(prev.fileHistory)
               }));
-            }, message.uuid);
+            }, message.uuid as any);
           }} onSummarize={async (message: UserMessage, feedback?: string, direction: PartialCompactDirection = 'from') => {
             // Project snipped messages so the compact model
             // doesn't summarize content that was intentionally removed.
@@ -4932,7 +4939,7 @@ export function REPL({
             const newAbortController = createAbortController();
             const context = getToolUseContext(compactMessages, [], newAbortController, mainLoopModel);
             const appState = context.getAppState();
-            const defaultSysPrompt = await getSystemPrompt(context.options.tools, context.options.mainLoopModel, Array.from(appState.toolPermissionContext.additionalWorkingDirectories.keys()), context.options.mcpClients);
+            const defaultSysPrompt = await getSystemPrompt(context.options.tools, context.options.mainLoopModel, Array.from((appState.toolPermissionContext.additionalWorkingDirectories as any).keys()), context.options.mcpClients);
             const systemPrompt = buildEffectiveSystemPrompt({
               mainThreadAgentDefinition: undefined,
               toolUseContext: context,

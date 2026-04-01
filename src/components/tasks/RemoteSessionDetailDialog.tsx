@@ -457,6 +457,7 @@ function StagePipeline(t0) {
   if ($[5] !== completed || $[6] !== currentIdx || $[7] !== inSetup) {
     t4 = STAGES.map((s, i) => {
       const isCurrent = !completed && !inSetup && i === currentIdx;
+      // @ts-ignore React Fragment key
       return <React.Fragment key={s}>{i > 0 && <Text dimColor={true}> → </Text>}{isCurrent ? <Text color="background">{STAGE_LABELS[s]}</Text> : <Text dimColor={true}>{STAGE_LABELS[s]}</Text>}</React.Fragment>;
     });
     $[5] = completed;

@@ -143,7 +143,7 @@ function deduplicateDiagnosticFiles(
   for (const file of allFiles) {
     if (!fileMap.has(file.uri)) {
       fileMap.set(file.uri, new Set())
-      dedupedFiles.push({ uri: file.uri, diagnostics: [] })
+      dedupedFiles.push({ uri: file.uri, diagnostics: [] } as any)
     }
 
     const seenDiagnostics = fileMap.get(file.uri)!

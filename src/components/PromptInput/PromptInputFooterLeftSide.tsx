@@ -5,6 +5,8 @@ import { feature } from '../../bun-bundle-shim.js';
 /* eslint-disable @typescript-eslint/no-require-imports */
 const coordinatorModule = feature('COORDINATOR_MODE') ? require('../../coordinator/coordinatorMode.js') as typeof import('../../coordinator/coordinatorMode.js') : undefined;
 /* eslint-enable @typescript-eslint/no-require-imports */
+// Conditional feature stubs for ant-only components
+const TungstenPill: any = undefined
 import { Box, Text, Link } from '../../ink.js';
 import * as React from 'react';
 import figures from 'figures';

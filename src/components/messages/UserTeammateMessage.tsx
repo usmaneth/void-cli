@@ -84,18 +84,21 @@ export function UserTeammateMessage({
       // Try to render as plan approval message (request or response)
       const planApprovalElement = tryRenderPlanApprovalMessage(msg_0.content, displayName);
       if (planApprovalElement) {
+        // @ts-ignore React Fragment key
         return <React.Fragment key={index}>{planApprovalElement}</React.Fragment>;
       }
 
       // Try to render as shutdown message (request or rejected)
       const shutdownElement = tryRenderShutdownMessage(msg_0.content);
       if (shutdownElement) {
+        // @ts-ignore React Fragment key
         return <React.Fragment key={index}>{shutdownElement}</React.Fragment>;
       }
 
       // Try to render as task assignment message
       const taskAssignmentElement = tryRenderTaskAssignmentMessage(msg_0.content);
       if (taskAssignmentElement) {
+        // @ts-ignore React Fragment key
         return <React.Fragment key={index}>{taskAssignmentElement}</React.Fragment>;
       }
 

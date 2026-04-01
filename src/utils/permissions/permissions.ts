@@ -996,7 +996,7 @@ function handleDenialLimitExceeded(
     return null
   }
 
-  const hitTotalLimit = denialState.totalDenials >= DENIAL_LIMITS.maxTotal
+  const hitTotalLimit = denialState.totalDenials >= (DENIAL_LIMITS as any).maxTotal
   const isHeadless = appState.toolPermissionContext.shouldAvoidPermissionPrompts
   // Capture counts before persistDenialState, which may mutate denialState
   // in-place via Object.assign for subagents with localDenialTracking.

@@ -226,7 +226,7 @@ function setNonDumpable(): void {
   if (process.platform !== 'linux' || typeof Bun === 'undefined') return
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const ffi = require('bun:ffi') as typeof import('bun:ffi')
+    const ffi = require('bun:ffi') as any
     const lib = ffi.dlopen('libc.so.6', {
       prctl: {
         args: ['int', 'u64', 'u64', 'u64', 'u64'],

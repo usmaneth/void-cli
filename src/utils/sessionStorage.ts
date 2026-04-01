@@ -1851,7 +1851,7 @@ function applyPreservedSegmentRelinks(
   const entryIndex = new Map<UUID, number>()
   let i = 0
   for (const entry of messages.values()) {
-    entryIndex.set(entry.uuid, i)
+    entryIndex.set(entry.uuid as any, i)
     if (isCompactBoundaryMessage(entry)) {
       absoluteLastBoundaryIdx = i
       const seg = entry.compactMetadata?.preservedSegment
@@ -1876,9 +1876,9 @@ function applyPreservedSegmentRelinks(
     const walkSeen = new Set<UUID>()
     let cur = messages.get(lastSeg.tailUuid)
     let reachedHead = false
-    while (cur && !walkSeen.has(cur.uuid)) {
-      walkSeen.add(cur.uuid)
-      preservedUuids.add(cur.uuid)
+    while (cur && !walkSeen.has(cur.uuid as any)) {
+      walkSeen.add(cur.uuid as any)
+      preservedUuids.add(cur.uuid as any)
       if (cur.uuid === lastSeg.headUuid) {
         reachedHead = true
         break
@@ -2074,7 +2074,7 @@ export function buildConversationChain(
   const seen = new Set<UUID>()
   let currentMsg: TranscriptMessage | undefined = leafMessage
   while (currentMsg) {
-    if (seen.has(currentMsg.uuid)) {
+    if (seen.has(currentMsg.uuid as any)) {
       logError(
         new Error(
           `Cycle detected in parentUuid chain at message ${currentMsg.uuid}. Returning partial transcript.`,
@@ -2083,7 +2083,7 @@ export function buildConversationChain(
       logEvent('tengu_chain_parent_cycle', {})
       break
     }
-    seen.add(currentMsg.uuid)
+    seen.add(currentMsg.uuid as any)
     transcript.push(currentMsg)
     currentMsg = currentMsg.parentUuid
       ? messages.get(currentMsg.parentUuid)
@@ -2130,7 +2130,7 @@ function recoverOrphanedParallelToolResults(
   // already in chain order, so later iterations overwrite → last wins.
   const anchorByMsgId = new Map<string, ChainAssistant>()
   for (const a of chainAssistants) {
-    if (a.message.id) anchorByMsgId.set(a.message.id, a)
+    if ((a as any).message.id) anchorByMsgId.set((a as any).message.id, a)
   }
 
   // O(n) precompute: sibling groups and TR index.
@@ -2163,18 +2163,18 @@ function recoverOrphanedParallelToolResults(
   const inserts = new Map<UUID, TranscriptMessage[]>()
   let recoveredCount = 0
   for (const asst of chainAssistants) {
-    const msgId = asst.message.id
+    const msgId = (asst as any).message.id
     if (!msgId || processedGroups.has(msgId)) continue
     processedGroups.add(msgId)
 
     const group = siblingsByMsgId.get(msgId) ?? [asst]
-    const orphanedSiblings = group.filter(s => !seen.has(s.uuid))
+    const orphanedSiblings = group.filter(s => !seen.has(s.uuid as any))
     const orphanedTRs: TranscriptMessage[] = []
     for (const member of group) {
-      const trs = toolResultsByAsst.get(member.uuid)
+      const trs = toolResultsByAsst.get(member.uuid as any)
       if (!trs) continue
       for (const tr of trs) {
-        if (!seen.has(tr.uuid)) orphanedTRs.push(tr)
+        if (!seen.has(tr.uuid as any)) orphanedTRs.push(tr)
       }
     }
     if (orphanedSiblings.length === 0 && orphanedTRs.length === 0) continue
@@ -2186,9 +2186,9 @@ function recoverOrphanedParallelToolResults(
 
     const anchor = anchorByMsgId.get(msgId)!
     const recovered = [...orphanedSiblings, ...orphanedTRs]
-    for (const r of recovered) seen.add(r.uuid)
+    for (const r of recovered) seen.add(r.uuid as any)
     recoveredCount += recovered.length
-    inserts.set(anchor.uuid, recovered)
+    inserts.set((anchor as any).uuid as any, recovered)
   }
 
   if (recoveredCount === 0) return chain
@@ -2199,7 +2199,7 @@ function recoverOrphanedParallelToolResults(
   const result: TranscriptMessage[] = []
   for (const m of chain) {
     result.push(m)
-    const toInsert = inserts.get(m.uuid)
+    const toInsert = inserts.get(m.uuid as any)
     if (toInsert) result.push(...toInsert)
   }
   return result
@@ -2253,7 +2253,7 @@ function buildFileHistorySnapshotChain(
   // messageId → last index in snapshots[] for O(1) update lookup
   const indexByMessageId = new Map<string, number>()
   for (const message of conversation) {
-    const snapshotMessage = fileHistorySnapshots.get(message.uuid)
+    const snapshotMessage = fileHistorySnapshots.get(message.uuid as any)
     if (!snapshotMessage) {
       continue
     }
@@ -2315,7 +2315,7 @@ export async function loadTranscriptFromFile(
 
     // Find the most recent leaf message using pre-computed leaf UUIDs
     const leafMessage = findLatestMessage(messages.values(), msg =>
-      leafUuids.has(msg.uuid),
+      leafUuids.has(msg.uuid as any),
     )
 
     if (!leafMessage) {
@@ -2325,7 +2325,7 @@ export async function loadTranscriptFromFile(
     // Build the conversation chain backwards from leaf to root
     const transcript = buildConversationChain(messages, leafMessage)
 
-    const summary = summaries.get(leafMessage.uuid)
+    const summary = summaries.get(leafMessage.uuid as any)
     const customTitle = customTitles.get(leafMessage.sessionId as UUID)
     const tag = tags.get(leafMessage.sessionId as UUID)
     const sessionId = leafMessage.sessionId as UUID
@@ -2511,7 +2511,7 @@ function convertToLogOption(
     teamName: firstMessage.teamName,
     agentName: firstMessage.agentName,
     agentSetting,
-    leafUuid: lastMessage.uuid,
+    leafUuid: lastMessage.uuid as any,
     summary,
     customTitle,
     tag,
@@ -2988,7 +2988,7 @@ export async function loadFullLog(log: LogOption): Promise<LogOption> {
     const mostRecentLeaf = findLatestMessage(
       messages.values(),
       msg =>
-        leafUuids.has(msg.uuid) &&
+        leafUuids.has(msg.uuid as any) &&
         (msg.type === 'user' || msg.type === 'assistant'),
     )
     if (!mostRecentLeaf) {
@@ -3006,7 +3006,7 @@ export async function loadFullLog(log: LogOption): Promise<LogOption> {
       firstPrompt: extractFirstPrompt(transcript),
       messageCount: countVisibleMessages(transcript),
       summary: mostRecentLeaf
-        ? summaries.get(mostRecentLeaf.uuid)
+        ? summaries.get(mostRecentLeaf.uuid as any)
         : log.summary,
       customTitle: sessionId ? customTitles.get(sessionId) : log.customTitle,
       tag: sessionId ? tags.get(sessionId) : log.tag,
@@ -3026,7 +3026,7 @@ export async function loadFullLog(log: LogOption): Promise<LogOption> {
       gitBranch: mostRecentLeaf?.gitBranch ?? log.gitBranch,
       isSidechain: transcript[0]?.isSidechain ?? log.isSidechain,
       teamName: transcript[0]?.teamName ?? log.teamName,
-      leafUuid: mostRecentLeaf?.uuid ?? log.leafUuid,
+      leafUuid: (mostRecentLeaf?.uuid as any) ?? log.leafUuid,
       fileHistorySnapshots: buildFileHistorySnapshotChain(
         fileHistorySnapshots,
         transcript,
@@ -3643,7 +3643,7 @@ export async function loadTranscriptFile(
         if (entry.parentUuid && progressBridge.has(entry.parentUuid)) {
           entry.parentUuid = progressBridge.get(entry.parentUuid) ?? null
         }
-        messages.set(entry.uuid, entry)
+        messages.set(entry.uuid as any, entry)
         // Compact boundary: prior marble-origami-commit entries reference
         // messages that won't be in the post-boundary chain. The >5MB
         // backward-scan path discards them naturally by never reading the
@@ -3723,7 +3723,7 @@ export async function loadTranscriptFile(
   )
 
   // Find all terminal messages (messages with no children)
-  const terminalMessages = allMessages.filter(msg => !parentUuids.has(msg.uuid))
+  const terminalMessages = allMessages.filter(msg => !parentUuids.has(msg.uuid as any))
 
   const leafUuids = new Set<UUID>()
   let hasCycle = false
@@ -3746,14 +3746,14 @@ export async function loadTranscriptFile(
       const seen = new Set<UUID>()
       let current: TranscriptMessage | undefined = terminal
       while (current) {
-        if (seen.has(current.uuid)) {
+        if (seen.has(current.uuid as any)) {
           hasCycle = true
           break
         }
-        seen.add(current.uuid)
+        seen.add(current.uuid as any)
         if (current.type === 'user' || current.type === 'assistant') {
-          if (!hasUserAssistantChild.has(current.uuid)) {
-            leafUuids.add(current.uuid)
+          if (!hasUserAssistantChild.has(current.uuid as any)) {
+            leafUuids.add(current.uuid as any)
           }
           break
         }
@@ -3769,13 +3769,13 @@ export async function loadTranscriptFile(
       const seen = new Set<UUID>()
       let current: TranscriptMessage | undefined = terminal
       while (current) {
-        if (seen.has(current.uuid)) {
+        if (seen.has(current.uuid as any)) {
           hasCycle = true
           break
         }
-        seen.add(current.uuid)
+        seen.add(current.uuid as any)
         if (current.type === 'user' || current.type === 'assistant') {
-          leafUuids.add(current.uuid)
+          leafUuids.add(current.uuid as any)
           break
         }
         current = current.parentUuid
@@ -3903,7 +3903,7 @@ export async function getLastSessionLog(
   // Build the transcript chain from the last message
   const transcript = buildConversationChain(messages, lastMessage)
 
-  const summary = summaries.get(lastMessage.uuid)
+  const summary = summaries.get(lastMessage.uuid as any)
   const customTitle = customTitles.get(lastMessage.sessionId as UUID)
   const tag = tags.get(lastMessage.sessionId as UUID)
   const agentSetting = agentSettings.get(sessionId)
@@ -4210,7 +4210,7 @@ export async function getAgentTranscript(agentId: AgentId): Promise<{
     const parentUuids = new Set(agentMessages.map(msg => msg.parentUuid))
     const leafMessage = findLatestMessage(
       agentMessages,
-      msg => !parentUuids.has(msg.uuid),
+      msg => !parentUuids.has(msg.uuid as any),
     )
 
     if (!leafMessage) {
@@ -4623,7 +4623,7 @@ export async function loadAllLogsFromSessionFile(
   // Build parentUuid → children index once (O(n)), so trailing-message lookup is O(1) per leaf
   const childrenByParent = new Map<UUID, TranscriptMessage[]>()
   for (const msg of messages.values()) {
-    if (leafUuids.has(msg.uuid)) {
+    if (leafUuids.has(msg.uuid as any)) {
       leafMessages.push(msg)
     } else if (msg.parentUuid) {
       const siblings = childrenByParent.get(msg.parentUuid)
@@ -4642,7 +4642,7 @@ export async function loadAllLogsFromSessionFile(
     if (chain.length === 0) continue
 
     // Append trailing messages that are children of the leaf
-    const trailingMessages = childrenByParent.get(leafMessage.uuid)
+    const trailingMessages = childrenByParent.get(leafMessage.uuid as any)
     if (trailingMessages) {
       // ISO-8601 UTC timestamps are lexically sortable
       trailingMessages.sort((a, b) =>
@@ -4665,8 +4665,8 @@ export async function loadAllLogsFromSessionFile(
       messageCount: countVisibleMessages(chain),
       isSidechain: firstMessage.isSidechain ?? false,
       sessionId,
-      leafUuid: leafMessage.uuid,
-      summary: summaries.get(leafMessage.uuid),
+      leafUuid: leafMessage.uuid as any,
+      summary: summaries.get(leafMessage.uuid as any),
       customTitle: customTitles.get(sessionId),
       tag: tags.get(sessionId),
       agentName: agentNames.get(sessionId),

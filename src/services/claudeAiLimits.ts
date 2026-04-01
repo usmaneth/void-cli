@@ -62,6 +62,8 @@ export let currentLimits: ClaudeAILimits = {
 type RawUtilization = {
   utilization: number | undefined
   rateLimitType: RateLimitType | undefined
+  five_hour?: { utilization: number; rateLimitType: RateLimitType } | undefined
+  seven_day?: { utilization: number; rateLimitType: RateLimitType } | undefined
 }
 
 export function getRawUtilization(): RawUtilization {

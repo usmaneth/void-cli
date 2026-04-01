@@ -312,7 +312,7 @@ export const NotebookEditTool = buildTool({
       await fileHistoryTrackEdit(
         updateFileHistoryState,
         fullPath,
-        parentMessage.uuid,
+        parentMessage.uuid as any,
       )
     }
 

@@ -119,7 +119,7 @@ export function toSDKMessages(messages: Message[]): SDKMessage[] {
         return [
           {
             type: 'assistant',
-            message: normalizeAssistantMessageForSDK(message),
+            message: normalizeAssistantMessageForSDK(message as any),
             session_id: getSessionId(),
             parent_tool_use_id: null,
             uuid: message.uuid,
@@ -169,7 +169,7 @@ export function toSDKMessages(messages: Message[]): SDKMessage[] {
           return [
             localCommandOutputToSDKAssistantMessage(
               message.content,
-              message.uuid,
+              message.uuid as any,
             ),
           ]
         }

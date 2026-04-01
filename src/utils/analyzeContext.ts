@@ -888,11 +888,11 @@ async function approximateMessageTokens(
   // Process each message for detailed breakdown
   for (const msg of microcompactResult.messages) {
     if (msg.type === 'assistant') {
-      processAssistantMessage(msg, breakdown)
+      processAssistantMessage(msg as any, breakdown)
     } else if (msg.type === 'user') {
-      processUserMessage(msg, breakdown, toolUseIdToName)
+      processUserMessage(msg as any, breakdown, toolUseIdToName)
     } else if (msg.type === 'attachment') {
-      processAttachment(msg, breakdown)
+      processAttachment(msg as any, breakdown)
     }
   }
 

@@ -11,6 +11,7 @@ import { basename } from 'path';
 import { MessageResponse } from '../MessageResponse.js';
 import { FilePathLink } from '../FilePathLink.js';
 import { openPath } from '../../utils/browser.js';
+const HOOK_TIMING_DISPLAY_THRESHOLD_MS = 5000;
 /* eslint-disable @typescript-eslint/no-require-imports */
 const teamMemSaved = feature('TEAMMEM') ? require('./teamMemSaved.js') as typeof import('./teamMemSaved.js') : null;
 /* eslint-enable @typescript-eslint/no-require-imports */

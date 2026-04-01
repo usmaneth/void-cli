@@ -56,8 +56,8 @@ function whichNodeSync(command: string): string | null {
 }
 
 const bunWhich =
-  typeof Bun !== 'undefined' && typeof Bun.which === 'function'
-    ? Bun.which
+  typeof Bun !== 'undefined' && typeof (Bun as any).which === 'function'
+    ? (Bun as any).which
     : null
 
 /**

@@ -383,7 +383,7 @@ export function renderToolResultMessage(data: Output, progressMessagesForMessage
       inference_geo: null,
       iterations: null,
       speed: null
-    }
+    } as any
   });
   return <Box flexDirection="column">
       {USER_TYPE === 'ant' && <MessageResponse>

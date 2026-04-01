@@ -189,7 +189,7 @@ function enqueueRemoteNotification(taskId: string, title: string, status: 'compl
  */
 function markTaskNotified(taskId: string, setAppState: SetAppState): boolean {
   let shouldEnqueue = false;
-  updateTaskState(taskId, setAppState, task => {
+  updateTaskState(taskId, setAppState, (task: any) => {
     if (task.notified) {
       return task;
     }
@@ -743,7 +743,7 @@ function startRemoteSessionPolling(taskId: string, context: TaskContext): () => 
           }
 
           // No output or remote error — mark failed with a review-specific message.
-          updateTaskState(taskId, context.setAppState, t => ({
+          updateTaskState(taskId, context.setAppState, (t: any) => ({
             ...t,
             status: 'failed'
           }));
@@ -769,7 +769,7 @@ function startRemoteSessionPolling(taskId: string, context: TaskContext): () => 
         const appState = context.getAppState();
         const task = appState.tasks?.[taskId] as RemoteAgentTaskState | undefined;
         if (task?.isRemoteReview && task.status === 'running' && Date.now() - task.pollStartedAt > REMOTE_REVIEW_TIMEOUT_MS) {
-          updateTaskState(taskId, context.setAppState, t => ({
+          updateTaskState(taskId, context.setAppState, (t: any) => ({
             ...t,
             status: 'failed',
             endTime: Date.now()

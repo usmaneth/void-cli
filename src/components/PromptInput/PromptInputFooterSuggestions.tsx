@@ -248,6 +248,7 @@ export function PromptInputFooterSuggestions(t0) {
     t3 = overlay ? undefined : "flex-end";
     let t5;
     if ($[13] !== maxColumnWidth || $[14] !== selectedSuggestion || $[15] !== suggestions) {
+      // @ts-ignore key prop
       t5 = item_0 => <SuggestionItemRow key={item_0.id} item={item_0} maxColumnWidth={maxColumnWidth} isSelected={item_0.id === suggestions[selectedSuggestion]?.id} />;
       $[13] = maxColumnWidth;
       $[14] = selectedSuggestion;

@@ -293,7 +293,7 @@ export class QueryEngine {
       tools,
       mainLoopModel: initialMainLoopModel,
       additionalWorkingDirectories: Array.from(
-        initialAppState.toolPermissionContext.additionalWorkingDirectories.keys(),
+        (initialAppState.toolPermissionContext.additionalWorkingDirectories as any).keys(),
       ),
       mcpClients,
       customSystemPrompt: customPrompt,
@@ -649,7 +649,7 @@ export class QueryEngine {
                 fileHistory: updater(prev.fileHistory),
               }))
             },
-            message.uuid,
+            message.uuid as any,
           )
         })
     }
@@ -1056,15 +1056,15 @@ export class QueryEngine {
     // isResultSuccessful handles both (user with all tool_result blocks is a
     // valid successful terminal state).
     const result = messages.findLast(
-      m => m.type === 'assistant' || m.type === 'user',
-    )
+      (m: any) => m.type === 'assistant' || m.type === 'user',
+    ) as any
     // Capture for the error_during_execution diagnostic — isResultSuccessful
     // is a type predicate (message is Message), so inside the false branch
     // `result` narrows to never and these accesses don't typecheck.
     const edeResultType = result?.type ?? 'undefined'
     const edeLastContentType =
       result?.type === 'assistant'
-        ? (last(result.message.content)?.type ?? 'none')
+        ? ((last(result.message.content) as any)?.type ?? 'none')
         : 'n/a'
 
     // Flush buffered transcript writes before yielding result.
@@ -1122,7 +1122,7 @@ export class QueryEngine {
     let isApiError = false
 
     if (result.type === 'assistant') {
-      const lastContent = last(result.message.content)
+      const lastContent = last(result.message.content) as any
       if (
         lastContent?.type === 'text' &&
         !SYNTHETIC_MESSAGES.has(lastContent.text)

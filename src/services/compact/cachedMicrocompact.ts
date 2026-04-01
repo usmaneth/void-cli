@@ -1,4 +1,7 @@
 // Auto-generated stub for missing module
+export type CachedMCState = any
+export type CacheEditsBlock = any
+export type PinnedCacheEdits = any
 export type createCacheEditsBlock = any
 export const createCacheEditsBlock: any = undefined as any
 export type createCachedMCState = any

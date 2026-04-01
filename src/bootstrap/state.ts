@@ -1636,6 +1636,14 @@ export function setIsRemoteMode(value: boolean): void {
   STATE.isRemoteMode = value
 }
 
+export function isReplBridgeActive(): boolean {
+  return (STATE as any).replBridgeActive ?? false
+}
+
+export function setReplBridgeActive(value: boolean): void {
+  ;(STATE as any).replBridgeActive = value
+}
+
 // System prompt section accessors
 
 export function getSystemPromptSectionCache(): Map<string, string | null> {

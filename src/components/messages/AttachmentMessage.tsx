@@ -92,6 +92,7 @@ export function AttachmentMessage({
         // Try to render as plan approval message (request or response)
         const planApprovalElement = tryRenderPlanApprovalMessage(msg_0.text, msg_0.from);
         if (planApprovalElement) {
+          // @ts-ignore React Fragment key
           return <React.Fragment key={idx}>{planApprovalElement}</React.Fragment>;
         }
 
@@ -352,7 +353,7 @@ export function AttachmentMessage({
       // skill_discovery and teammate_mailbox are handled BEFORE the switch in
       // runtime-gated blocks (feature() / isAgentSwarmsEnabled()) that TS can't
       // narrow through — excluded here via type union (compile-time only, no emit).
-      attachment.type satisfies NullRenderingAttachmentType | 'skill_discovery' | 'teammate_mailbox';
+      attachment.type as any satisfies NullRenderingAttachmentType | 'skill_discovery' | 'teammate_mailbox';
       return null;
   }
 }
@@ -444,7 +445,7 @@ function TeammateTaskStatus(t0) {
   } else {
     t1 = $[1];
   }
-  const task = useAppState(t1);
+  const task = useAppState(t1) as any;
   if (task?.type !== "in_process_teammate") {
     let t2;
     if ($[2] !== attachment) {

@@ -452,7 +452,7 @@ function configureEffortParams(
     betas.push(EFFORT_BETA_HEADER)
   } else if (typeof effortValue === 'string') {
     // Send string effort level as is
-    outputConfig.effort = effortValue
+    outputConfig.effort = effortValue as any
     betas.push(EFFORT_BETA_HEADER)
   } else if (process.env.USER_TYPE === 'ant') {
     // Numeric effort override - ant-only (uses anthropic_internal)
@@ -961,9 +961,9 @@ export function stripExcessMediaItems(
   for (const msg of messages) {
     if (!Array.isArray(msg.message.content)) continue
     for (const block of msg.message.content) {
-      if (isMedia(block)) toRemove++
-      if (isToolResult(block) && Array.isArray(block.content)) {
-        for (const nested of block.content) {
+      if (isMedia(block as any)) toRemove++
+      if (isToolResult(block as any) && Array.isArray((block as any).content)) {
+        for (const nested of (block as any).content) {
           if (isMedia(nested)) toRemove++
         }
       }
@@ -987,7 +987,7 @@ export function stripExcessMediaItems(
         )
           return block
         const filtered = block.content.filter(n => {
-          if (toRemove > 0 && isMedia(n)) {
+          if (toRemove > 0 && isMedia(n as any)) {
             toRemove--
             return false
           }
@@ -1194,7 +1194,7 @@ async function* queryModel(
       getCachedMCConfig,
     } = await import('../compact/cachedMicrocompact.js')
     const betas = await import('src/constants/betas.js')
-    cacheEditingBetaHeader = betas.CACHE_EDITING_BETA_HEADER
+    cacheEditingBetaHeader = (betas as any).CACHE_EDITING_BETA_HEADER
     const featureEnabled = isCachedMicrocompactEnabled()
     const modelSupported = isModelSupportedForCacheEditing(options.model)
     cachedMCEnabled = featureEnabled && modelSupported
@@ -2397,7 +2397,7 @@ async function* queryModel(
       // eslint-disable-next-line eslint-plugin-n/no-unsupported-features/node-builtins
       const resp = streamResponse as unknown as Response | undefined
       if (resp) {
-        extractQuotaStatusFromHeaders(resp.headers)
+        extractQuotaStatusFromHeaders(resp.headers as any)
         // Store headers for gateway detection
         responseHeaders = resp.headers
       }

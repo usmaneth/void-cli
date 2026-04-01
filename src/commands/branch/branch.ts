@@ -38,7 +38,8 @@ type TranscriptEntry = TranscriptMessage & {
 export function deriveFirstPrompt(
   firstUserMessage: Extract<SerializedMessage, { type: 'user' }> | undefined,
 ): string {
-  const content = firstUserMessage?.message?.content
+  if (!firstUserMessage) return 'Branched conversation'
+  const content = (firstUserMessage as any).message?.content as string | Array<{type: string; text?: string}> | undefined
   if (!content) return 'Branched conversation'
   const raw =
     typeof content === 'string'
@@ -123,25 +124,25 @@ async function createFork(customTitle?: string): Promise<{
     // Create forked transcript entry preserving all original metadata
     const forkedEntry: TranscriptEntry = {
       ...entry,
-      sessionId: forkSessionId,
+      sessionId: forkSessionId as any,
       parentUuid,
       isSidechain: false,
       forkedFrom: {
         sessionId: originalSessionId,
-        messageUuid: entry.uuid,
+        messageUuid: entry.uuid as any,
       },
     }
 
     // Build serialized message for LogOption
     const serialized: SerializedMessage = {
       ...entry,
-      sessionId: forkSessionId,
+      sessionId: forkSessionId as any,
     }
 
     serializedMessages.push(serialized)
     lines.push(jsonStringify(forkedEntry))
     if (entry.type !== 'progress') {
-      parentUuid = entry.uuid
+      parentUuid = entry.uuid as any
     }
   }
 
@@ -240,7 +241,7 @@ export async function call(
     // Build LogOption for resume
     const now = new Date()
     const firstPrompt = deriveFirstPrompt(
-      serializedMessages.find(m => m.type === 'user'),
+      serializedMessages.find(m => m.type === 'user') as any,
     )
 
     // Save custom title - use provided title or firstPrompt as default

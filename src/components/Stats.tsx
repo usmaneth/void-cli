@@ -125,7 +125,7 @@ function StatsContent(t0) {
     allTimePromise,
     onClose
   } = t0;
-  const allTimeResult = use(allTimePromise);
+  const allTimeResult = use(allTimePromise) as any;
   const [dateRange, setDateRange] = useState("all");
   let t1;
   if ($[0] === Symbol.for("react.memo_cache_sentinel")) {
@@ -150,7 +150,7 @@ function StatsContent(t0) {
       }
       let cancelled = false;
       setIsLoadingFiltered(true);
-      aggregateClaudeCodeStatsForRange(dateRange).then(data => {
+      aggregateClaudeCodeStatsForRange(dateRange as any).then(data => {
         if (!cancelled) {
           setStatsCache(prev => ({
             ...prev,
@@ -214,10 +214,10 @@ function StatsContent(t0) {
         setActiveTab(_temp);
       }
       if (input === "r" && !key.ctrl && !key.meta) {
-        setDateRange(getNextDateRange(dateRange));
+        setDateRange(getNextDateRange(dateRange as any));
       }
       if (key.ctrl && input === "s" && displayStats) {
-        handleScreenshot(displayStats, activeTab, setCopyStatus);
+        handleScreenshot(displayStats, activeTab as any, setCopyStatus);
       }
     };
     $[8] = activeTab;
@@ -262,7 +262,7 @@ function StatsContent(t0) {
   }
   let t7;
   if ($[17] !== allTimeStats || $[18] !== dateRange || $[19] !== displayStats || $[20] !== isLoadingFiltered) {
-    t7 = <Tab title="Overview"><OverviewTab stats={displayStats} allTimeStats={allTimeStats} dateRange={dateRange} isLoading={isLoadingFiltered} /></Tab>;
+    t7 = <Tab title="Overview"><OverviewTab stats={displayStats} allTimeStats={allTimeStats} dateRange={dateRange as any} isLoading={isLoadingFiltered} /></Tab>;
     $[17] = allTimeStats;
     $[18] = dateRange;
     $[19] = displayStats;

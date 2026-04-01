@@ -598,7 +598,7 @@ export async function compactConversation(
     const boundaryMarker = createCompactBoundaryMessage(
       isAutoCompact ? 'auto' : 'manual',
       preCompactTokenCount ?? 0,
-      messages.at(-1)?.uuid,
+      messages.at(-1)?.uuid as any,
     )
     // Carry loaded-tool state — the summary doesn't preserve tool_reference
     // blocks, so the post-compact schema filter needs this to keep sending
@@ -789,15 +789,15 @@ export async function partialCompactConversation(
     // works), and removing an old summary would lose its covered history.
     const messagesToKeep =
       direction === 'up_to'
-        ? allMessages
+        ? (allMessages as any[])
             .slice(pivotIndex)
             .filter(
-              m =>
+              (m: any) =>
                 m.type !== 'progress' &&
                 !isCompactBoundaryMessage(m) &&
-                !(m.type === 'user' && m.isCompactSummary),
+                !((m as any).type === 'user' && (m as any).isCompactSummary),
             )
-        : allMessages.slice(0, pivotIndex).filter(m => m.type !== 'progress')
+        : (allMessages as any[]).slice(0, pivotIndex).filter((m: any) => m.type !== 'progress')
 
     if (messagesToSummarize.length === 0) {
       throw new Error(
@@ -1014,7 +1014,7 @@ export async function partialCompactConversation(
     const boundaryMarker = createCompactBoundaryMessage(
       'manual',
       preCompactTokenCount ?? 0,
-      lastPreCompactUuid,
+      lastPreCompactUuid as any,
       userFeedback,
       messagesToSummarize.length,
     )

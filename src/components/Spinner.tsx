@@ -32,6 +32,10 @@ import { getMainLoopModel } from '../utils/model/model.js';
 import { getViewedTeammateTask } from '../state/selectors.js';
 import { TEARDROP_ASTERISK } from '../constants/figures.js';
 import figures from 'figures';
+
+// ANT-ONLY stubs
+declare const apiMetricsRef: { current: any[] } | undefined;
+declare function computeTtftText(metrics: any[]): string | null;
 import { getCurrentTurnTokenBudget, getTurnOutputTokens } from '../bootstrap/state.js';
 import { TeammateSpinnerTree } from './Spinner/TeammateSpinnerTree.js';
 import { useAnimationFrame } from '../ink.js';

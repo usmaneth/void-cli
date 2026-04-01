@@ -123,7 +123,7 @@ export function applyPermissionUpdate(
       logForDebugging(
         `Applying permission update: Adding ${update.directories.length} director${update.directories.length === 1 ? 'y' : 'ies'} with destination '${update.destination}': ${jsonStringify(update.directories)}`,
       )
-      const newAdditionalDirs = new Map(context.additionalWorkingDirectories)
+      const newAdditionalDirs = new Map(context.additionalWorkingDirectories as any)
       for (const directory of update.directories) {
         newAdditionalDirs.set(directory, {
           path: directory,
@@ -172,7 +172,7 @@ export function applyPermissionUpdate(
       logForDebugging(
         `Applying permission update: Removing ${update.directories.length} director${update.directories.length === 1 ? 'y' : 'ies'}: ${jsonStringify(update.directories)}`,
       )
-      const newAdditionalDirs = new Map(context.additionalWorkingDirectories)
+      const newAdditionalDirs = new Map(context.additionalWorkingDirectories as any)
       for (const directory of update.directories) {
         newAdditionalDirs.delete(directory)
       }

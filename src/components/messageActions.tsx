@@ -324,6 +324,7 @@ export function MessageActionsBar(t0) {
     t2 = 1;
     t3 = applicable.map((a_0, i) => {
       const label = typeof a_0.label === "function" ? a_0.label(cursor) : a_0.label;
+      // @ts-ignore React Fragment key
       return <React.Fragment key={a_0.key}>{i > 0 && <Text dimColor={true}> · </Text>}<Text bold={true} dimColor={false}>{a_0.key}</Text><Text dimColor={true}> {label}</Text></React.Fragment>;
     });
     $[0] = cursor;

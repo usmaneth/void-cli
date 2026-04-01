@@ -252,7 +252,7 @@ export function ToolSelector(t0) {
   let t9;
   if ($[22] !== selectedSet) {
     t9 = bucketTools => {
-      const selected = count(bucketTools, t_5 => selectedSet.has(t_5.name));
+      const selected = count(bucketTools, t_5 => selectedSet.has((t_5 as any).name));
       const needsSelection = selected < bucketTools.length;
       return () => {
         const toolNames_1 = bucketTools.map(_temp4);
@@ -322,7 +322,7 @@ export function ToolSelector(t0) {
       if (bucketTools_0.length === 0) {
         return;
       }
-      const selected_0 = count(bucketTools_0, t_8 => selectedSet.has(t_8.name));
+      const selected_0 = count(bucketTools_0, t_8 => selectedSet.has((t_8 as any).name));
       const isFullySelected = selected_0 === bucketTools_0.length;
       navigableItems.push({
         id,
@@ -510,6 +510,7 @@ export function ToolSelector(t0) {
       const isCurrentlyFocused = index + 1 === focusIndex;
       const isToggleButton = item_0.isToggle;
       const isHeader = item_0.isHeader;
+      // @ts-ignore React Fragment key
       return <React.Fragment key={item_0.id}>{isToggleButton && <Divider width={40} />}{isHeader && index > 0 && <Box marginTop={1} />}<Text color={isHeader ? undefined : isCurrentlyFocused ? "suggestion" : undefined} dimColor={isHeader} bold={isToggleButton && isCurrentlyFocused}>{isHeader ? "" : isCurrentlyFocused ? `${figures.pointer} ` : "  "}{isToggleButton ? `[ ${item_0.label} ]` : item_0.label}</Text></React.Fragment>;
     });
     $[59] = focusIndex;

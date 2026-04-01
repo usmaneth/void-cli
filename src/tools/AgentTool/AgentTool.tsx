@@ -500,8 +500,8 @@ export const AgentTool = buildTool({
         // Fallback: recompute. May diverge from parent's cached bytes if
         // GrowthBook state changed between parent turn-start and fork spawn.
         const mainThreadAgentDefinition = appState.agent ? appState.agentDefinitions.activeAgents.find(a => a.agentType === appState.agent) : undefined;
-        const additionalWorkingDirectories = Array.from(appState.toolPermissionContext.additionalWorkingDirectories.keys());
-        const defaultSystemPrompt = await getSystemPrompt(toolUseContext.options.tools, toolUseContext.options.mainLoopModel, additionalWorkingDirectories, toolUseContext.options.mcpClients);
+        const additionalWorkingDirectories = Array.from((appState.toolPermissionContext.additionalWorkingDirectories as any).keys());
+        const defaultSystemPrompt = await getSystemPrompt(toolUseContext.options.tools, toolUseContext.options.mainLoopModel, additionalWorkingDirectories as any, toolUseContext.options.mcpClients);
         forkParentSystemPrompt = buildEffectiveSystemPrompt({
           mainThreadAgentDefinition,
           toolUseContext,
@@ -513,7 +513,7 @@ export const AgentTool = buildTool({
       promptMessages = buildForkedMessages(prompt, assistantMessage);
     } else {
       try {
-        const additionalWorkingDirectories = Array.from(appState.toolPermissionContext.additionalWorkingDirectories.keys());
+        const additionalWorkingDirectories = Array.from((appState.toolPermissionContext.additionalWorkingDirectories as any).keys());
 
         // All agents have getSystemPrompt - pass toolUseContext to all
         const agentPrompt = selectedAgent.getSystemPrompt({
@@ -532,7 +532,7 @@ export const AgentTool = buildTool({
         }
 
         // Apply environment details enhancement
-        enhancedSystemPrompt = await enhanceSystemPromptWithEnvDetails([agentPrompt], resolvedAgentModel, additionalWorkingDirectories);
+        enhancedSystemPrompt = await enhanceSystemPromptWithEnvDetails([agentPrompt], resolvedAgentModel, additionalWorkingDirectories as any);
       } catch (error) {
         logForDebugging(`Failed to get system prompt for agent ${selectedAgent.agentType}: ${errorMessage(error)}`);
       }
@@ -1062,7 +1062,7 @@ export const AgentTool = buildTool({
               result
             } = raceResult;
             if (result.done) break;
-            const message = result.value;
+            const message = result.value as MessageType;
             agentMessages.push(message);
 
             // Emit task_progress for the VS Code subagent panel
@@ -1082,26 +1082,26 @@ export const AgentTool = buildTool({
 
             // Forward bash_progress events from sub-agent to parent so the SDK
             // receives tool_progress events just as it does for the main agent.
-            if (message.type === 'progress' && (message.data.type === 'bash_progress' || message.data.type === 'powershell_progress') && onProgress) {
+            if ((message as any).type === 'progress' && ((message as any).data.type === 'bash_progress' || (message as any).data.type === 'powershell_progress') && onProgress) {
               onProgress({
-                toolUseID: message.toolUseID,
-                data: message.data
+                toolUseID: (message as any).toolUseID,
+                data: (message as any).data
               });
             }
-            if (message.type !== 'assistant' && message.type !== 'user') {
+            if ((message as any).type !== 'assistant' && (message as any).type !== 'user') {
               continue;
             }
 
             // Increment token count in spinner for assistant messages
             // Subagent streaming events are filtered out in runAgent.ts, so we
             // need to count tokens from completed messages here
-            if (message.type === 'assistant') {
-              const contentLength = getAssistantMessageContentLength(message);
+            if ((message as any).type === 'assistant') {
+              const contentLength = getAssistantMessageContentLength(message as any);
               if (contentLength > 0) {
                 toolUseContext.setResponseLength(len => len + contentLength);
               }
             }
-            const normalizedNew = normalizeMessages([message]);
+            const normalizedNew = normalizeMessages([message] as any);
             for (const m of normalizedNew) {
               for (const content of m.message.content) {
                 if (content.type !== 'tool_use' && content.type !== 'tool_result') {

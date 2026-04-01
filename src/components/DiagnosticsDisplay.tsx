@@ -84,6 +84,7 @@ export function DiagnosticsDisplay(t0) {
   }
 }
 function _temp3(file_0, fileIndex) {
+  // @ts-ignore React Fragment key
   return <React.Fragment key={fileIndex}><MessageResponse><Text dimColor={true} wrap="wrap"><Text bold={true}>{relative(getCwd(), file_0.uri.replace("file://", "").replace("_claude_fs_right:", ""))}</Text>{" "}<Text dimColor={true}>{file_0.uri.startsWith("file://") ? "(file://)" : file_0.uri.startsWith("_claude_fs_right:") ? "(claude_fs_right)" : `(${file_0.uri.split(":")[0]})`}</Text>:</Text></MessageResponse>{file_0.diagnostics.map(_temp2)}</React.Fragment>;
 }
 function _temp2(diagnostic, diagIndex) {

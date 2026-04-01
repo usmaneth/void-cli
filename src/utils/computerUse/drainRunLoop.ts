@@ -70,7 +70,7 @@ export async function drainRunLoop<T>(fn: () => Promise<T>): Promise<T> {
     const work = fn()
     work.catch(() => {})
     const timeout = withResolvers<never>()
-    timer = setTimeout(timeoutReject, TIMEOUT_MS, timeout.reject)
+    timer = setTimeout(timeoutReject, TIMEOUT_MS, timeout.reject) as any
     return await Promise.race([work, timeout.promise])
   } finally {
     clearTimeout(timer)

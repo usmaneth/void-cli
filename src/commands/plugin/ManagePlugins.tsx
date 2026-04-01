@@ -2177,6 +2177,7 @@ export function ManagePlugins({
             return scope_8;
         }
       };
+      // @ts-ignore React Fragment key
       return <React.Fragment key={item_10.id}>
             {showScopeHeader && <Box marginTop={visibleIndex > 0 ? 1 : 0} paddingLeft={2}>
                 <Text dimColor={item_10.scope !== 'flagged'} color={item_10.scope === 'flagged' ? 'warning' : undefined} bold={item_10.scope === 'flagged'}>

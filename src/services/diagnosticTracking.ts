@@ -15,7 +15,7 @@ export class DiagnosticTrackingService {
     return []
   }
   clear(): void {}
-  handleQueryStart(): void {}
+  handleQueryStart(_clients?: unknown): void {}
   shutdown(): void {}
   beforeFileEdited(_path: string): void {}
   getNewDiagnostics(): DiagnosticFile[] {

@@ -3,16 +3,16 @@ import * as React from 'react';
 import { useState } from 'react';
 import { Box, Text } from 'src/ink.js';
 import { formatAPIError } from 'src/services/api/errorUtils.js';
-import type { SystemAPIErrorMessage } from 'src/types/message.js';
+import type { SystemAPIErrorMessage as SystemAPIErrorMessageType } from 'src/types/message.js';
 import { useInterval } from 'usehooks-ts';
 import { CtrlOToExpand } from '../CtrlOToExpand.js';
 import { MessageResponse } from '../MessageResponse.js';
 const MAX_API_ERROR_CHARS = 1000;
 type Props = {
-  message: SystemAPIErrorMessage;
+  message: SystemAPIErrorMessageType;
   verbose: boolean;
 };
-export function SystemAPIErrorMessage(t0) {
+export function SystemAPIErrorMessage(t0: Props) {
   const $ = _c(33);
   const {
     message: t1,

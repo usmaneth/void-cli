@@ -752,7 +752,7 @@ export function normalizeMessages(messages: Message[]): NormalizedMessage[] {
         isNewChain = isNewChain || message.message.content.length > 1
         return message.message.content.map((_, index) => {
           const uuid = isNewChain
-            ? deriveUUID(message.uuid, index)
+            ? deriveUUID(message.uuid as any, index)
             : message.uuid
           return {
             type: 'assistant' as const,
@@ -780,7 +780,7 @@ export function normalizeMessages(messages: Message[]): NormalizedMessage[] {
         return [message]
       case 'user': {
         if (typeof message.message.content === 'string') {
-          const uuid = isNewChain ? deriveUUID(message.uuid, 0) : message.uuid
+          const uuid = isNewChain ? deriveUUID(message.uuid as any, 0) : message.uuid
           return [
             {
               ...message,
@@ -807,14 +807,14 @@ export function normalizeMessages(messages: Message[]): NormalizedMessage[] {
               content: [_],
               toolUseResult: message.toolUseResult,
               mcpMeta: message.mcpMeta,
-              isMeta: message.isMeta,
-              isVisibleInTranscriptOnly: message.isVisibleInTranscriptOnly,
-              isVirtual: message.isVirtual,
+              isMeta: message.isMeta as any,
+              isVisibleInTranscriptOnly: message.isVisibleInTranscriptOnly as any,
+              isVirtual: message.isVirtual as any,
               timestamp: message.timestamp,
               imagePasteIds: imageId !== undefined ? [imageId] : undefined,
               origin: message.origin,
             }),
-            uuid: isNewChain ? deriveUUID(message.uuid, index) : message.uuid,
+            uuid: isNewChain ? deriveUUID(message.uuid as any, index) : message.uuid,
           } as NormalizedMessage
         })
       }
@@ -1492,7 +1492,7 @@ export function reorderAttachmentsForAPI(messages: Message[]): Message[] {
 
     if (message.type === 'attachment') {
       // Collect attachment to bubble up
-      pendingAttachments.push(message)
+      pendingAttachments.push(message as any)
     } else {
       // Check if this is a stopping point
       const isStoppingPoint =
@@ -2559,7 +2559,7 @@ function smooshIntoToolResult(
   // results) and matches the legacy smoosh output shape.
   if (allText && (existing === undefined || typeof existing === 'string')) {
     const joined = [
-      (existing ?? '').trim(),
+      ((existing ?? '') as string).trim(),
       ...blocks.map(b => (b as TextBlockParam).text.trim()),
     ]
       .filter(Boolean)
@@ -4910,7 +4910,7 @@ export function filterWhitespaceOnlyAssistantMessages(
   for (const message of filtered) {
     const prev = merged.at(-1)
     if (message.type === 'user' && prev?.type === 'user') {
-      merged[merged.length - 1] = mergeUserMessages(prev, message) // lvalue
+      merged[merged.length - 1] = mergeUserMessages(prev as any, message as any) // lvalue
     } else {
       merged.push(message)
     }

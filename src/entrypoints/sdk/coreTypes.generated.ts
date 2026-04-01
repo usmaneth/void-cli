@@ -16,9 +16,20 @@ export type ExitReason = any
 export type PermissionResult = any
 export type PermissionMode = any
 export type HookInput = any
-export type HookJSONOutput = any
-export type AsyncHookJSONOutput = any
-export type SyncHookJSONOutput = any
+export type AsyncHookJSONOutput = {
+  async: true
+  asyncTimeout?: number
+}
+export type SyncHookJSONOutput = {
+  continue?: boolean
+  suppressOutput?: boolean
+  stopReason?: string
+  decision?: 'approve' | 'block'
+  systemMessage?: string
+  reason?: string
+  hookSpecificOutput?: any
+}
+export type HookJSONOutput = AsyncHookJSONOutput | SyncHookJSONOutput
 export type BaseHookInput = any
 export type PreToolUseHookInput = any
 export type PostToolUseHookInput = any
@@ -50,3 +61,12 @@ export type FileChangedHookInput = any
 export type PermissionUpdate = any
 export type SDKPartialAssistantMessage = any
 export type SDKSystemMessage = any
+export type ModelInfo = any
+export type McpServerConfigForProcessTransport = any
+export type McpServerStatus = any
+export type RewindFilesResult = any
+export type SDKCompactBoundaryMessage = any
+export type SDKPermissionDenial = any
+export type SDKToolProgressMessage = any
+export type SDKRateLimitInfo = any
+export type ApiKeySource = any

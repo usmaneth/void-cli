@@ -95,12 +95,12 @@ export const init = memoize(async (): Promise<void> => {
       import('../services/analytics/firstPartyEventLogger.js'),
       import('../services/analytics/growthbook.js'),
     ]).then(([fp, gb]) => {
-      fp.initialize1PEventLogging()
+      ;(fp as any).initialize1PEventLogging()
       // Rebuild the logger provider if tengu_1p_event_batch_config changes
       // mid-session. Change detection (isEqual) is inside the handler so
       // unchanged refreshes are no-ops.
       gb.onGrowthBookRefresh(() => {
-        void fp.reinitialize1PEventLoggingIfConfigChanged()
+        void (fp as any).reinitialize1PEventLoggingIfConfigChanged()
       })
     })
     profileCheckpoint('init_after_1p_event_logging')
@@ -315,7 +315,7 @@ async function setMeterState(): Promise<void> {
       name: string,
       options: MetricOptions,
     ): AttributedCounter => {
-      const counter = meter?.createCounter(name, options)
+      const counter = (meter as any)?.createCounter(name, options)
 
       return {
         add(value: number, additionalAttributes: Attributes = {}) {

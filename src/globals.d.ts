@@ -9,3 +9,14 @@ declare const MACRO: {
   FEEDBACK_CHANNEL: string
   VERSION_CHANGELOG: string | undefined
 }
+
+declare module 'react/jsx-runtime' {
+  namespace JSX {
+    interface IntrinsicElements {
+      'ink-box': any
+      'ink-text': any
+      'ink-link': any
+      'ink-raw-ansi': any
+    }
+  }
+}

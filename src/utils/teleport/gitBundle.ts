@@ -34,13 +34,15 @@ export type BundleUploadResult =
       bundleSizeBytes: number
       scope: BundleScope
       hasWip: boolean
+      error?: undefined
+      failReason?: undefined
     }
   | { success: false; error: string; failReason?: BundleFailReason }
 
 type BundleFailReason = 'git_error' | 'too_large' | 'empty_repo'
 
 type BundleCreateResult =
-  | { ok: true; size: number; scope: BundleScope }
+  | { ok: true; size: number; scope: BundleScope; error?: undefined; failReason?: undefined }
   | { ok: false; error: string; failReason: BundleFailReason }
 
 // Bundle --all → HEAD → squashed-root. HEAD drops side branches/tags but
@@ -254,7 +256,7 @@ export async function createAndUploadGitBundle(
         outcome:
           'failed' as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
       })
-      return { success: false, error: upload.error }
+      return { success: false, error: (upload as any).error }
     }
 
     logForDebugging(

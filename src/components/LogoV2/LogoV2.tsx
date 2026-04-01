@@ -27,6 +27,10 @@ import { VoiceModeNotice } from './VoiceModeNotice.js';
 import { Opus1mMergeNotice } from './Opus1mMergeNotice.js';
 import { feature } from '../../bun-bundle-shim.js';
 
+// Stubs for ant-only components (stripped from OSS build)
+const GateOverridesWarning: React.FC = () => null;
+const ExperimentEnrollmentNotice: React.FC = () => null;
+
 // Conditional require so ChannelsNotice.tsx tree-shakes when both flags are
 // false. A module-scope helper component inside a feature() ternary does NOT
 // tree-shake (docs/feature-gating.md); the require pattern eliminates the
@@ -191,7 +195,7 @@ export function LogoV2() {
       t14 = ChannelsNoticeModule && <ChannelsNoticeModule.ChannelsNotice />;
       t15 = isDebugMode() && <Box paddingLeft={2} flexDirection="column"><Text color="warning">Debug mode enabled</Text><Text dimColor={true}>Logging to: {isDebugToStdErr() ? "stderr" : getDebugLogPath()}</Text></Box>;
       t16 = <EmergencyTip />;
-      t17 = process.env.VOID_TMUX_SESSION && <Box paddingLeft={2} flexDirection="column"><Text dimColor={true}>tmux session: {process.env.VOID_TMUX_SESSION}</Text><Text dimColor={true}>{process.env.VOID_TMUX_PREFIX_CONFLICTS ? `Detach: ${process.env.VOID_TMUX_PREFIX} ${process.env.VOID_TMUX_PREFIX} d (press prefix twice - Claude uses ${process.env.VOID_TMUX_PREFIX})` : `Detach: ${process.env.VOID_TMUX_PREFIX} d`}</Text></Box>;
+      t17 = process.env.VOID_TMUX_SESSION && <Box paddingLeft={2} flexDirection="column"><Text dimColor={true}>tmux session: {process.env.VOID_TMUX_SESSION}</Text><Text dimColor={true}>{process.env.VOID_TMUX_PREFIX_CONFLICTS ? `Detach: ${process.env.VOID_TMUX_PREFIX} ${process.env.VOID_TMUX_PREFIX} d (press prefix twice - Void uses ${process.env.VOID_TMUX_PREFIX})` : `Detach: ${process.env.VOID_TMUX_PREFIX} d`}</Text></Box>;
       $[15] = t11;
       $[16] = t12;
       $[17] = t13;
@@ -462,7 +466,7 @@ export function LogoV2() {
     t31 = ChannelsNoticeModule && <ChannelsNoticeModule.ChannelsNotice />;
     t32 = isDebugMode() && <Box paddingLeft={2} flexDirection="column"><Text color="warning">Debug mode enabled</Text><Text dimColor={true}>Logging to: {isDebugToStdErr() ? "stderr" : getDebugLogPath()}</Text></Box>;
     t33 = <EmergencyTip />;
-    t34 = process.env.VOID_TMUX_SESSION && <Box paddingLeft={2} flexDirection="column"><Text dimColor={true}>tmux session: {process.env.VOID_TMUX_SESSION}</Text><Text dimColor={true}>{process.env.VOID_TMUX_PREFIX_CONFLICTS ? `Detach: ${process.env.VOID_TMUX_PREFIX} ${process.env.VOID_TMUX_PREFIX} d (press prefix twice - Claude uses ${process.env.VOID_TMUX_PREFIX})` : `Detach: ${process.env.VOID_TMUX_PREFIX} d`}</Text></Box>;
+    t34 = process.env.VOID_TMUX_SESSION && <Box paddingLeft={2} flexDirection="column"><Text dimColor={true}>tmux session: {process.env.VOID_TMUX_SESSION}</Text><Text dimColor={true}>{process.env.VOID_TMUX_PREFIX_CONFLICTS ? `Detach: ${process.env.VOID_TMUX_PREFIX} ${process.env.VOID_TMUX_PREFIX} d (press prefix twice - Void uses ${process.env.VOID_TMUX_PREFIX})` : `Detach: ${process.env.VOID_TMUX_PREFIX} d`}</Text></Box>;
     $[75] = t29;
     $[76] = t30;
     $[77] = t31;

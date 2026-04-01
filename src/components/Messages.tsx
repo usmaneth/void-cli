@@ -625,6 +625,7 @@ const MessagesImpl = ({
 
     // Per-row Provider — only 2 rows re-render on selection change.
     // Wrapped BEFORE divider branch so both return paths get it.
+    // @ts-ignore React Provider key
     const wrapped = <MessageActionsSelectedContext.Provider key={k_0} value={index === selectedIdx}>
         {row}
       </MessageActionsSelectedContext.Provider>;

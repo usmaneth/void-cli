@@ -33,14 +33,15 @@ export function StatusNotices(t0) {
     agentDefinitions,
     memoryFiles: use(t2)
   };
-  const activeNotices = getActiveNotices(context);
+  const activeNotices = getActiveNotices(context as any);
   if (activeNotices.length === 0) {
     return null;
   }
   const T0 = Box;
   const t3 = "column";
   const t4 = 1;
-  const t5 = activeNotices.map(notice => <React.Fragment key={notice.id}>{notice.render(context)}</React.Fragment>);
+  // @ts-ignore React Fragment key
+  const t5 = activeNotices.map(notice => <React.Fragment key={notice.id}>{notice.render(context as any)}</React.Fragment>);
   let t6;
   if ($[1] !== T0 || $[2] !== t5) {
     t6 = <T0 flexDirection={t3} paddingLeft={t4}>{t5}</T0>;

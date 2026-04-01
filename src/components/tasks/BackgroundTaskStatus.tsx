@@ -152,6 +152,7 @@ export function BackgroundTaskStatus(t0) {
     if ($[25] !== selectedIdx || $[26] !== setAppState || $[27] !== viewedIdx || $[28] !== visiblePills) {
       t13 = visiblePills.map((pill_1, i_1) => {
         const needsSeparator = i_1 > 0;
+        // @ts-ignore React Fragment key
         return <React.Fragment key={pill_1.name}>{needsSeparator && <Text> </Text>}<AgentPill name={pill_1.name} color={pill_1.color} isSelected={selectedIdx === pill_1.idx} isViewed={viewedIdx === pill_1.idx} isIdle={pill_1.isIdle} onClick={() => pill_1.taskId ? enterTeammateView(pill_1.taskId, setAppState) : exitTeammateView(setAppState)} /></React.Fragment>;
       });
       $[25] = selectedIdx;

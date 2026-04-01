@@ -144,7 +144,7 @@ function Highlighted(t0) {
       }
       let highlightLang = "markdown";
       if (language) {
-        if (hl.supportsLanguage(language)) {
+        if ((hl as any).supportsLanguage(language)) {
           highlightLang = language;
         } else {
           logForDebugging(`Language not supported while highlighting code, falling back to markdown: ${language}`);
@@ -152,14 +152,14 @@ function Highlighted(t0) {
       }
       ;
       try {
-        t2 = cachedHighlight(hl, codeWithSpaces, highlightLang);
+        t2 = cachedHighlight(hl as any, codeWithSpaces, highlightLang as any);
       } catch (t3) {
         const e = t3;
         if (e instanceof Error && e.message.includes("Unknown language")) {
           logForDebugging(`Language not supported while highlighting code, falling back to markdown: ${e}`);
           let t4;
           if ($[5] !== codeWithSpaces || $[6] !== hl) {
-            t4 = cachedHighlight(hl, codeWithSpaces, "markdown");
+            t4 = cachedHighlight(hl as any, codeWithSpaces, "markdown" as any);
             $[5] = codeWithSpaces;
             $[6] = hl;
             $[7] = t4;

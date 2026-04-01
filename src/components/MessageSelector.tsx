@@ -75,7 +75,7 @@ export function MessageSelector({
   useEffect(() => {
     if (!preselectedMessage || !isFileHistoryEnabled) return;
     let cancelled = false;
-    void fileHistoryGetDiffStats(fileHistory, preselectedMessage.uuid).then(stats => {
+    void fileHistoryGetDiffStats(fileHistory, preselectedMessage.uuid as any).then(stats => {
       if (!cancelled) setDiffStatsForRestore(stats);
     });
     return () => {
@@ -171,7 +171,7 @@ export function MessageSelector({
       await restoreConversationDirectly(message_0);
       return;
     }
-    const diffStats = await fileHistoryGetDiffStats(fileHistory, message_0.uuid);
+    const diffStats = await fileHistoryGetDiffStats(fileHistory, message_0.uuid as any);
     setMessageToRestore(message_0);
     setDiffStatsForRestore(diffStats);
   }
@@ -292,9 +292,9 @@ export function MessageSelector({
       // Load file snapshot metadata
       void Promise.all(messageOptions.map(async (userMessage, itemIndex) => {
         if (userMessage.uuid !== currentUUID) {
-          const canRestore = fileHistoryCanRestore(fileHistory, userMessage.uuid);
+          const canRestore = fileHistoryCanRestore(fileHistory, userMessage.uuid as any);
           const nextUserMessage = messageOptions.at(itemIndex + 1);
-          const diffStats_0 = canRestore ? computeDiffStatsBetweenMessages(messages, userMessage.uuid, nextUserMessage?.uuid !== currentUUID ? nextUserMessage?.uuid : undefined) : undefined;
+          const diffStats_0 = canRestore ? computeDiffStatsBetweenMessages(messages, userMessage.uuid as any, nextUserMessage?.uuid !== currentUUID ? nextUserMessage?.uuid as any : undefined) : undefined;
           if (diffStats_0 !== undefined) {
             setFileHistoryMetadata(prev_1 => ({
               ...prev_1,

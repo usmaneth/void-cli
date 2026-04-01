@@ -93,7 +93,7 @@ function migrateLegacyAttachmentTypes(message: Message): Message {
         type: 'file',
         displayPath: relative(getCwd(), attachment.filename as string),
       },
-    } as SerializedMessage // Cast entire message since we know the structure is correct
+    } as unknown as SerializedMessage // Cast entire message since we know the structure is correct
   }
 
   if (attachment.type === 'new_directory') {
@@ -104,7 +104,7 @@ function migrateLegacyAttachmentTypes(message: Message): Message {
         type: 'directory',
         displayPath: relative(getCwd(), attachment.path as string),
       },
-    } as SerializedMessage // Cast entire message since we know the structure is correct
+    } as unknown as SerializedMessage // Cast entire message since we know the structure is correct
   }
 
   // Backfill displayPath for attachments from old sessions
@@ -320,7 +320,7 @@ function detectTurnInterruption(
       return { kind: 'interrupted_turn' }
     }
     // Plain text user prompt — CC hadn't started responding
-    return { kind: 'interrupted_prompt', message: lastMessage }
+    return { kind: 'interrupted_prompt', message: lastMessage as any }
   }
 
   if (lastMessage.type === 'attachment') {
@@ -421,7 +421,7 @@ export async function loadMessagesFromJsonlPath(path: string): Promise<{
   let tip: (typeof byUuid extends Map<UUID, infer T> ? T : never) | null = null
   let tipTs = 0
   for (const m of byUuid.values()) {
-    if (m.isSidechain || !leafUuids.has(m.uuid)) continue
+    if (m.isSidechain || !leafUuids.has(m.uuid as any)) continue
     const ts = new Date(m.timestamp).getTime()
     if (ts > tipTs) {
       tipTs = ts

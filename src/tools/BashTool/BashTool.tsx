@@ -390,7 +390,7 @@ async function applySedEdit(simulatedEdit: {
 
   // Track file history before making changes (for undo support)
   if (fileHistoryEnabled() && parentMessage) {
-    await fileHistoryTrackEdit(toolUseContext.updateFileHistoryState, absoluteFilePath, parentMessage.uuid);
+    await fileHistoryTrackEdit(toolUseContext.updateFileHistoryState, absoluteFilePath, parentMessage.uuid as any);
   }
 
   // Detect line endings and write new content

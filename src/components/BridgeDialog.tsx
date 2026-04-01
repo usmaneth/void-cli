@@ -68,7 +68,7 @@ export function BridgeDialog(t0) {
         setQrText("");
         return;
       }
-      qrToString(displayUrl, {
+      (qrToString as any)(displayUrl, {
         type: "utf8",
         errorCorrectionLevel: "L",
         small: true

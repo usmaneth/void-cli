@@ -1664,6 +1664,7 @@ export function Config({
                 {filteredSettingsItems.slice(scrollOffset, scrollOffset + maxVisible).map((setting_2, i) => {
             const actualIndex = scrollOffset + i;
             const isSelected = actualIndex === selectedIndex && !headerFocused && !isSearchMode;
+            // @ts-ignore React Fragment key
             return <React.Fragment key={setting_2.id}>
                         <Box>
                           <Box width={44}>

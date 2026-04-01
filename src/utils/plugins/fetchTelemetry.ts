@@ -7,6 +7,9 @@ export function classifyFetchError(_error: unknown): string {
 }
 
 export function logPluginFetch(
-  _url: string,
-  _metadata?: Record<string, unknown>,
+  _label: string,
+  _url?: string,
+  _status?: string,
+  _duration?: number,
+  _error?: string,
 ): void {}

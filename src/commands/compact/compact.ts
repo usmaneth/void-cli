@@ -262,7 +262,7 @@ async function getCacheSharingParams(
     context.options.tools,
     context.options.mainLoopModel,
     Array.from(
-      appState.toolPermissionContext.additionalWorkingDirectories.keys(),
+      (appState.toolPermissionContext.additionalWorkingDirectories as any).keys(),
     ),
     context.options.mcpClients,
   )

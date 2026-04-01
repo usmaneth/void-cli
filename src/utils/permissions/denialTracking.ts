@@ -25,17 +25,21 @@ export function createDenialTrackingState(): DenialTrackingState {
 
 export function recordDenial(
   _state: DenialTrackingState,
-  _toolName: string,
-): void {}
+  _toolName?: string,
+): DenialTrackingState {
+  return _state
+}
 
 export function recordSuccess(
   _state: DenialTrackingState,
-  _toolName: string,
-): void {}
+  _toolName?: string,
+): DenialTrackingState {
+  return _state
+}
 
 export function shouldFallbackToPrompting(
   _state: DenialTrackingState,
-  _toolName: string,
+  _toolName?: string,
 ): boolean {
   return false
 }

@@ -1,3 +1,4 @@
+import '../macros.js';
 import { feature } from '../bun-bundle-shim.js';
 
 // Bugfix for corepack auto-pinning, which adds yarnpkg to peoples' package.jsons
@@ -32,6 +33,23 @@ if (feature('ABLATION_BASELINE') && process.env.VOID_ABLATION_BASELINE) {
  */
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
+
+  // Show Void logo immediately for interactive sessions
+  if (!args.includes('-p') && !args.includes('--print') && !args.includes('--version') && !args.includes('-v')) {
+    const logo = [
+      '',
+      '  \x1b[36m ██╗   ██╗ ██████╗ ██╗██████╗ \x1b[0m',
+      '  \x1b[36m ██║   ██║██╔═══██╗██║██╔══██╗\x1b[0m',
+      '  \x1b[36m ██║   ██║██║   ██║██║██║  ██║\x1b[0m',
+      '  \x1b[36m ╚██╗ ██╔╝██║   ██║██║██║  ██║\x1b[0m',
+      '  \x1b[36m  ╚████╔╝ ╚██████╔╝██║██████╔╝\x1b[0m',
+      '  \x1b[36m   ╚═══╝   ╚═════╝ ╚═╝╚═════╝ \x1b[0m',
+      '',
+      `  \x1b[1mVoid\x1b[0m \x1b[2mv${MACRO.VERSION}\x1b[0m`,
+      '',
+    ];
+    process.stdout.write(logo.join('\n') + '\n');
+  }
 
   // Fast-path for --version/-v: zero module loading needed
   if (args.length === 1 && (args[0] === '--version' || args[0] === '-v' || args[0] === '-V')) {

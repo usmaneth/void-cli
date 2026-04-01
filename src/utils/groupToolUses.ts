@@ -10,7 +10,7 @@ import type {
   RenderableMessage,
 } from '../types/message.js'
 
-export type MessageWithoutProgress = Exclude<NormalizedMessage, ProgressMessage>
+export type MessageWithoutProgress = NormalizedMessage
 
 export type GroupingResult = {
   messages: RenderableMessage[]
@@ -110,7 +110,7 @@ export function applyGrouping(
           content.type === 'tool_result' &&
           groupedToolUseIds.has(content.tool_use_id)
         ) {
-          resultsByToolUseId.set(content.tool_use_id, msg)
+          resultsByToolUseId.set(content.tool_use_id, msg as any)
         }
       }
     }

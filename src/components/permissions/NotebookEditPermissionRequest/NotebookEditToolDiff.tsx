@@ -74,7 +74,7 @@ function NotebookEditToolDiffInner(t0) {
     promise
   } = t0;
   const edit_mode = t1 === undefined ? "replace" : t1;
-  const notebookData = use(promise);
+  const notebookData = use(promise) as any;
   let t2;
   if ($[0] !== cell_id || $[1] !== notebookData) {
     bb0: {
@@ -206,6 +206,7 @@ function NotebookEditToolDiffInner(t0) {
   }
   let t9;
   if ($[23] !== cell_type || $[24] !== edit_mode || $[25] !== hunks || $[26] !== new_source || $[27] !== notebook_path || $[28] !== oldSource || $[29] !== width) {
+    // @ts-ignore key prop
     t9 = edit_mode === "delete" ? <Box flexDirection="column" paddingLeft={2}><HighlightedCode code={oldSource} filePath={notebook_path} /></Box> : edit_mode === "insert" ? <Box flexDirection="column" paddingLeft={2}><HighlightedCode code={new_source} filePath={cell_type === "markdown" ? "file.md" : notebook_path} /></Box> : hunks ? intersperse(hunks.map(_ => <StructuredDiff key={_.newStart} patch={_} dim={false} width={width} filePath={notebook_path} firstLine={new_source.split("\n")[0] ?? null} fileContent={oldSource} />), _temp3) : <HighlightedCode code={new_source} filePath={cell_type === "markdown" ? "file.md" : notebook_path} />;
     $[23] = cell_type;
     $[24] = edit_mode;

@@ -142,7 +142,7 @@ function* yieldMissingToolResultBlocks(
           },
         ],
         toolUseResult: errorMessage,
-        sourceToolAssistantUUID: assistantMessage.uuid,
+        sourceToolAssistantUUID: assistantMessage.uuid as any,
       })
     }
   }

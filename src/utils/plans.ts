@@ -312,7 +312,7 @@ function recoverPlanFromMessages(log: LogOption): string | null {
     }
 
     if (msg.type === 'attachment') {
-      const attachmentMsg = msg as AttachmentMessage
+      const attachmentMsg = msg as unknown as AttachmentMessage
       if (attachmentMsg.attachment?.type === 'plan_file_reference') {
         const plan = (attachmentMsg.attachment as { planContent?: string })
           .planContent

@@ -280,20 +280,22 @@ export function parsePluginId(
  * handle analytics/error-catching around this.
  */
 export type InstallCoreResult =
-  | { ok: true; closure: string[]; depNote: string }
-  | { ok: false; reason: 'local-source-no-location'; pluginName: string }
-  | { ok: false; reason: 'settings-write-failed'; message: string }
+  | { ok: true; closure: string[]; depNote: string; reason?: undefined }
+  | { ok: false; reason: 'local-source-no-location'; pluginName: string; depNote?: undefined }
+  | { ok: false; reason: 'settings-write-failed'; message: string; depNote?: undefined }
   | {
       ok: false
       reason: 'resolution-failed'
       resolution: ResolutionResult & { ok: false }
+      depNote?: undefined
     }
-  | { ok: false; reason: 'blocked-by-policy'; pluginName: string }
+  | { ok: false; reason: 'blocked-by-policy'; pluginName: string; depNote?: undefined }
   | {
       ok: false
       reason: 'dependency-blocked-by-policy'
       pluginName: string
       blockedDependency: string
+      depNote?: undefined
     }
 
 /**
@@ -408,7 +410,7 @@ export async function installResolvedPlugin({
     allowedCrossMarketplaces,
   )
   if (!resolution.ok) {
-    return { ok: false, reason: 'resolution-failed', resolution }
+    return { ok: false, reason: 'resolution-failed', resolution } as any
   }
 
   // ── Policy guard for transitive dependencies ──
@@ -484,8 +486,8 @@ export async function installResolvedPlugin({
  * Result of a plugin installation operation
  */
 export type InstallPluginResult =
-  | { success: true; message: string }
-  | { success: false; error: string }
+  | { success: true; message: string; error?: undefined }
+  | { success: false; error: string; message?: undefined }
 
 /**
  * Parameters for installing a plugin from marketplace
@@ -529,27 +531,27 @@ export async function installPluginFromMarketplace({
         case 'local-source-no-location':
           return {
             success: false,
-            error: `Cannot install local plugin "${result.pluginName}" without marketplace install location`,
+            error: `Cannot install local plugin "${(result as any).pluginName}" without marketplace install location`,
           }
         case 'settings-write-failed':
           return {
             success: false,
-            error: `Failed to update settings: ${result.message}`,
+            error: `Failed to update settings: ${(result as any).message}`,
           }
         case 'resolution-failed':
           return {
             success: false,
-            error: formatResolutionError(result.resolution),
+            error: formatResolutionError((result as any).resolution),
           }
         case 'blocked-by-policy':
           return {
             success: false,
-            error: `Plugin "${result.pluginName}" is blocked by your organization's policy and cannot be installed`,
+            error: `Plugin "${(result as any).pluginName}" is blocked by your organization's policy and cannot be installed`,
           }
         case 'dependency-blocked-by-policy':
           return {
             success: false,
-            error: `Cannot install "${result.pluginName}": dependency "${result.blockedDependency}" is blocked by your organization's policy`,
+            error: `Cannot install "${(result as any).pluginName}": dependency "${(result as any).blockedDependency}" is blocked by your organization's policy`,
           }
       }
     }

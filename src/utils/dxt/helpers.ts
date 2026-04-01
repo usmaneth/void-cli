@@ -13,14 +13,14 @@ import { jsonParse } from '../slowOperations.js'
 export async function validateManifest(
   manifestJson: unknown,
 ): Promise<McpbManifest> {
-  const { McpbManifestSchema } = await import('@anthropic-ai/mcpb')
+  const { McpbManifestSchema } = await import('@anthropic-ai/mcpb') as any
   const parseResult = McpbManifestSchema.safeParse(manifestJson)
 
   if (!parseResult.success) {
     const errors = parseResult.error.flatten()
     const errorMessages = [
       ...Object.entries(errors.fieldErrors).map(
-        ([field, errs]) => `${field}: ${errs?.join(', ')}`,
+        ([field, errs]: [string, any]) => `${field}: ${errs?.join(', ')}`,
       ),
       ...(errors.formErrors || []),
     ]

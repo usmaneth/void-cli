@@ -8,6 +8,8 @@ import { useTerminalSize } from '../../hooks/useTerminalSize.js';
 import { useIsInsideModal, useModalOrTerminalSize } from '../../context/modalContext.js';
 import { Pane } from '../design-system/Pane.js';
 import { Tabs, Tab } from '../design-system/Tabs.js';
+// Conditional feature stub
+const Gates: any = undefined
 import { Status, buildDiagnostics } from './Status.js';
 import { Config } from './Config.js';
 import { Usage } from './Usage.js';

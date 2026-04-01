@@ -447,7 +447,7 @@ function createCompactionResultFromSessionMemory(
   const boundaryMarker = createCompactBoundaryMessage(
     'auto',
     preCompactTokenCount ?? 0,
-    messages[messages.length - 1]?.uuid,
+    messages[messages.length - 1]?.uuid as any,
   )
   const preCompactDiscovered = extractDiscoveredToolNames(messages)
   if (preCompactDiscovered.size > 0) {
@@ -487,7 +487,7 @@ function createCompactionResultFromSessionMemory(
   return {
     boundaryMarker: annotateBoundaryWithPreservedSegment(
       boundaryMarker,
-      summaryMessages[summaryMessages.length - 1]!.uuid,
+      summaryMessages[summaryMessages.length - 1]!.uuid as any,
       messagesToKeep,
     ),
     summaryMessages,

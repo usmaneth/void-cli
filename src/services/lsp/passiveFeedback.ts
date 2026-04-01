@@ -94,6 +94,7 @@ export function formatDiagnosticsForAttachment(
   return [
     {
       uri,
+      path: uri.replace('file://', ''),
       diagnostics,
     },
   ]

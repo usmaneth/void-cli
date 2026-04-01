@@ -246,13 +246,13 @@ async function executeForkedSlashCommand(command: CommandBase & PromptCommand, a
       // Add progress message for assistant messages (which contain tool uses)
       if (message.type === 'assistant') {
         // Increment token count in spinner for assistant messages
-        const contentLength = getAssistantMessageContentLength(message);
+        const contentLength = getAssistantMessageContentLength(message as any);
         if (contentLength > 0) {
           context.setResponseLength(len => len + contentLength);
         }
         const normalizedMsg = normalizedNew[0];
         if (normalizedMsg && normalizedMsg.type === 'assistant') {
-          progressMessages.push(createProgressMessage(message));
+          progressMessages.push(createProgressMessage(message as any));
           updateProgress();
         }
       }
@@ -261,7 +261,7 @@ async function executeForkedSlashCommand(command: CommandBase & PromptCommand, a
       if (message.type === 'user') {
         const normalizedMsg = normalizedNew[0];
         if (normalizedMsg && normalizedMsg.type === 'user') {
-          progressMessages.push(createProgressMessage(normalizedMsg));
+          progressMessages.push(createProgressMessage(normalizedMsg as any));
           updateProgress();
         }
       }

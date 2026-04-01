@@ -999,7 +999,7 @@ export async function getAttachments(
     ...userAttachmentResults.flat(),
     ...threadAttachmentResults.flat(),
     ...mainThreadAttachmentResults.flat(),
-  ].filter(a => a !== undefined && a !== null)
+  ].filter(a => a !== undefined && a !== null) as any
 }
 
 async function maybe<A>(label: string, f: () => Promise<A[]>): Promise<A[]> {
@@ -2778,7 +2778,7 @@ export function extractAtMentionedFiles(content: string): string[] {
   // Extract regular mentions
   const regularMatchArray = content.match(regularAtMentionRegex) || []
   regularMatchArray.forEach(match => {
-    const filename = match.slice(match.indexOf('@') + 1)
+    const filename = (match as any).slice((match as any).indexOf('@') + 1)
     // Don't include if it starts with a quote (already handled as quoted)
     if (!filename.startsWith('"')) {
       regularMatches.push(filename)
@@ -3205,7 +3205,7 @@ export function createAttachmentMessage(
     attachment,
     type: 'attachment',
     uuid: randomUUID(),
-    timestamp: new Date().toISOString(),
+    timestamp: new Date().toISOString() as any,
   }
 }
 

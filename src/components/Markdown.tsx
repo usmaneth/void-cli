@@ -136,6 +136,7 @@ function MarkdownBody(t0) {
     let nonTableContent = "";
     const flushNonTableContent = function flushNonTableContent() {
       if (nonTableContent) {
+        // @ts-ignore key prop
         elements.push(<Ansi key={elements.length} dimColor={dimColor}>{nonTableContent.trim()}</Ansi>);
         nonTableContent = "";
       }
@@ -143,6 +144,7 @@ function MarkdownBody(t0) {
     for (const token of tokens) {
       if (token.type === "table") {
         flushNonTableContent();
+        // @ts-ignore key prop
         elements.push(<MarkdownTable key={elements.length} token={token as Tokens.Table} highlight={highlight} />);
       } else {
         nonTableContent = nonTableContent + formatToken(token, theme, 0, null, null, highlight);
