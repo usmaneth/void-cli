@@ -99,8 +99,8 @@ export function modelSupportsISP(model: string): boolean {
   }
   const canonical = getCanonicalName(model)
   const provider = getAPIProvider()
-  // Foundry supports interleaved thinking for all models
-  if (provider === 'foundry') {
+  // Foundry and OpenRouter support interleaved thinking for all models
+  if (provider === 'foundry' || provider === 'openrouter') {
     return true
   }
   if (provider === 'firstParty') {
@@ -125,7 +125,7 @@ function vertexModelSupportsWebSearch(model: string): boolean {
 export function modelSupportsContextManagement(model: string): boolean {
   const canonical = getCanonicalName(model)
   const provider = getAPIProvider()
-  if (provider === 'foundry') {
+  if (provider === 'foundry' || provider === 'openrouter') {
     return true
   }
   if (provider === 'firstParty') {
@@ -142,8 +142,8 @@ export function modelSupportsContextManagement(model: string): boolean {
 export function modelSupportsStructuredOutputs(model: string): boolean {
   const canonical = getCanonicalName(model)
   const provider = getAPIProvider()
-  // Structured outputs only supported on firstParty and Foundry (not Bedrock/Vertex yet)
-  if (provider !== 'firstParty' && provider !== 'foundry') {
+  // Structured outputs only supported on firstParty, Foundry, and OpenRouter (not Bedrock/Vertex yet)
+  if (provider !== 'firstParty' && provider !== 'foundry' && provider !== 'openrouter') {
     return false
   }
   return (

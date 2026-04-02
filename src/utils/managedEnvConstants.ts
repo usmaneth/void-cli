@@ -18,6 +18,7 @@ const PROVIDER_MANAGED_ENV_VARS = new Set([
   'VOID_USE_BEDROCK',
   'VOID_USE_VERTEX',
   'VOID_USE_FOUNDRY',
+  'VOID_USE_OPENROUTER',
   // Endpoint config (base URLs, project/resource identifiers)
   'ANTHROPIC_BASE_URL',
   'ANTHROPIC_BEDROCK_BASE_URL',
@@ -28,6 +29,7 @@ const PROVIDER_MANAGED_ENV_VARS = new Set([
   // Region routing (per-model VERTEX_REGION_CLAUDE_* handled by prefix below)
   'CLOUD_ML_REGION',
   // Auth
+  'OPENROUTER_API_KEY',
   'ANTHROPIC_API_KEY',
   'ANTHROPIC_AUTH_TOKEN',
   'VOID_OAUTH_TOKEN',
@@ -147,6 +149,7 @@ export const SAFE_ENV_VARS = new Set([
   'VOID_SUBAGENT_MODEL',
   'VOID_USE_BEDROCK',
   'VOID_USE_FOUNDRY',
+  'VOID_USE_OPENROUTER',
   'VOID_USE_VERTEX',
   'DISABLE_AUTOUPDATER',
   'DISABLE_BUG_COMMAND',

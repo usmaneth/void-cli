@@ -297,6 +297,27 @@ export async function getAnthropicClient({
     return new AnthropicVertex(vertexArgs) as unknown as Anthropic
   }
 
+  if (isEnvTruthy(process.env.VOID_USE_OPENROUTER)) {
+    const openrouterKey = process.env.OPENROUTER_API_KEY
+    if (!openrouterKey) {
+      throw new Error(
+        'OPENROUTER_API_KEY environment variable is required when VOID_USE_OPENROUTER is enabled',
+      )
+    }
+    const openrouterConfig: ConstructorParameters<typeof Anthropic>[0] = {
+      apiKey: openrouterKey,
+      baseURL: 'https://openrouter.ai/api',
+      ...ARGS,
+      defaultHeaders: {
+        ...ARGS.defaultHeaders,
+        'HTTP-Referer': 'https://github.com/usmaneth/void-cli',
+        'X-Title': 'Void CLI',
+      },
+      ...(isDebugToStdErr() && { logger: createStderrLogger() }),
+    }
+    return new Anthropic(openrouterConfig)
+  }
+
   // Determine authentication method based on available tokens
   const clientConfig: ConstructorParameters<typeof Anthropic>[0] = {
     apiKey: isClaudeAISubscriber() ? null : apiKey || getAnthropicApiKey(),
