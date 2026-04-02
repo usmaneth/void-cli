@@ -115,7 +115,8 @@ export function isAnthropicAuthEnabled(): boolean {
   const is3P =
     isEnvTruthy(process.env.VOID_USE_BEDROCK) ||
     isEnvTruthy(process.env.VOID_USE_VERTEX) ||
-    isEnvTruthy(process.env.VOID_USE_FOUNDRY)
+    isEnvTruthy(process.env.VOID_USE_FOUNDRY) ||
+    isEnvTruthy(process.env.VOID_USE_OPENROUTER)
 
   // Check if user has configured an external API key source
   // This allows externally-provided API keys to work (without requiring proxy configuration)
@@ -1594,7 +1595,8 @@ export function is1PApiCustomer(): boolean {
   if (
     isEnvTruthy(process.env.VOID_USE_BEDROCK) ||
     isEnvTruthy(process.env.VOID_USE_VERTEX) ||
-    isEnvTruthy(process.env.VOID_USE_FOUNDRY)
+    isEnvTruthy(process.env.VOID_USE_FOUNDRY) ||
+    isEnvTruthy(process.env.VOID_USE_OPENROUTER)
   ) {
     return false
   }
@@ -1733,7 +1735,8 @@ export function isUsing3PServices(): boolean {
   return !!(
     isEnvTruthy(process.env.VOID_USE_BEDROCK) ||
     isEnvTruthy(process.env.VOID_USE_VERTEX) ||
-    isEnvTruthy(process.env.VOID_USE_FOUNDRY)
+    isEnvTruthy(process.env.VOID_USE_FOUNDRY) ||
+    isEnvTruthy(process.env.VOID_USE_OPENROUTER)
   )
 }
 

@@ -56,7 +56,7 @@ export function isNonCustomOpusModel(model: ModelName): boolean {
  * Priority order within this function:
  * 1. Model override during session (from /model command) - highest priority
  * 2. Model override at startup (from --model flag)
- * 3. ANTHROPIC_MODEL environment variable
+ * 3. OPENROUTER_MODEL / ANTHROPIC_MODEL environment variable
  * 4. Settings (from user's saved settings)
  */
 export function getUserSpecifiedModelSetting(): ModelSetting | undefined {
@@ -67,7 +67,11 @@ export function getUserSpecifiedModelSetting(): ModelSetting | undefined {
     specifiedModel = modelOverride
   } else {
     const settings = getSettings_DEPRECATED() || {}
-    specifiedModel = process.env.ANTHROPIC_MODEL || settings.model || undefined
+    specifiedModel =
+      process.env.OPENROUTER_MODEL ||
+      process.env.ANTHROPIC_MODEL ||
+      settings.model ||
+      undefined
   }
 
   // Ignore the user-specified model if it's not in the availableModels allowlist.
@@ -110,7 +114,9 @@ export function getDefaultOpusModel(): ModelName {
   // 3P providers (Bedrock, Vertex, Foundry) — kept as a separate branch
   // even when values match, since 3P availability lags firstParty and
   // these will diverge again at the next model launch.
-  if (getAPIProvider() !== 'firstParty') {
+  // OpenRouter proxies all models, so it gets the latest like firstParty.
+  const provider = getAPIProvider()
+  if (provider !== 'firstParty' && provider !== 'openrouter') {
     return getModelStrings().opus46
   }
   return getModelStrings().opus46
@@ -122,7 +128,9 @@ export function getDefaultSonnetModel(): ModelName {
     return process.env.ANTHROPIC_DEFAULT_SONNET_MODEL
   }
   // Default to Sonnet 4.5 for 3P since they may not have 4.6 yet
-  if (getAPIProvider() !== 'firstParty') {
+  // OpenRouter proxies all models, so it gets the latest like firstParty.
+  const provider = getAPIProvider()
+  if (provider !== 'firstParty' && provider !== 'openrouter') {
     return getModelStrings().sonnet45
   }
   return getModelStrings().sonnet46
@@ -217,6 +225,9 @@ export function getDefaultMainLoopModel(): ModelName {
  */
 export function firstPartyNameToCanonical(name: ModelName): ModelShortName {
   name = name.toLowerCase()
+  // Normalize OpenRouter-style dot versions (e.g. "anthropic/claude-opus-4.6")
+  // to dash-separated format for matching (e.g. "claude-opus-4-6")
+  name = name.replace(/(\d+)\.(\d+)/g, '$1-$2')
   // Special cases for Claude 4+ models to differentiate versions
   // Order matters: check more specific versions first (4-5 before 4)
   if (name.includes('claude-opus-4-6')) {

@@ -297,6 +297,37 @@ export async function getAnthropicClient({
     return new AnthropicVertex(vertexArgs) as unknown as Anthropic
   }
 
+  // OpenRouter routing: use the OpenAI-compatible shim for non-Claude models.
+  // Two modes:
+  // 1. VOID_USE_OPENROUTER=1: OpenRouter is the default provider for ALL models
+  // 2. Model contains '/': Auto-route to OpenRouter (e.g. "openai/gpt-4o", "thudm/glm-4")
+  //    This allows both Anthropic and OpenRouter to coexist in the same session.
+  const isOpenRouterModel = model && model.includes('/')
+  if (
+    isEnvTruthy(process.env.VOID_USE_OPENROUTER) ||
+    (isOpenRouterModel && process.env.OPENROUTER_API_KEY)
+  ) {
+    const openrouterKey = process.env.OPENROUTER_API_KEY
+    if (!openrouterKey) {
+      throw new Error(
+        'OPENROUTER_API_KEY environment variable is required for OpenRouter models',
+      )
+    }
+    const { createOpenAIShimClient } = await import('./openaiShim.js')
+    const openrouterBaseURL =
+      process.env.OPENROUTER_BASE_URL || 'https://openrouter.ai/api/v1'
+    return createOpenAIShimClient({
+      apiKey: openrouterKey,
+      baseURL: openrouterBaseURL,
+      defaultHeaders: {
+        ...defaultHeaders,
+        'HTTP-Referer': 'https://github.com/usmaneth/void-cli',
+        'X-Title': 'Void CLI',
+      },
+      timeout: ARGS.timeout,
+    }) as unknown as Anthropic
+  }
+
   // Determine authentication method based on available tokens
   const clientConfig: ConstructorParameters<typeof Anthropic>[0] = {
     apiKey: isClaudeAISubscriber() ? null : apiKey || getAnthropicApiKey(),
