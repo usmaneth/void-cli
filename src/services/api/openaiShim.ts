@@ -403,6 +403,60 @@ async function* openaiStreamToAnthropic(
   yield { type: 'message_stop' }
 }
 
+// ── Non-streaming: OpenAI response → Anthropic BetaMessage ───────────────────
+
+function convertOpenAIResponseToMessage(json: any, model: string): any {
+  const choice = json.choices?.[0]
+  if (!choice) {
+    throw new Error('No choices in OpenRouter response')
+  }
+
+  const content: any[] = []
+  const msg = choice.message
+
+  if (msg.content) {
+    content.push({ type: 'text', text: msg.content })
+  }
+
+  if (msg.tool_calls) {
+    for (const tc of msg.tool_calls) {
+      let input: any = {}
+      try {
+        input = JSON.parse(tc.function.arguments)
+      } catch {
+        input = {}
+      }
+      content.push({
+        type: 'tool_use',
+        id: tc.id,
+        name: tc.function.name,
+        input,
+      })
+    }
+  }
+
+  const stopReason =
+    choice.finish_reason === 'tool_calls'
+      ? 'tool_use'
+      : choice.finish_reason === 'length'
+        ? 'max_tokens'
+        : 'end_turn'
+
+  return {
+    id: json.id || `msg_${Date.now()}`,
+    type: 'message',
+    role: 'assistant',
+    content,
+    model,
+    stop_reason: stopReason,
+    stop_sequence: null,
+    usage: {
+      input_tokens: json.usage?.prompt_tokens || 0,
+      output_tokens: json.usage?.completion_tokens || 0,
+    },
+  }
+}
+
 // ── Shim Client ──────────────────────────────────────────────────────────────
 
 /**
@@ -422,6 +476,7 @@ export function createOpenAIShimClient(config: {
     params: any,
     options?: { signal?: AbortSignal; headers?: Record<string, string> },
   ): Promise<any> {
+    const isStreaming = params.stream !== false
     const system = convertSystemPrompt(params.system)
     const messages = convertAnthropicMessages(params.messages, system)
     const tools = convertTools(params.tools)
@@ -429,8 +484,7 @@ export function createOpenAIShimClient(config: {
     const body: Record<string, unknown> = {
       model: params.model,
       messages,
-      stream: true,
-      stream_options: { include_usage: true },
+      ...(isStreaming && { stream: true, stream_options: { include_usage: true } }),
     }
 
     if (params.max_tokens) {
@@ -494,7 +548,13 @@ export function createOpenAIShimClient(config: {
       throw error
     }
 
-    // Create an async iterable that yields Anthropic-format events
+    // Non-streaming: convert OpenAI response to Anthropic BetaMessage format
+    if (!isStreaming) {
+      const json = await response.json() as any
+      return { result: convertOpenAIResponseToMessage(json, params.model), response }
+    }
+
+    // Streaming: create an async iterable that yields Anthropic-format events
     const eventStream = openaiStreamToAnthropic(response, params.model)
 
     // Wrap in an object that mimics the Anthropic SDK stream interface
@@ -502,28 +562,62 @@ export function createOpenAIShimClient(config: {
       [Symbol.asyncIterator]() {
         return eventStream
       },
-      async withResponse() {
-        return {
-          data: stream,
-          response,
-          request_id: response.headers.get('x-request-id') || undefined,
-        }
-      },
       controller: new AbortController(),
     }
 
-    return stream
+    return { stream, response }
+  }
+
+  /**
+   * Creates an APIPromise-like object that mimics the Anthropic SDK's return type.
+   * The Anthropic SDK's .create() returns an object where:
+   * - await it → gets the stream directly
+   * - .withResponse() → gets { data: stream, response, request_id }
+   */
+  function createAPIPromise(
+    params: any,
+    options?: { signal?: AbortSignal; headers?: Record<string, string> },
+  ): any {
+    const innerPromise = createMessageStream(params, options)
+
+    // Resolve to the primary data: stream for streaming, message for non-streaming
+    function getData(r: any) {
+      return r.stream || r.result
+    }
+
+    // Build a thenable that also has .withResponse()
+    const apiPromise = {
+      then(onFulfilled: any, onRejected?: any) {
+        return innerPromise.then(r => getData(r)).then(onFulfilled, onRejected)
+      },
+      catch(onRejected: any) {
+        return innerPromise.then(r => getData(r)).catch(onRejected)
+      },
+      finally(onFinally: any) {
+        return innerPromise.then(r => getData(r)).finally(onFinally)
+      },
+      withResponse() {
+        return innerPromise.then(r => ({
+          data: getData(r),
+          response: r.response,
+          request_id:
+            r.response.headers.get('x-request-id') || `or_${Date.now()}`,
+        }))
+      },
+    }
+
+    return apiPromise
   }
 
   // Build the shim client that looks like an Anthropic SDK client
   const shimClient = {
     beta: {
       messages: {
-        create: createMessageStream,
+        create: createAPIPromise,
       },
     },
     messages: {
-      create: createMessageStream,
+      create: createAPIPromise,
     },
   }
 
