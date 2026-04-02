@@ -3,8 +3,9 @@ import type { APIProvider } from './providers.js'
 
 export type ModelConfig = Record<APIProvider, ModelName>
 
-// OpenRouter model IDs use the firstParty names — OpenRouter's Anthropic-compatible
-// endpoint accepts standard Anthropic model identifiers.
+// OpenRouter model IDs use provider/model format (e.g. "anthropic/claude-opus-4.6").
+// For non-Claude models, users specify the OpenRouter model ID via --model or
+// ANTHROPIC_MODEL env var (e.g. "openai/gpt-4o", "thudm/glm-4").
 
 // @[MODEL LAUNCH]: Add a new CLAUDE_*_CONFIG constant here. Double check the correct model strings
 // here since the pattern may change.

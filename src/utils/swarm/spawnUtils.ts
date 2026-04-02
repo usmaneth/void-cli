@@ -101,6 +101,8 @@ const TEAMMATE_ENV_VARS = [
   'VOID_USE_FOUNDRY',
   'VOID_USE_OPENROUTER',
   'OPENROUTER_API_KEY',
+  'OPENROUTER_MODEL',
+  'OPENROUTER_BASE_URL',
   // Custom API endpoint
   'ANTHROPIC_BASE_URL',
   // Config directory override
