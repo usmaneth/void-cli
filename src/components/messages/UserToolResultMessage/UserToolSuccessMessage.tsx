@@ -9,6 +9,7 @@ import type { NormalizedUserMessage, ProgressMessage } from '../../../types/mess
 import { deleteClassifierApproval, getClassifierApproval, getYoloClassifierApproval } from '../../../utils/classifierApprovals.js';
 import type { buildMessageLookups } from '../../../utils/messages.js';
 import { MessageResponse } from '../../MessageResponse.js';
+import { ToolCard, resolveToolCardType } from '../../ToolCard.js';
 import { HookProgressMessage } from '../HookProgressMessage.js';
 type Props = {
   message: NormalizedUserMessage;
@@ -82,9 +83,11 @@ export function UserToolSuccessMessage({
   // so MarkdownTable's SAFETY_MARGIN=4 (tuned for the assistant-text 2-col
   // dot gutter) holds — otherwise tables wrap their box-drawing chars.
   const rendersAsAssistantText = tool.userFacingName(undefined) === '';
+  const toolCardType = resolveToolCardType(tool.name);
+  const toolLabel = tool.userFacingName(lookups.toolUseByToolUseID.get(toolUseID)?.input as any) || tool.name;
   return <Box flexDirection="column">
       <Box flexDirection="column" width={rendersAsAssistantText ? undefined : width}>
-        {renderedMessage}
+        {rendersAsAssistantText ? renderedMessage : <ToolCard type={toolCardType} label={toolLabel} collapsed={style === 'condensed'}>{renderedMessage}</ToolCard>}
         {feature('BASH_CLASSIFIER') ? classifierRule && <MessageResponse height={1}>
                 <Text dimColor>
                   <Text color="success">{figures.tick}</Text>
