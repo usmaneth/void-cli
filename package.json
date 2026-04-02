@@ -6,8 +6,10 @@
     "void": "./dist/entrypoints/cli.js"
   },
   "scripts": {
-    "build": "tsc",
-    "check": "tsc --noEmit"
+    "build": "tsc && node scripts/postbuild.js",
+    "postinstall": "node scripts/postbuild.js 2>/dev/null || true",
+    "check": "tsc --noEmit",
+    "start": "node dist/entrypoints/cli.js"
   },
   "dependencies": {
     "@alcalzone/ansi-tokenize": "^0.3.0",

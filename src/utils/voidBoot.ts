@@ -1,9 +1,10 @@
 /**
- * Void CLI boot animation — prints a brief animated portal to stdout
+ * Void CLI boot animation — prints a brief animated sequence to stdout
  * before the Ink app renders. Pure console output, no React dependency.
  */
 
 const PURPLE = '\x1b[38;2;139;92;246m'  // #8B5CF6
+const CYAN = '\x1b[36m'
 const BOLD = '\x1b[1m'
 const DIM = '\x1b[2m'
 const RESET = '\x1b[0m'
@@ -13,15 +14,10 @@ const HIDE_CURSOR = '\x1b[?25l'
 const SHOW_CURSOR = '\x1b[?25h'
 
 const PORTAL_FRAMES = [
-  ['         ·         '],
   ['       · · ·       ', '      ·     ·      ', '       · · ·       '],
   ['      ░░░░░░░      ', '    ░░       ░░    ', '   ░░         ░░   ', '    ░░       ░░    ', '      ░░░░░░░      '],
   ['     ░░░░░░░░░     ', '   ░░▒▒▒▒▒▒▒░░    ', '  ░░▒▒       ▒▒░░  ', ' ░░▒▒         ▒▒░░ ', '  ░░▒▒       ▒▒░░  ', '   ░░▒▒▒▒▒▒▒░░    ', '     ░░░░░░░░░     '],
-  ['     ░░░░░░░░░░░     ', '   ░░▒▒▓▓▓▓▓▒▒░░    ', '  ░░▒▓▓█████▓▓▒░░   ', ' ░░▒▓██     ██▓▒░░  ', ' ░░▒▓█       █▓▒░░  ', ' ░░▒▓██     ██▓▒░░  ', '  ░░▒▓▓█████▓▓▒░░   ', '   ░░▒▒▓▓▓▓▓▒▒░░    ', '     ░░░░░░░░░░░     '],
 ]
-
-const TITLE = 'V O I D'
-const TAGLINE = 'the infinite agent'
 
 function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms))
@@ -44,7 +40,7 @@ function writeFrame(lines: string[]): void {
 }
 
 /**
- * Run the Void boot animation. Returns after animation completes (~1.5s).
+ * Run the Void boot animation. Returns after animation completes (~0.8s).
  * Skipped if stdout is not a TTY.
  */
 export async function runVoidBootAnimation(): Promise<void> {
@@ -59,26 +55,16 @@ export async function runVoidBootAnimation(): Promise<void> {
   let prevLines = 0
 
   try {
+    // Quick portal animation
     for (const frame of PORTAL_FRAMES) {
       clearFrame(prevLines)
       writeFrame(frame)
       prevLines = frame.length
-      await sleep(180)
+      await sleep(120)
     }
 
-    // Show title
+    // Clear animation, leave clean state for Ink
     await sleep(200)
-    process.stdout.write(`\n${PURPLE}${BOLD}       ${TITLE}${RESET}\n`)
-    prevLines += 2
-
-    // Show tagline
-    await sleep(250)
-    process.stdout.write(`${DIM}    ${TAGLINE}${RESET}\n`)
-    prevLines += 1
-
-    await sleep(400)
-
-    // Clear the entire animation
     clearFrame(prevLines)
   } finally {
     process.stdout.write(SHOW_CURSOR)

@@ -1,3 +1,19 @@
 #!/usr/bin/env bash
-export PATH="$HOME/.bun/bin:$PATH"
-exec bun "$(dirname "$0")/../src/entrypoints/cli.tsx" "$@"
+# Void CLI launcher
+# Supports both bun (fast, dev) and node (production) runtimes.
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+# If bun is available, use it directly on the TypeScript source (faster, no build needed)
+if command -v bun >/dev/null 2>&1; then
+  exec bun "$ROOT_DIR/src/entrypoints/cli.tsx" "$@"
+fi
+
+# Fall back to Node.js with the compiled dist
+if [ ! -d "$ROOT_DIR/dist" ]; then
+  echo "Error: dist/ not found. Run 'npm run build' first." >&2
+  exit 1
+fi
+
+exec node --import "$ROOT_DIR/scripts/register-loader.js" "$ROOT_DIR/dist/entrypoints/cli.js" "$@"
