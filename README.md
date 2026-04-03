@@ -204,13 +204,52 @@ void-cli/
 
 | Phase | Feature | Status |
 |-------|---------|--------|
-| 1 | Core CLI — rebrand, theming, boot sequence | Done |
-| 2 | Multi-model engine — OpenRouter, model switching | Planned |
-| 3 | Interaction redesign — tool cards, cost footers | Planned |
-| 4 | Agent council — multi-agent orchestration | Planned |
-| 5 | Knowledge graph memory — persistent context | Planned |
-| 6 | Native integrations — GitHub, Slack, Notion | Planned |
-| 7 | Visual output — charts, diagrams, images | Planned |
+| 1 | Core CLI — rebrand, theming, boot sequence | ✅ Done |
+| 2 | Multi-model engine — OpenRouter, model switching | ✅ Done |
+| 3 | Interaction redesign — tool cards, cost footers, spinners, diff rendering | ✅ Done |
+| 4 | Agent council — multi-model orchestration, consensus voting | ✅ Done |
+| 5 | Knowledge graph memory — persistent context across sessions | ✅ Done |
+| 6 | Native integrations — GitHub, Slack, Notion | ✅ Done |
+| 7 | Visual output — charts, diagrams, tables, sparklines | ✅ Done |
+
+### Phase details
+
+**Phase 2 — Multi-model engine**
+- OpenRouter integration via OpenAI Chat Completions shim
+- Dual-provider routing: Anthropic direct + OpenRouter for 50+ models
+- Env: `OPENROUTER_API_KEY`, `OPENROUTER_MODEL`, `VOID_USE_OPENROUTER`
+
+**Phase 3 — Interaction redesign**
+- ToolCard: Color-coded bordered cards for 10 tool types
+- SessionHUD: Context window bar, token counts, session duration, cost
+- ContextualSpinner: Tool-specific loading messages
+- EnhancedDiff: Syntax-aware diff rendering with line numbers
+- PromptStatusBar: Model, branch, permission mode, token budget
+- MessageGutter/Divider: Visual message type differentiation
+
+**Phase 4 — Agent council**
+- Run multiple models in parallel (Claude, GPT-4o, Gemini, Llama, etc.)
+- 4 presets: duo, trinity, full, open-source
+- 4 consensus methods: leader-picks, voting, longest, first
+- `/council` command with full management
+
+**Phase 5 — Knowledge graph memory**
+- Persistent entity/relation graph at `~/.void/memory/graph.json`
+- Auto-learns from file reads, edits, commands, patterns
+- 10 entity types, 8 relation types, graph traversal
+- `/memory` command for search, recall, manage
+
+**Phase 6 — Native integrations**
+- GitHub: Issues, PRs, comments (auto-detects repo from git remote)
+- Slack: Webhook messages, code blocks, session summaries
+- Notion: Pages, session logs, search
+- `/integrate` command for all three services
+
+**Phase 7 — Visual output**
+- Bar charts, sparklines, pie charts, heatmaps, progress bars
+- Tree diagrams, box diagrams, ASCII tables, flowcharts
+- React/Ink components for inline rendering
+- `/visual` command for all chart types
 
 ---
 
