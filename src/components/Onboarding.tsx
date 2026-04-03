@@ -18,6 +18,7 @@ import { Select } from './CustomSelect/select.js';
 import { WelcomeV2 } from './LogoV2/WelcomeV2.js';
 import { PressEnterToContinue } from './PressEnterToContinue.js';
 import { ThemePicker } from './ThemePicker.js';
+import { VoidBootSequence } from './VoidBootSequence.js';
 import { OrderedList } from './ui/OrderedList.js';
 type StepId = 'preflight' | 'theme' | 'oauth' | 'api-key' | 'security' | 'terminal-setup';
 interface OnboardingStep {
@@ -31,6 +32,7 @@ export function Onboarding({
   onDone
 }: Props): React.ReactNode {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
+  const [bootSequenceComplete, setBootSequenceComplete] = useState(false);
   const [skipOAuth, setSkipOAuth] = useState(false);
   const [oauthEnabled] = useState(() => isAnthropicAuthEnabled());
   const [theme, setTheme] = useTheme();
@@ -189,6 +191,9 @@ export function Onboarding({
   const handleTerminalSetupSkip = useCallback(() => {
     goToNextStep();
   }, [currentStepIndex, steps.length, oauthEnabled, onDone]);
+  const handleBootSequenceComplete = useCallback(() => {
+    setBootSequenceComplete(true);
+  }, []);
   useKeybindings({
     'confirm:yes': handleSecurityContinue
   }, {
@@ -201,6 +206,9 @@ export function Onboarding({
     context: 'Confirmation',
     isActive: currentStep?.id === 'terminal-setup'
   });
+  if (!bootSequenceComplete) {
+    return <VoidBootSequence onComplete={handleBootSequenceComplete} accentColor="cyan" />;
+  }
   return <Box flexDirection="column">
       <WelcomeV2 />
       <Box flexDirection="column" marginTop={1}>

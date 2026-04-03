@@ -4,7 +4,10 @@
  * line format for detailed reports.
  */
 
-import type { performance as PerformanceType } from 'perf_hooks'
+import {
+  performance as nodePerformance,
+  type performance as PerformanceType,
+} from 'perf_hooks'
 import { formatFileSize } from './format.js'
 
 // Lazy-load performance API only when profiling is enabled.
@@ -13,8 +16,7 @@ let performance: typeof PerformanceType | null = null
 
 export function getPerformance(): typeof PerformanceType {
   if (!performance) {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    performance = require('perf_hooks').performance
+    performance = nodePerformance
   }
   return performance!
 }

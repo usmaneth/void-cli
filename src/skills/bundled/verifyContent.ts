@@ -1,9 +1,11 @@
 // Content for the verify bundled skill.
-// Each .md file is inlined as a string at build time via Bun's text loader.
+// Load markdown from package files so both Bun and Node ESM can start the CLI.
 
-import cliMd from './verify/examples/cli.md'
-import serverMd from './verify/examples/server.md'
-import skillMd from './verify/SKILL.md'
+import { loadBundledMarkdown } from './loadMarkdown.js'
+
+const cliMd = loadBundledMarkdown('./verify/examples/cli.md')
+const serverMd = loadBundledMarkdown('./verify/examples/server.md')
+const skillMd = loadBundledMarkdown('./verify/SKILL.md')
 
 export const SKILL_MD: string = skillMd
 
