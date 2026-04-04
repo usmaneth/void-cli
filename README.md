@@ -121,6 +121,12 @@ Inside a Void session, use `/` commands:
 | `/resume` | Browse and resume past sessions |
 | `/mcp` | Manage MCP server connections |
 | `/login` | Authenticate with your API provider |
+| `/checkpoint` | Manage workspace checkpoints (list, diff, restore) |
+| `/watch` | File watcher with auto-lint/test feedback |
+| `/session` | Save, resume, search, export sessions |
+| `/cmd` | Run custom command templates |
+| `/architect` | Toggle architect mode (two-model pipeline) |
+| `/mode` | Switch permission modes (suggest/auto-edit/full-auto) |
 
 ---
 
@@ -211,6 +217,13 @@ void-cli/
 | 5 | Knowledge graph memory — persistent context across sessions | ✅ Done |
 | 6 | Native integrations — GitHub, Slack, Notion | ✅ Done |
 | 7 | Visual output — charts, diagrams, tables, sparklines | ✅ Done |
+| 8 | Auto-compact — context window management with auto-summarization | ✅ Done |
+| 9 | Workspace checkpoints — git-based undo/redo with diff viewing | ✅ Done |
+| 10 | Watch mode — file watcher with auto-lint/test feedback loops | ✅ Done |
+| 11 | Session persistence — save, resume, search, export sessions | ✅ Done |
+| 12 | Custom commands — user-defined .md templates with placeholders | ✅ Done |
+| 13 | Architect mode — two-model pipeline (plan then implement) | ✅ Done |
+| 14 | Tiered permissions — suggest / auto-edit / full-auto modes | ✅ Done |
 
 ### Phase details
 
@@ -250,6 +263,49 @@ void-cli/
 - Tree diagrams, box diagrams, ASCII tables, flowcharts
 - React/Ink components for inline rendering
 - `/visual` command for all chart types
+
+**Phase 8 — Auto-compact**
+- Tracks cumulative token usage per conversation turn
+- Warns at 80% context window, auto-compacts at 90%
+- Heuristic summarization: extracts key decisions, files modified, task state
+- `/compact status`, `/compact now`, `/compact threshold <percent>`
+
+**Phase 9 — Workspace checkpoints**
+- Git stash-based snapshots before every file-modifying tool call
+- Per-project checkpoint storage at `~/.void/checkpoints/`
+- `/checkpoint list`, `/checkpoint diff <id>`, `/checkpoint restore <id>`, `/checkpoint prune`
+
+**Phase 10 — Watch mode**
+- Recursive file watcher with debouncing (500ms default)
+- Auto-runs lint and test commands on file changes
+- Parses ESLint, TypeScript, Jest error formats
+- Scans for `// AI: ...` trigger comments in changed files
+- `/watch start`, `/watch stop`, `/watch status`, `/watch config`
+
+**Phase 11 — Session persistence**
+- JSONL-based message storage at `~/.void/sessions/`
+- Auto-generated session titles from first user message
+- Session tagging and search
+- `/session list`, `/session save`, `/session resume`, `/session export`
+
+**Phase 12 — Custom commands**
+- User-defined `.md` templates in `~/.void/commands/` (global) or `.void/commands/` (project)
+- `$PLACEHOLDER` syntax for template arguments
+- Subdirectory organization (e.g., `git/commit.md` → `git:commit`)
+- Default templates: review, explain, commit, refactor
+- `/cmd list`, `/cmd run <name>`, `/cmd create`, `/cmd init`
+
+**Phase 13 — Architect mode**
+- Two-stage pipeline: architect model plans, coder model implements
+- Structured JSON plans with steps, files affected, risks
+- Configurable models for each role (works with OpenRouter)
+- `/architect on|off`, `/architect plan <task>`, `/architect model`
+
+**Phase 14 — Tiered permissions**
+- Three modes: suggest (read-only), auto-edit (files ok, commands confirm), full-auto (everything)
+- Per-project defaults via `.void/config.json`
+- Visual mode indicator in status bar
+- `/mode suggest`, `/mode auto-edit`, `/mode full-auto`, `/mode permissions`
 
 ---
 
