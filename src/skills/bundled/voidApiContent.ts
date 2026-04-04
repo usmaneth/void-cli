@@ -1,32 +1,70 @@
 // Content for the claude-api bundled skill.
-// Each .md file is inlined as a string at build time via Bun's text loader.
+// Load markdown from package files so both Bun and Node ESM can start the CLI.
 
-import csharpClaudeApi from './claude-api/csharp/claude-api.md'
-import curlExamples from './claude-api/curl/examples.md'
-import goClaudeApi from './claude-api/go/claude-api.md'
-import javaClaudeApi from './claude-api/java/claude-api.md'
-import phpClaudeApi from './claude-api/php/claude-api.md'
-import pythonAgentSdkPatterns from './claude-api/python/agent-sdk/patterns.md'
-import pythonAgentSdkReadme from './claude-api/python/agent-sdk/README.md'
-import pythonClaudeApiBatches from './claude-api/python/claude-api/batches.md'
-import pythonClaudeApiFilesApi from './claude-api/python/claude-api/files-api.md'
-import pythonClaudeApiReadme from './claude-api/python/claude-api/README.md'
-import pythonClaudeApiStreaming from './claude-api/python/claude-api/streaming.md'
-import pythonClaudeApiToolUse from './claude-api/python/claude-api/tool-use.md'
-import rubyClaudeApi from './claude-api/ruby/claude-api.md'
-import skillPrompt from './claude-api/SKILL.md'
-import sharedErrorCodes from './claude-api/shared/error-codes.md'
-import sharedLiveSources from './claude-api/shared/live-sources.md'
-import sharedModels from './claude-api/shared/models.md'
-import sharedPromptCaching from './claude-api/shared/prompt-caching.md'
-import sharedToolUseConcepts from './claude-api/shared/tool-use-concepts.md'
-import typescriptAgentSdkPatterns from './claude-api/typescript/agent-sdk/patterns.md'
-import typescriptAgentSdkReadme from './claude-api/typescript/agent-sdk/README.md'
-import typescriptClaudeApiBatches from './claude-api/typescript/claude-api/batches.md'
-import typescriptClaudeApiFilesApi from './claude-api/typescript/claude-api/files-api.md'
-import typescriptClaudeApiReadme from './claude-api/typescript/claude-api/README.md'
-import typescriptClaudeApiStreaming from './claude-api/typescript/claude-api/streaming.md'
-import typescriptClaudeApiToolUse from './claude-api/typescript/claude-api/tool-use.md'
+import { loadBundledMarkdown } from './loadMarkdown.js'
+
+const csharpClaudeApi = loadBundledMarkdown('./claude-api/csharp/claude-api.md')
+const curlExamples = loadBundledMarkdown('./claude-api/curl/examples.md')
+const goClaudeApi = loadBundledMarkdown('./claude-api/go/claude-api.md')
+const javaClaudeApi = loadBundledMarkdown('./claude-api/java/claude-api.md')
+const phpClaudeApi = loadBundledMarkdown('./claude-api/php/claude-api.md')
+const pythonAgentSdkPatterns = loadBundledMarkdown(
+  './claude-api/python/agent-sdk/patterns.md',
+)
+const pythonAgentSdkReadme = loadBundledMarkdown(
+  './claude-api/python/agent-sdk/README.md',
+)
+const pythonClaudeApiBatches = loadBundledMarkdown(
+  './claude-api/python/claude-api/batches.md',
+)
+const pythonClaudeApiFilesApi = loadBundledMarkdown(
+  './claude-api/python/claude-api/files-api.md',
+)
+const pythonClaudeApiReadme = loadBundledMarkdown(
+  './claude-api/python/claude-api/README.md',
+)
+const pythonClaudeApiStreaming = loadBundledMarkdown(
+  './claude-api/python/claude-api/streaming.md',
+)
+const pythonClaudeApiToolUse = loadBundledMarkdown(
+  './claude-api/python/claude-api/tool-use.md',
+)
+const rubyClaudeApi = loadBundledMarkdown('./claude-api/ruby/claude-api.md')
+const skillPrompt = loadBundledMarkdown('./claude-api/SKILL.md')
+const sharedErrorCodes = loadBundledMarkdown(
+  './claude-api/shared/error-codes.md',
+)
+const sharedLiveSources = loadBundledMarkdown(
+  './claude-api/shared/live-sources.md',
+)
+const sharedModels = loadBundledMarkdown('./claude-api/shared/models.md')
+const sharedPromptCaching = loadBundledMarkdown(
+  './claude-api/shared/prompt-caching.md',
+)
+const sharedToolUseConcepts = loadBundledMarkdown(
+  './claude-api/shared/tool-use-concepts.md',
+)
+const typescriptAgentSdkPatterns = loadBundledMarkdown(
+  './claude-api/typescript/agent-sdk/patterns.md',
+)
+const typescriptAgentSdkReadme = loadBundledMarkdown(
+  './claude-api/typescript/agent-sdk/README.md',
+)
+const typescriptClaudeApiBatches = loadBundledMarkdown(
+  './claude-api/typescript/claude-api/batches.md',
+)
+const typescriptClaudeApiFilesApi = loadBundledMarkdown(
+  './claude-api/typescript/claude-api/files-api.md',
+)
+const typescriptClaudeApiReadme = loadBundledMarkdown(
+  './claude-api/typescript/claude-api/README.md',
+)
+const typescriptClaudeApiStreaming = loadBundledMarkdown(
+  './claude-api/typescript/claude-api/streaming.md',
+)
+const typescriptClaudeApiToolUse = loadBundledMarkdown(
+  './claude-api/typescript/claude-api/tool-use.md',
+)
 
 // @[MODEL LAUNCH]: Update the model IDs/names below. These are substituted into {{VAR}}
 // placeholders in the .md files at runtime before the skill prompt is sent.

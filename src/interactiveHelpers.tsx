@@ -17,6 +17,12 @@ import { isQualifiedForGrove } from './services/api/grove.js';
 import { handleMcpjsonServerApprovals } from './services/mcpServerApproval.js';
 import { AppStateProvider } from './state/AppState.js';
 import { onChangeAppState } from './state/onChangeAppState.js';
+import {
+  getAnthropicApiKeyWithSource,
+  getAuthTokenSource,
+  isAnthropicAuthEnabled,
+  isUsing3PServices,
+} from './utils/auth.js';
 import { normalizeApiKeyForConfig } from './utils/authPortable.js';
 import { getExternalClaudeMdIncludes, getMemoryFiles, shouldShowClaudeMdExternalIncludesWarning } from './utils/voidmd.js';
 import { checkHasTrustDialogAccepted, getCustomApiKeyStatus, getGlobalConfig, saveGlobalConfig } from './utils/config.js';
@@ -108,8 +114,14 @@ export async function showSetupScreens(root: Root, permissionMode: PermissionMod
     return false;
   }
   const config = getGlobalConfig();
+  const hasUsableAuth = isUsing3PServices() || getAuthTokenSource().hasToken || getAnthropicApiKeyWithSource({
+    skipRetrievingKeyFromApiKeyHelper: true
+  }).source !== 'none';
   let onboardingShown = false;
-  if (!config.theme || !config.hasCompletedOnboarding // always show onboarding at least once
+  if (!config.theme || !config.hasCompletedOnboarding ||
+  // Re-open onboarding/login if the persisted config says setup is done but
+  // there is no usable auth source left (e.g. missing keychain token).
+  isAnthropicAuthEnabled() && !hasUsableAuth
   ) {
     onboardingShown = true;
     const {
