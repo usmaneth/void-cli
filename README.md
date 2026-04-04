@@ -127,6 +127,9 @@ Inside a Void session, use `/` commands:
 | `/cmd` | Run custom command templates |
 | `/architect` | Toggle architect mode (two-model pipeline) |
 | `/mode` | Switch permission modes (suggest/auto-edit/full-auto) |
+| `/repomap` | Repository map — ranked code symbols and file relationships |
+| `/completion` | Output shell completion scripts (bash/zsh/fish) |
+| `/serve` | Start headless HTTP server for CI/CD integration |
 
 ---
 
@@ -224,6 +227,9 @@ void-cli/
 | 12 | Custom commands — user-defined .md templates with placeholders | ✅ Done |
 | 13 | Architect mode — two-model pipeline (plan then implement) | ✅ Done |
 | 14 | Tiered permissions — suggest / auto-edit / full-auto modes | ✅ Done |
+| 15 | Repo map — regex-based code indexing with reference ranking | ✅ Done |
+| 16 | Shell completions & diagnostics — bash/zsh/fish + void doctor | ✅ Done |
+| 17 | Headless HTTP server — CI/CD integration via JSON API | ✅ Done |
 
 ### Phase details
 
@@ -300,6 +306,25 @@ void-cli/
 - Structured JSON plans with steps, files affected, risks
 - Configurable models for each role (works with OpenRouter)
 - `/architect on|off`, `/architect plan <task>`, `/architect model`
+
+**Phase 15 — Repo map**
+- Regex-based code indexing for TypeScript, Python, Go, Rust, Java
+- Reference-count ranking (PageRank-inspired — most-referenced symbols first)
+- Compact file map for LLM context injection
+- Related file discovery via import graph
+- Disk-cached with 10-minute TTL
+- `/repomap show`, `/repomap build`, `/repomap file`, `/repomap related`, `/repomap stats`
+
+**Phase 16 — Shell completions & diagnostics**
+- `void completion bash|zsh|fish` — output completion scripts
+- `/doctor-diag` — run environment diagnostics (Node.js, git, API keys, disk, network)
+- Checks: 10 diagnostic categories with pass/warn/fail + suggested fixes
+
+**Phase 17 — Headless HTTP server**
+- `void serve --port 3456` — JSON-over-HTTP API for CI/CD
+- Routes: `/health`, `/status`, `/chat`, `/review`, `/sessions`
+- Auth via Bearer token, CORS, concurrency limiting
+- Stubbed AI handlers ready for pipeline integration
 
 **Phase 14 — Tiered permissions**
 - Three modes: suggest (read-only), auto-edit (files ok, commands confirm), full-auto (everything)

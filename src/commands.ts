@@ -1,5 +1,7 @@
 // biome-ignore-all assist/source/organizeImports: ANT-ONLY import markers must not be reordered
 import architect from './architect/command.js'
+import { completionCommand, doctorDiagCommand } from './completions/command.js'
+import { repomapCommand } from './repomap/command.js'
 import addDir from './commands/add-dir/index.js'
 import autofixPr from './commands/autofix-pr/index.js'
 import backfillSessions from './commands/backfill-sessions/index.js'
@@ -142,6 +144,7 @@ import heapDump from './commands/heapdump/index.js'
 import mockLimits from './commands/mock-limits/index.js'
 import bridgeKick from './commands/bridge-kick.js'
 import version from './commands/version.js'
+import serve from './commands/serve/index.js'
 import summary from './commands/summary/index.js'
 import {
   resetLimits,
@@ -245,6 +248,7 @@ export const INTERNAL_ONLY_COMMANDS = [
   resetLimits,
   resetLimitsNonInteractive,
   onboarding,
+  serve,
   share,
   summary,
   teleport,
@@ -271,6 +275,7 @@ const COMMANDS = memoize((): Command[] => [
   cmd,
   color,
   compact,
+  completionCommand,
   config,
   copy,
   desktop,
@@ -279,6 +284,7 @@ const COMMANDS = memoize((): Command[] => [
   cost,
   diff,
   doctor,
+  doctorDiagCommand,
   effort,
   exit,
   fast,
@@ -302,6 +308,7 @@ const COMMANDS = memoize((): Command[] => [
   releaseNotes,
   reloadPlugins,
   rename,
+  repomapCommand,
   resume,
   session,
   skills,
