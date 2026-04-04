@@ -1,4 +1,5 @@
 // biome-ignore-all assist/source/organizeImports: ANT-ONLY import markers must not be reordered
+import architect from './architect/command.js'
 import addDir from './commands/add-dir/index.js'
 import autofixPr from './commands/autofix-pr/index.js'
 import backfillSessions from './commands/backfill-sessions/index.js'
@@ -123,6 +124,7 @@ const buddy = feature('BUDDY')
 /* eslint-enable @typescript-eslint/no-require-imports */
 import thinkback from './commands/thinkback/index.js'
 import thinkbackPlay from './commands/thinkback-play/index.js'
+import mode from './permissions/command.js'
 import permissions from './commands/permissions/index.js'
 import plan from './commands/plan/index.js'
 import fast from './commands/fast/index.js'
@@ -134,6 +136,7 @@ import branch from './commands/branch/index.js'
 import agents from './commands/agents/index.js'
 import plugin from './commands/plugin/index.js'
 import reloadPlugins from './commands/reload-plugins/index.js'
+import checkpoint from './checkpoints/checkpointCommand.js'
 import rewind from './commands/rewind/index.js'
 import heapDump from './commands/heapdump/index.js'
 import mockLimits from './commands/mock-limits/index.js'
@@ -201,6 +204,7 @@ const usageReport: Command = {
   },
 }
 import oauthRefresh from './commands/oauth-refresh/index.js'
+import cmd from './commands/cmd/index.js'
 import debugToolCall from './commands/debug-tool-call/index.js'
 import { getSettingSourceName } from './utils/settings/constants.js'
 import {
@@ -259,10 +263,12 @@ const COMMANDS = memoize((): Command[] => [
   addDir,
   advisor,
   agents,
+  architect,
   branch,
   btw,
   chrome,
   clear,
+  cmd,
   color,
   compact,
   config,
@@ -287,6 +293,7 @@ const COMMANDS = memoize((): Command[] => [
   mcp,
   memory,
   mobile,
+  mode,
   model,
   outputStyle,
   remoteEnv,
@@ -307,6 +314,7 @@ const COMMANDS = memoize((): Command[] => [
   feedback,
   review,
   ultrareview,
+  checkpoint,
   rewind,
   securityReview,
   terminalSetup,
