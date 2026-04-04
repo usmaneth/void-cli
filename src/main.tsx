@@ -48,7 +48,7 @@ import { canUserConfigureAdvisor, getInitialAdvisorSetting, isAdvisorEnabled, is
 import { isAgentSwarmsEnabled } from './utils/agentSwarmsEnabled.js';
 import { count, uniq } from './utils/array.js';
 import { installAsciicastRecorder } from './utils/asciicast.js';
-import { getSubscriptionType, isClaudeAISubscriber, prefetchAwsCredentialsAndBedRockInfoIfSafe, prefetchGcpCredentialsIfSafe, validateForceLoginOrg } from './utils/auth.js';
+import { getAnthropicApiKeyWithSource, getAuthTokenSource, getSubscriptionType, isClaudeAISubscriber, isUsing3PServices, prefetchAwsCredentialsAndBedRockInfoIfSafe, prefetchGcpCredentialsIfSafe, validateForceLoginOrg } from './utils/auth.js';
 import { checkHasTrustDialogAccepted, getGlobalConfig, getRemoteControlAtStartup, isAutoUpdaterDisabled, saveGlobalConfig } from './utils/config.js';
 import { seedEarlyInput, stopCapturingEarlyInput } from './utils/earlyInput.js';
 import { getInitialEffortSetting, parseEffortValue } from './utils/effort.js';
@@ -2217,6 +2217,10 @@ async function run(): Promise<CommanderCommand> {
 
     // Show setup screens after commands are loaded
     if (!isNonInteractiveSession) {
+      // Run console-based boot animation before Ink takes over stdout
+      const { runVoidBootAnimation } = await import('./utils/voidBoot.js');
+      await runVoidBootAnimation();
+
       const ctx = getRenderContext(false);
       getFpsMetrics = ctx.getFpsMetrics;
       stats = ctx.stats;
@@ -2580,6 +2584,22 @@ async function run(): Promise<CommanderCommand> {
     if (isNonInteractiveSession) {
       if (outputFormat === 'stream-json' || outputFormat === 'json') {
         setHasFormattedOutput(true);
+      }
+
+      // Pre-flight auth check: in headless mode, if there's no API key and no
+      // OAuth tokens, fail fast with a clear error instead of hanging on the API call.
+      if (!isUsing3PServices()) {
+        const authSource = getAuthTokenSource();
+        if (!authSource.hasToken && !getAnthropicApiKeyWithSource({ skipRetrievingKeyFromApiKeyHelper: true }).key) {
+          process.stderr.write(
+            '\nError: No API credentials found.\n' +
+            'Set one of:\n' +
+            '  - ANTHROPIC_API_KEY environment variable\n' +
+            '  - OPENROUTER_API_KEY environment variable (with VOID_USE_OPENROUTER=1)\n' +
+            '  - Run `void` interactively to log in with OAuth\n\n'
+          );
+          process.exit(1);
+        }
       }
 
       // Apply full environment variables in print mode since trust dialog is bypassed
