@@ -1,5 +1,12 @@
 // biome-ignore-all assist/source/organizeImports: ANT-ONLY import markers must not be reordered
 import architect from './architect/command.js'
+import board from './board/command.js'
+import contextsync from './contextsync/command.js'
+import healthCmd from './health/command.js'
+import messages from './messaging/command.js'
+import mission from './mission/command.js'
+import orchestrate from './orchestrator/command.js'
+import workstream from './workstream/command.js'
 import { completionCommand, doctorDiagCommand } from './completions/command.js'
 import { repomapCommand } from './repomap/command.js'
 import addDir from './commands/add-dir/index.js'
@@ -286,6 +293,7 @@ const COMMANDS = memoize((): Command[] => [
   agenttemplates,
   architect,
   bg,
+  board,
   branch,
   btw,
   chrome,
@@ -297,6 +305,7 @@ const COMMANDS = memoize((): Command[] => [
   compress,
   completionCommand,
   config,
+  contextsync,
   copy,
   desktop,
   context,
@@ -316,6 +325,7 @@ const COMMANDS = memoize((): Command[] => [
   forkCommand,
   guardrails,
   heapDump,
+  healthCmd,
   help,
   hints,
   ide,
@@ -325,11 +335,14 @@ const COMMANDS = memoize((): Command[] => [
   installSlackApp,
   mcp,
   mcpserver,
+  messages,
+  mission,
   memory,
   mobile,
   mode,
   model,
   notify,
+  orchestrate,
   outputStyle,
   remoteEnv,
   plugin,
@@ -361,6 +374,7 @@ const COMMANDS = memoize((): Command[] => [
   usage,
   usageReport,
   vim,
+  workstream,
   ...(webCmd ? [webCmd] : []),
   ...(forkCmd ? [forkCmd] : []),
   ...(buddy ? [buddy] : []),
