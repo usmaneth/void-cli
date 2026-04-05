@@ -130,6 +130,12 @@ Inside a Void session, use `/` commands:
 | `/repomap` | Repository map — ranked code symbols and file relationships |
 | `/completion` | Output shell completion scripts (bash/zsh/fish) |
 | `/serve` | Start headless HTTP server for CI/CD integration |
+| `/think` | Toggle thinking mode for complex reasoning |
+| `/clarify` | Pre-generation clarification questions |
+| `/hints` | Manage hierarchical .voidhints project context |
+| `/guardrails` | Edit guardrails — auto-lint and syntax validation |
+| `/compress` | LM-optimized output compression |
+| `/diff-review` | Unified multi-file diff review |
 
 ---
 
@@ -230,6 +236,13 @@ void-cli/
 | 15 | Repo map — regex-based code indexing with reference ranking | ✅ Done |
 | 16 | Shell completions & diagnostics — bash/zsh/fish + void doctor | ✅ Done |
 | 17 | Headless HTTP server — CI/CD integration via JSON API | ✅ Done |
+| 18 | @-file references — inline file context injection | ✅ Done |
+| 19 | Thinking mode — deep reasoning toggle for complex tasks | ✅ Done |
+| 20 | Clarification — pre-generation ambiguity analysis | ✅ Done |
+| 21 | .voidhints — hierarchical project context files | ✅ Done |
+| 22 | Edit guardrails — syntax validation and auto-lint on edit | ✅ Done |
+| 23 | Output compression — LM-optimized token-saving compression | ✅ Done |
+| 24 | Multi-file diff review — unified diff viewer with navigation | ✅ Done |
 
 ### Phase details
 
@@ -331,6 +344,48 @@ void-cli/
 - Per-project defaults via `.void/config.json`
 - Visual mode indicator in status bar
 - `/mode suggest`, `/mode auto-edit`, `/mode full-auto`, `/mode permissions`
+
+**Phase 18 — @-file references**
+- Type `@path/to/file` inline in prompts to inject file content as context
+- Auto-completion of file paths with directory traversal
+- Supports files and directories, respects .gitignore exclusions
+- Content wrapped in `<file-reference>` blocks for clean LLM context
+
+**Phase 19 — Thinking mode**
+- `/think` toggles deep reasoning for complex tasks (inspired by Kimi Code)
+- Complexity analyzer scores messages 0-100 based on heuristics
+- Auto-think option for messages exceeding complexity threshold
+- Configurable token budget for thinking
+
+**Phase 20 — Clarification questions**
+- Ambiguity analysis before generating code (inspired by GPT Engineer)
+- Detects vague scope, missing targets, multiple interpretations
+- Generates targeted clarification questions
+- `/clarify analyze <message>` to preview analysis
+
+**Phase 21 — .voidhints context files**
+- Hierarchical `.voidhints` files at any directory level (inspired by Goose)
+- Auto-discovers and merges hints from project root to target directory
+- Section types: rules, conventions, architecture, testing, context
+- `/hints init` creates starter templates
+
+**Phase 22 — Edit guardrails**
+- Syntax validation after every edit (inspired by SWE-agent)
+- Bracket matching, string validation, import syntax checks
+- Blocked paths to prevent accidental modification
+- Optional auto-lint integration with reject-on-error mode
+
+**Phase 23 — Output compression**
+- Smart compression of large command output to save tokens (inspired by SWE-agent)
+- Three strategies: truncate, smart (preserves errors/structure), summary
+- Specialized compressors for test, lint, build, and git output
+- Auto-detects output type and applies appropriate compression
+
+**Phase 24 — Multi-file diff review**
+- Unified diff viewer for reviewing changes across files (inspired by Zed)
+- Parses git diff output into structured entries with hunks and lines
+- Multiple views: unified, side-by-side, summary
+- Filter by file, language, change size, or status
 
 ---
 

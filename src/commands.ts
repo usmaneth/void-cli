@@ -41,6 +41,7 @@ import releaseNotes from './commands/release-notes/index.js'
 import rename from './commands/rename/index.js'
 import resume from './commands/resume/index.js'
 import review, { ultrareview } from './commands/review.js'
+import diffReview from './review/command.js'
 import session from './commands/session/index.js'
 import share from './commands/share/index.js'
 import skills from './commands/skills/index.js'
@@ -156,6 +157,11 @@ import sandboxToggle from './commands/sandbox-toggle/index.js'
 import chrome from './commands/chrome/index.js'
 import stickers from './commands/stickers/index.js'
 import advisor from './commands/advisor.js'
+import clarify from './clarify/command.js'
+import compress from './compress/command.js'
+import guardrails from './guardrails/command.js'
+import hints from './hints/command.js'
+import think from './thinking/command.js'
 import { logError } from './utils/log.js'
 import { toError } from './utils/errors.js'
 import { logForDebugging } from './utils/debug.js'
@@ -271,10 +277,12 @@ const COMMANDS = memoize((): Command[] => [
   branch,
   btw,
   chrome,
+  clarify,
   clear,
   cmd,
   color,
   compact,
+  compress,
   completionCommand,
   config,
   copy,
@@ -283,14 +291,17 @@ const COMMANDS = memoize((): Command[] => [
   contextNonInteractive,
   cost,
   diff,
+  diffReview,
   doctor,
   doctorDiagCommand,
   effort,
   exit,
   fast,
   files,
+  guardrails,
   heapDump,
   help,
+  hints,
   ide,
   init,
   keybindings,
@@ -341,6 +352,7 @@ const COMMANDS = memoize((): Command[] => [
   ...(bridge ? [bridge] : []),
   ...(remoteControlServerCommand ? [remoteControlServerCommand] : []),
   ...(voiceCommand ? [voiceCommand] : []),
+  think,
   thinkback,
   thinkbackPlay,
   permissions,
