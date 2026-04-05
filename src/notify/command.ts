@@ -13,7 +13,7 @@
 
 import type { ToolUseContext } from '../Tool.js'
 import type { LocalCommandResult } from '../types/command.js'
-import type { Command } from '../commands.js'
+import type { Command } from '../types/command.js'
 import { getNotificationManager } from './index.js'
 
 // ---------------------------------------------------------------------------

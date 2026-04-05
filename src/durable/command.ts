@@ -1,4 +1,4 @@
-import type { Command } from '../commands.js'
+import type { Command } from '../types/command.js'
 import type { LocalCommandCall, LocalCommandResult } from '../types/command.js'
 import {
   formatRelativeTime,

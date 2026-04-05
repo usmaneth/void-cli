@@ -305,7 +305,7 @@ function formatTemplateDetails(t: AgentTemplate): string {
 // Command registration
 // ---------------------------------------------------------------------------
 
-import type { Command } from '../commands.js'
+import type { Command } from '../types/command.js'
 
 const agenttemplates = {
   type: 'local',

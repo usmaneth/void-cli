@@ -177,7 +177,7 @@ function handleAdd(args: string[]): string {
 // Command registration
 // ---------------------------------------------------------------------------
 
-import type { Command } from '../commands.js'
+import type { Command } from '../types/command.js'
 
 const errors = {
   type: 'local',
