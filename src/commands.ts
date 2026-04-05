@@ -159,9 +159,15 @@ import stickers from './commands/stickers/index.js'
 import advisor from './commands/advisor.js'
 import clarify from './clarify/command.js'
 import compress from './compress/command.js'
+import execpolicy from './execpolicy/command.js'
+import forkCommand from './fork/command.js'
 import guardrails from './guardrails/command.js'
 import hints from './hints/command.js'
+import notify from './notify/command.js'
+import planact from './planact/command.js'
+import taskqueue from './taskqueue/command.js'
 import think from './thinking/command.js'
+import bg from './background/command.js'
 import { logError } from './utils/log.js'
 import { toError } from './utils/errors.js'
 import { logForDebugging } from './utils/debug.js'
@@ -274,6 +280,7 @@ const COMMANDS = memoize((): Command[] => [
   advisor,
   agents,
   architect,
+  bg,
   branch,
   btw,
   chrome,
@@ -295,9 +302,11 @@ const COMMANDS = memoize((): Command[] => [
   doctor,
   doctorDiagCommand,
   effort,
+  execpolicy,
   exit,
   fast,
   files,
+  forkCommand,
   guardrails,
   heapDump,
   help,
@@ -312,6 +321,7 @@ const COMMANDS = memoize((): Command[] => [
   mobile,
   mode,
   model,
+  notify,
   outputStyle,
   remoteEnv,
   plugin,
@@ -363,7 +373,9 @@ const COMMANDS = memoize((): Command[] => [
   sandboxToggle,
   ...(!isUsing3PServices() ? [logout, login()] : []),
   passes,
+  planact,
   ...(peersCmd ? [peersCmd] : []),
+  taskqueue,
   tasks,
   ...(workflowsCmd ? [workflowsCmd] : []),
   ...(torch ? [torch] : []),
