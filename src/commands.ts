@@ -157,17 +157,21 @@ import sandboxToggle from './commands/sandbox-toggle/index.js'
 import chrome from './commands/chrome/index.js'
 import stickers from './commands/stickers/index.js'
 import advisor from './commands/advisor.js'
+import agenttemplates from './agenttemplates/command.js'
+import bg from './background/command.js'
 import clarify from './clarify/command.js'
 import compress from './compress/command.js'
+import durable from './durable/command.js'
+import errors from './errorstream/command.js'
 import execpolicy from './execpolicy/command.js'
 import forkCommand from './fork/command.js'
 import guardrails from './guardrails/command.js'
 import hints from './hints/command.js'
+import mcpserver from './mcpserver/command.js'
 import notify from './notify/command.js'
 import planact from './planact/command.js'
 import taskqueue from './taskqueue/command.js'
 import think from './thinking/command.js'
-import bg from './background/command.js'
 import { logError } from './utils/log.js'
 import { toError } from './utils/errors.js'
 import { logForDebugging } from './utils/debug.js'
@@ -279,6 +283,7 @@ const COMMANDS = memoize((): Command[] => [
   addDir,
   advisor,
   agents,
+  agenttemplates,
   architect,
   bg,
   branch,
@@ -301,7 +306,9 @@ const COMMANDS = memoize((): Command[] => [
   diffReview,
   doctor,
   doctorDiagCommand,
+  durable,
   effort,
+  errors,
   execpolicy,
   exit,
   fast,
@@ -317,6 +324,7 @@ const COMMANDS = memoize((): Command[] => [
   installGitHubApp,
   installSlackApp,
   mcp,
+  mcpserver,
   memory,
   mobile,
   mode,
