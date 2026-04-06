@@ -140,12 +140,19 @@ export class NotificationManager {
     title: string,
     body: string,
     trigger: NotificationTrigger,
+    durationMs?: number,
   ): NotificationEntry | null {
     if (!this.config.enabled) {
       return null
     }
 
     if (!this.config.triggers.includes(trigger)) {
+      return null
+    }
+
+    // For long_running trigger, only notify if the task has been running
+    // longer than minDurationMs. For other triggers, durationMs is optional.
+    if (trigger === 'long_running' && durationMs !== undefined && durationMs < this.config.minDurationMs) {
       return null
     }
 

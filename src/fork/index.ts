@@ -171,44 +171,11 @@ export class ForkTree {
       throw new Error(`Fork "${id}" not found`)
     }
 
-    const chain: ForkNode[] = []
-    let current: ForkNode | undefined = node
-    while (current) {
-      chain.unshift(current)
-      current = current.parentId
-        ? this.data.nodes[current.parentId]
-        : undefined
-    }
-
-    // Build composite history: for each ancestor, take messages from 0..turnNumber,
-    // then for the leaf node take all messages.
-    const history: any[] = []
-    for (let i = 0; i < chain.length; i++) {
-      const n = chain[i]!
-      if (i < chain.length - 1) {
-        // Ancestor: only take messages up to the next fork's turn number
-        const nextFork = chain[i + 1]!
-        const slice = n.messages.slice(0, nextFork.turnNumber)
-        // Only add messages that haven't been added yet (inherited messages
-        // are already included in child forks, so we skip for non-root
-        // ancestors after the first).
-        if (i === 0) {
-          history.push(...slice)
-        }
-      } else {
-        // Leaf node: add all its messages (which already includes inherited ones)
-        // But skip the inherited portion we already added from ancestors
-        if (chain.length === 1) {
-          history.push(...n.messages)
-        } else {
-          // The leaf's messages already contain inherited messages from creation;
-          // just return them directly since they represent the full branch.
-          return n.messages
-        }
-      }
-    }
-
-    return history
+    // The leaf node's messages already contain inherited messages from
+    // all ancestors (they were copied at fork creation time), plus any
+    // messages added after forking. So the leaf's messages array IS the
+    // full history for this branch.
+    return [...node.messages]
   }
 
   /**

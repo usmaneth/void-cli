@@ -526,7 +526,7 @@ export function getDashboardHTML(wsPort: number): string {
   // -- WebSocket --
   function connectWS() {
     try {
-      ws = new WebSocket('ws://localhost:' + wsPort + '/ws');
+      ws = new WebSocket('ws://' + window.location.hostname + ':' + wsPort + '/ws');
     } catch (e) {
       startPolling();
       return;

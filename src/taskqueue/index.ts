@@ -377,13 +377,17 @@ export class TaskQueueManager {
     for (const entry of manifest) {
       // Use completedAt, startedAt, or treat as old if neither exists
       const dateStr = entry.completedAt ?? entry.startedAt
-      if (dateStr) {
-        const ts = new Date(dateStr).getTime()
-        if (ts < cutoff) {
-          deleteTaskFile(entry.id)
-          pruned++
-          continue
-        }
+      if (!dateStr) {
+        // No timestamp at all — treat as old, prune it
+        deleteTaskFile(entry.id)
+        pruned++
+        continue
+      }
+      const ts = new Date(dateStr).getTime()
+      if (ts < cutoff) {
+        deleteTaskFile(entry.id)
+        pruned++
+        continue
       }
       keep.push(entry)
     }

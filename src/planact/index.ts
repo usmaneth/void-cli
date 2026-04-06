@@ -354,8 +354,10 @@ export class PlanActManager {
     // In plan mode, check against the read-only allowlist
     if (!READ_ONLY_TOOLS.has(toolName)) return false
 
-    // For Bash tool, additionally check that the command is read-only
-    if (toolName === 'Bash' && bashCommand) {
+    // For Bash tool, additionally check that the command is read-only.
+    // If no command is provided, deny by default (can't verify safety).
+    if (toolName === 'Bash') {
+      if (!bashCommand) return false
       return isReadOnlyBashCommand(bashCommand)
     }
 

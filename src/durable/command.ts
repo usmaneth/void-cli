@@ -43,6 +43,8 @@ export const call: LocalCommandCall = async (
       return resumeExecution(subArgs[0])
     case 'inspect':
       return inspectExecution(subArgs[0])
+    case 'complete':
+      return completeExecution(subArgs[0])
     case 'cleanup':
       return cleanupExecutions(subArgs[0])
     case 'clear':
@@ -50,7 +52,7 @@ export const call: LocalCommandCall = async (
     default:
       return {
         type: 'text',
-        value: `Unknown subcommand: ${subcommand}\nUsage: /durable <list|resume|inspect|cleanup|clear> [args]`,
+        value: `Unknown subcommand: ${subcommand}\nUsage: /durable <list|resume|inspect|complete|cleanup|clear> [args]`,
       }
   }
 }
@@ -189,6 +191,22 @@ function inspectExecution(id?: string): LocalCommandResult {
   }
 
   return { type: 'text', value: out }
+}
+
+function completeExecution(id?: string): LocalCommandResult {
+  if (!id) {
+    return { type: 'text', value: 'Usage: /durable complete <id>' }
+  }
+  const mgr = getDurableExecutionManager()
+  try {
+    mgr.complete(id)
+    return { type: 'text', value: `Execution ${id} marked as completed.` }
+  } catch (err) {
+    return {
+      type: 'text',
+      value: `Error: ${err instanceof Error ? err.message : String(err)}`,
+    }
+  }
 }
 
 function cleanupExecutions(daysArg?: string): LocalCommandResult {

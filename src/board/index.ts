@@ -168,7 +168,7 @@ export class TaskBoard {
       avgTokens: completed.length > 0
         ? completed.reduce((s, e) => s + e.tokenUsage, 0) / completed.length
         : 0,
-      successRate: all.length > 0 ? completed.length / (completed.length + failed.length) * 100 : 0,
+      successRate: (completed.length + failed.length) > 0 ? completed.length / (completed.length + failed.length) * 100 : 0,
       totalTokens,
       totalCost: totalTokens * 0.000003,
     }

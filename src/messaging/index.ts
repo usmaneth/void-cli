@@ -237,7 +237,7 @@ export class MessageBus {
 
   private saveHistory(): void {
     try {
-      writeFileSync(join(STORE_DIR, 'history.json'), JSON.stringify(this.history.slice(-200), null, 2))
+      writeFileSync(join(STORE_DIR, 'history.json'), JSON.stringify(this.history.slice(-MAX_HISTORY), null, 2))
     } catch { /* ignore */ }
   }
 

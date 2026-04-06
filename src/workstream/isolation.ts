@@ -3,56 +3,65 @@
  * Uses only Node.js built-ins (child_process).
  */
 
-import { execSync } from 'child_process'
+import { execFileSync } from 'child_process'
+
+/**
+ * Sanitize a branch name to prevent shell injection.
+ * Only allows alphanumeric, hyphens, underscores, slashes, and dots.
+ */
+function sanitizeBranchName(name: string): string {
+  return name.replace(/[^a-zA-Z0-9/_.\-]/g, '-')
+}
 
 export class WorkstreamIsolation {
-  private run(cmd: string): string {
+  private run(args: string[]): string {
     try {
-      return execSync(cmd, { encoding: 'utf8', timeout: 30000, stdio: ['pipe', 'pipe', 'pipe'] }).trim()
+      return execFileSync('git', args, { encoding: 'utf8', timeout: 30000, stdio: ['pipe', 'pipe', 'pipe'] }).trim()
     } catch (e: any) {
       return e.stdout?.toString().trim() ?? ''
     }
   }
 
   getCurrentBranch(): string {
-    return this.run('git branch --show-current')
+    return this.run(['branch', '--show-current'])
   }
 
   createBranch(workstreamName: string): string {
     const branch = `void/workstream/${workstreamName.replace(/[^a-zA-Z0-9_-]/g, '-')}`
-    this.run(`git checkout -b "${branch}"`)
+    this.run(['checkout', '-b', sanitizeBranchName(branch)])
     return branch
   }
 
   switchToBranch(branchName: string): void {
-    this.run(`git checkout "${branchName}"`)
+    this.run(['checkout', sanitizeBranchName(branchName)])
   }
 
   mergeBranch(branchName: string): string {
-    return this.run(`git merge "${branchName}" --no-edit`)
+    return this.run(['merge', sanitizeBranchName(branchName), '--no-edit'])
   }
 
   diffBranch(branchName: string): string {
-    const base = this.run(`git merge-base HEAD "${branchName}"`)
+    const safe = sanitizeBranchName(branchName)
+    const base = this.run(['merge-base', 'HEAD', safe])
     if (!base) return 'No common ancestor found.'
-    return this.run(`git diff --stat "${base}..${branchName}"`)
+    return this.run(['diff', '--stat', `${base}..${safe}`])
   }
 
   deleteBranch(branchName: string): void {
-    this.run(`git branch -d "${branchName}"`)
+    this.run(['branch', '-d', sanitizeBranchName(branchName)])
   }
 
   stashChanges(): boolean {
-    const result = this.run('git stash')
+    const result = this.run(['stash'])
     return !result.includes('No local changes')
   }
 
   popStash(): void {
-    this.run('git stash pop')
+    this.run(['stash', 'pop'])
   }
 
   branchExists(branchName: string): boolean {
-    const result = this.run(`git branch --list "${branchName}"`)
+    const result = this.run(['branch', '--list', sanitizeBranchName(branchName)])
     return result.length > 0
   }
 }

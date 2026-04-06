@@ -99,7 +99,7 @@ export class McpServer {
     errorsCount: 0,
   }
   private methods: Map<string, MethodHandler> = new Map()
-  private currentTurnAbort: AbortController | null = null
+  private turnAborts: Map<string, AbortController> = new Map()
 
   constructor() {
     this.registerMethods()
@@ -163,11 +163,11 @@ export class McpServer {
 
     this.running = false
 
-    // Abort any in-progress turn
-    if (this.currentTurnAbort) {
-      this.currentTurnAbort.abort()
-      this.currentTurnAbort = null
+    // Abort all in-progress turns
+    for (const ac of this.turnAborts.values()) {
+      ac.abort()
     }
+    this.turnAborts.clear()
 
     if (this.rl) {
       this.rl.close()
@@ -303,6 +303,13 @@ export class McpServer {
         },
         id: null,
       })
+      return
+    }
+
+    // JSON-RPC 2.0 spec: notifications have no "id" field.
+    // We MUST NOT send a response to notifications.
+    if (parsed.id === undefined) {
+      // It's a notification — process silently, no response.
       return
     }
 
@@ -477,9 +484,10 @@ export class McpServer {
       }
     }
 
-    // Set up abort controller for this turn
-    this.currentTurnAbort = new AbortController()
-    const signal = this.currentTurnAbort.signal
+    // Set up abort controller for this turn, keyed by session
+    const abortCtrl = new AbortController()
+    this.turnAborts.set(params.session_id, abortCtrl)
+    const signal = abortCtrl.signal
 
     const now = new Date().toISOString()
 
@@ -497,7 +505,7 @@ export class McpServer {
 
     // Check for abort before generating response
     if (signal.aborted) {
-      this.currentTurnAbort = null
+      this.turnAborts.delete(params.session_id)
       return {
         jsonrpc: '2.0',
         error: {
@@ -524,7 +532,7 @@ export class McpServer {
     })
 
     session.updatedAt = new Date().toISOString()
-    this.currentTurnAbort = null
+    this.turnAborts.delete(params.session_id)
 
     this.sendNotification('turn/progress', {
       session_id: params.session_id,
@@ -573,9 +581,10 @@ export class McpServer {
       }
     }
 
-    if (this.currentTurnAbort) {
-      this.currentTurnAbort.abort()
-      this.currentTurnAbort = null
+    const abortCtrl = this.turnAborts.get(params.session_id)
+    if (abortCtrl) {
+      abortCtrl.abort()
+      this.turnAborts.delete(params.session_id)
       return {
         jsonrpc: '2.0',
         result: { status: 'interrupted' },

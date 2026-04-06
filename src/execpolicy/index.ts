@@ -204,7 +204,7 @@ function readPolicyFile(filePath: string): PolicyRule[] {
 }
 
 function writePolicyFile(filePath: string, rules: PolicyRule[]): void {
-  const dir = join(filePath, '..')
+  const dir = filePath.substring(0, filePath.lastIndexOf('/'))
   if (!existsSync(dir)) {
     mkdirSync(dir, { recursive: true })
   }
