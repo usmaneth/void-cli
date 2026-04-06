@@ -8,7 +8,7 @@ import mission from './mission/command.js'
 import orchestrate from './orchestrator/command.js'
 import workstream from './workstream/command.js'
 import { completionCommand, doctorDiagCommand } from './completions/command.js'
-import { repomapCommand } from './repomap/command.js'
+import repomapCommand from './repomap/command.js'
 import addDir from './commands/add-dir/index.js'
 import autofixPr from './commands/autofix-pr/index.js'
 import backfillSessions from './commands/backfill-sessions/index.js'
@@ -178,6 +178,11 @@ import mcpserver from './mcpserver/command.js'
 import notify from './notify/command.js'
 import planact from './planact/command.js'
 import taskqueue from './taskqueue/command.js'
+import autolintCmd from './autolint/command.js'
+import autocommitCmd from './autocommit/command.js'
+import vcheckpoint from './checkpoint/command.js'
+import mentionsCmd from './mentions/command.js'
+import watchCmd from './watchmode/command.js'
 import think from './thinking/command.js'
 import { logError } from './utils/log.js'
 import { toError } from './utils/errors.js'
@@ -291,6 +296,8 @@ const COMMANDS = memoize((): Command[] => [
   advisor,
   agents,
   agenttemplates,
+  autocommitCmd,
+  autolintCmd,
   architect,
   bg,
   board,
@@ -335,6 +342,7 @@ const COMMANDS = memoize((): Command[] => [
   installSlackApp,
   mcp,
   mcpserver,
+  mentionsCmd,
   messages,
   mission,
   memory,
@@ -373,7 +381,9 @@ const COMMANDS = memoize((): Command[] => [
   rateLimitOptions,
   usage,
   usageReport,
+  vcheckpoint,
   vim,
+  watchCmd,
   workstream,
   ...(webCmd ? [webCmd] : []),
   ...(forkCmd ? [forkCmd] : []),
