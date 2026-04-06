@@ -1,6 +1,7 @@
 // Critical system constants extracted to break circular dependencies
 
-function feature(_name: string): boolean { return false }
+// Import the shared feature flag function from the bundle shim
+import { feature } from '../bun-bundle-shim.js'
 import { logForDebugging } from '../utils/debug.js'
 import { getWorkload } from '../utils/workloadContext.js'
 

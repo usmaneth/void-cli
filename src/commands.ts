@@ -180,6 +180,7 @@ import planact from './planact/command.js'
 import taskqueue from './taskqueue/command.js'
 import autolintCmd from './autolint/command.js'
 import autocommitCmd from './autocommit/command.js'
+import repomapCmd from './repomap/command.js'
 import vcheckpoint from './checkpoint/command.js'
 import mentionsCmd from './mentions/command.js'
 import watchCmd from './watchmode/command.js'
@@ -406,6 +407,7 @@ const COMMANDS = memoize((): Command[] => [
   ...(!isUsing3PServices() ? [logout, login()] : []),
   passes,
   planact,
+  repomapCmd,
   ...(peersCmd ? [peersCmd] : []),
   taskqueue,
   tasks,
