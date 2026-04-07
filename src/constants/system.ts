@@ -2,7 +2,9 @@
 
 // Import the shared feature flag function from the bundle shim
 import { feature } from '../bun-bundle-shim.js'
+import { getFeatureValue_CACHED_MAY_BE_STALE } from '../services/analytics/growthbook.js'
 import { logForDebugging } from '../utils/debug.js'
+import { isEnvDefinedFalsy } from '../utils/envUtils.js'
 import { getWorkload } from '../utils/workloadContext.js'
 
 const DEFAULT_PREFIX = `You are Void, an infinite dev agent.`
@@ -39,9 +41,33 @@ export function getCLISyspromptPrefix(options?: {
 }
 
 /**
- * Get attribution header for API requests.
- * Returns empty string — attribution disabled for Void.
+ * Check if attribution header is enabled.
+ * Enabled by default, can be disabled via env var or GrowthBook killswitch.
  */
-export function getAttributionHeader(_fingerprint: string): string {
-  return ''
+function isAttributionHeaderEnabled(): boolean {
+  if (isEnvDefinedFalsy(process.env.CLAUDE_CODE_ATTRIBUTION_HEADER)) {
+    return false
+  }
+  return getFeatureValue_CACHED_MAY_BE_STALE('tengu_attribution_header', true)
+}
+
+/**
+ * Get attribution header for API requests.
+ * Returns a header string with cc_version and cc_entrypoint.
+ */
+export function getAttributionHeader(fingerprint: string): string {
+  if (!isAttributionHeaderEnabled()) {
+    return ''
+  }
+
+  const version = `${MACRO.VERSION}.${fingerprint}`
+  const entrypoint = process.env.CLAUDE_CODE_ENTRYPOINT ?? 'unknown'
+
+  const cch = feature('NATIVE_CLIENT_ATTESTATION') ? ' cch=00000;' : ''
+  const workload = getWorkload()
+  const workloadPair = workload ? ` cc_workload=${workload};` : ''
+  const header = `x-anthropic-billing-header: cc_version=${version}; cc_entrypoint=${entrypoint};${cch}${workloadPair}`
+
+  logForDebugging(`attribution header ${header}`)
+  return header
 }

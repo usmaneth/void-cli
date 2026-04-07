@@ -1,3 +1,3 @@
 // Auto-generated stub for missing module
 export type AssistantSessionChooser = any
-export const AssistantSessionChooser: any = undefined as any
+export const AssistantSessionChooser: any = ((..._: any[]) => {}) as any

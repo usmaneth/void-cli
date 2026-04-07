@@ -103,7 +103,7 @@ export function initializeRemoteManagedSettingsLoadingPromise(): void {
  * Uses the OAuth config base API URL
  */
 function getRemoteManagedSettingsEndpoint() {
-  return `${getOauthConfig().BASE_API_URL}/api/void_code/settings`
+  return `${getOauthConfig().BASE_API_URL}/api/claude_code/settings`
 }
 
 /**

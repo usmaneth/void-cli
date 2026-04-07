@@ -1,3 +1,4 @@
-// Auto-generated stub for missing module
-export type DiscoverySignal = any
-export const DiscoverySignal: any = undefined as any
+// Stub — skill search signals not available in this build
+export enum DiscoverySignal {
+  NONE = 'none',
+}

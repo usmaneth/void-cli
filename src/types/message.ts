@@ -14,7 +14,7 @@ export type AssistantMessage = {
   errorDetails?: string
   [key: string]: any
 }
-export const AssistantMessage: any = undefined as any
+export const AssistantMessage: any = ((..._: any[]) => {}) as any
 export type AttachmentMessage<T = any> = {
   type: string
   data?: T
@@ -25,15 +25,15 @@ export type AttachmentMessage<T = any> = {
   [key: string]: any
 }
 export type CollapsedReadSearchGroup = any
-export const CollapsedReadSearchGroup: any = undefined as any
+export const CollapsedReadSearchGroup: any = ((..._: any[]) => {}) as any
 export type CollapsibleMessage = any
-export const CollapsibleMessage: any = undefined as any
+export const CollapsibleMessage: any = ((..._: any[]) => {}) as any
 export type CompactMetadata = any
-export const CompactMetadata: any = undefined as any
+export const CompactMetadata: any = ((..._: any[]) => {}) as any
 export type GroupedToolUseMessage = any
-export const GroupedToolUseMessage: any = undefined as any
+export const GroupedToolUseMessage: any = ((..._: any[]) => {}) as any
 export type HookResultMessage = any
-export const HookResultMessage: any = undefined as any
+export const HookResultMessage: any = ((..._: any[]) => {}) as any
 export type Message = {
   type: string
   message?: any
@@ -59,9 +59,9 @@ export type Message = {
   errorDetails?: string
   [key: string]: any
 }
-export const Message: any = undefined as any
+export const Message: any = ((..._: any[]) => {}) as any
 export type MessageOrigin = any
-export const MessageOrigin: any = undefined as any
+export const MessageOrigin: any = ((..._: any[]) => {}) as any
 export type NormalizedAssistantMessage<T = any> = {
   type: string
   data?: T
@@ -105,7 +105,7 @@ export type NormalizedMessage = {
   data?: any
   [key: string]: any
 }
-export const NormalizedMessage: any = undefined as any
+export const NormalizedMessage: any = ((..._: any[]) => {}) as any
 export type NormalizedUserMessage = {
   type: 'user'
   message: any
@@ -120,9 +120,9 @@ export type NormalizedUserMessage = {
   origin?: any
   isCompactSummary?: boolean
 }
-export const NormalizedUserMessage: any = undefined as any
+export const NormalizedUserMessage: any = ((..._: any[]) => {}) as any
 export type PartialCompactDirection = any
-export const PartialCompactDirection: any = undefined as any
+export const PartialCompactDirection: any = ((..._: any[]) => {}) as any
 export type ProgressMessage<T = any> = {
   type: string
   data?: T
@@ -131,55 +131,55 @@ export type ProgressMessage<T = any> = {
   [key: string]: any
 }
 export type QueueOperationMessage = any
-export const QueueOperationMessage: any = undefined as any
+export const QueueOperationMessage: any = ((..._: any[]) => {}) as any
 export type RenderableMessage = any
-export const RenderableMessage: any = undefined as any
+export const RenderableMessage: any = ((..._: any[]) => {}) as any
 export type RequestStartEvent = any
-export const RequestStartEvent: any = undefined as any
+export const RequestStartEvent: any = ((..._: any[]) => {}) as any
 export type StopHookInfo = any
-export const StopHookInfo: any = undefined as any
+export const StopHookInfo: any = ((..._: any[]) => {}) as any
 export type StreamEvent = any
-export const StreamEvent: any = undefined as any
+export const StreamEvent: any = ((..._: any[]) => {}) as any
 export type SystemAPIErrorMessage = any
-export const SystemAPIErrorMessage: any = undefined as any
+export const SystemAPIErrorMessage: any = ((..._: any[]) => {}) as any
 export type SystemAgentsKilledMessage = any
-export const SystemAgentsKilledMessage: any = undefined as any
+export const SystemAgentsKilledMessage: any = ((..._: any[]) => {}) as any
 export type SystemApiMetricsMessage = any
-export const SystemApiMetricsMessage: any = undefined as any
+export const SystemApiMetricsMessage: any = ((..._: any[]) => {}) as any
 export type SystemAwaySummaryMessage = any
-export const SystemAwaySummaryMessage: any = undefined as any
+export const SystemAwaySummaryMessage: any = ((..._: any[]) => {}) as any
 export type SystemBridgeStatusMessage = any
-export const SystemBridgeStatusMessage: any = undefined as any
+export const SystemBridgeStatusMessage: any = ((..._: any[]) => {}) as any
 export type SystemCompactBoundaryMessage = any
-export const SystemCompactBoundaryMessage: any = undefined as any
+export const SystemCompactBoundaryMessage: any = ((..._: any[]) => {}) as any
 export type SystemFileSnapshotMessage = any
-export const SystemFileSnapshotMessage: any = undefined as any
+export const SystemFileSnapshotMessage: any = ((..._: any[]) => {}) as any
 export type SystemInformationalMessage = any
-export const SystemInformationalMessage: any = undefined as any
+export const SystemInformationalMessage: any = ((..._: any[]) => {}) as any
 export type SystemLocalCommandMessage = any
-export const SystemLocalCommandMessage: any = undefined as any
+export const SystemLocalCommandMessage: any = ((..._: any[]) => {}) as any
 export type SystemMemorySavedMessage = any
-export const SystemMemorySavedMessage: any = undefined as any
+export const SystemMemorySavedMessage: any = ((..._: any[]) => {}) as any
 export type SystemMessage = any
-export const SystemMessage: any = undefined as any
+export const SystemMessage: any = ((..._: any[]) => {}) as any
 export type SystemMessageLevel = any
-export const SystemMessageLevel: any = undefined as any
+export const SystemMessageLevel: any = ((..._: any[]) => {}) as any
 export type SystemMicrocompactBoundaryMessage = any
-export const SystemMicrocompactBoundaryMessage: any = undefined as any
+export const SystemMicrocompactBoundaryMessage: any = ((..._: any[]) => {}) as any
 export type SystemPermissionRetryMessage = any
-export const SystemPermissionRetryMessage: any = undefined as any
+export const SystemPermissionRetryMessage: any = ((..._: any[]) => {}) as any
 export type SystemScheduledTaskFireMessage = any
-export const SystemScheduledTaskFireMessage: any = undefined as any
+export const SystemScheduledTaskFireMessage: any = ((..._: any[]) => {}) as any
 export type SystemStopHookSummaryMessage = any
-export const SystemStopHookSummaryMessage: any = undefined as any
+export const SystemStopHookSummaryMessage: any = ((..._: any[]) => {}) as any
 export type SystemThinkingMessage = any
-export const SystemThinkingMessage: any = undefined as any
+export const SystemThinkingMessage: any = ((..._: any[]) => {}) as any
 export type SystemTurnDurationMessage = any
-export const SystemTurnDurationMessage: any = undefined as any
+export const SystemTurnDurationMessage: any = ((..._: any[]) => {}) as any
 export type TombstoneMessage = any
-export const TombstoneMessage: any = undefined as any
+export const TombstoneMessage: any = ((..._: any[]) => {}) as any
 export type ToolUseSummaryMessage = any
-export const ToolUseSummaryMessage: any = undefined as any
+export const ToolUseSummaryMessage: any = ((..._: any[]) => {}) as any
 export type UserMessage = {
   type: 'user'
   message: any
@@ -198,4 +198,4 @@ export type UserMessage = {
   summarizeMetadata?: any
   [key: string]: any
 }
-export const UserMessage: any = undefined as any
+export const UserMessage: any = ((..._: any[]) => {}) as any

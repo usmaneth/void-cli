@@ -858,6 +858,9 @@ export async function* executeNonStreamingRequest(
         retryParams,
         MAX_NON_STREAMING_TOKENS,
       )
+      // Strip streaming-only params that cause 500 on non-streaming
+      delete (adjustedParams as any).output_config
+      delete (adjustedParams as any).context_management
 
       try {
         // biome-ignore lint/plugin: non-streaming API call

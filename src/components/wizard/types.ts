@@ -12,6 +12,6 @@ export type WizardContextValue<T = any> = {
   showStepCounter?: boolean
 }
 export type WizardProviderProps = any
-export const WizardProviderProps: any = undefined as any
+export const WizardProviderProps: any = ((..._: any[]) => {}) as any
 export type WizardStepComponent = any
-export const WizardStepComponent: any = undefined as any
+export const WizardStepComponent: any = ((..._: any[]) => {}) as any

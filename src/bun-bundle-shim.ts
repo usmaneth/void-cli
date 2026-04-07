@@ -20,6 +20,24 @@ const DISABLED_FEATURES = new Set<string>([
   'MEMORY_SHAPE_TELEMETRY',  // Internal telemetry
   'SLOW_OPERATION_LOGGING',  // Internal logging
   'PROMPT_CACHE_BREAK_DETECTION', // Internal diagnostics
+  'TRANSCRIPT_CLASSIFIER',  // Requires proprietary prompt files not in repo
+  'PROACTIVE',              // SleepTool source not in repo
+  'KAIROS',                 // SleepTool/SendUserFile/PushNotification not in repo
+  'KAIROS_PUSH_NOTIFICATION', // PushNotificationTool not in repo
+  'KAIROS_GITHUB_WEBHOOKS', // SubscribePRTool not in repo
+  'CONTEXT_COLLAPSE',       // CtxInspectTool not in repo
+  'TERMINAL_PANEL',         // TerminalCaptureTool not in repo
+  'WEB_BROWSER_TOOL',       // WebBrowserTool not in repo
+  'HISTORY_SNIP',           // SnipTool not in repo
+  'UDS_INBOX',              // ListPeersTool not in repo
+  'WORKFLOW_SCRIPTS',       // WorkflowTool bundled files not in repo
+  'DAEMON',                 // remoteControlServer not in repo
+  'TORCH',                  // torch command not in repo
+  'ULTRAPLAN',              // ultraplan prompt.txt not in repo
+  'NATIVE_CLIENT_ATTESTATION', // Requires Bun native HTTP stack to rewrite cch= placeholder
+  'KAIROS_DREAM',           // dream skill not in repo
+  'REVIEW_ARTIFACT',        // hunter skill not in repo
+  'RUN_SKILL_GENERATOR',    // runSkillGenerator not in repo
 ])
 
 export function feature(name: string): boolean {

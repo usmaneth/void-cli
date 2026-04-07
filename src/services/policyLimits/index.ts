@@ -124,7 +124,7 @@ function getCachePath(): string {
  * Get the policy limits API endpoint
  */
 function getPolicyLimitsEndpoint(): string {
-  return `${getOauthConfig().BASE_API_URL}/api/void_code/policy_limits`
+  return `${getOauthConfig().BASE_API_URL}/api/claude_code/policy_limits`
 }
 
 /**

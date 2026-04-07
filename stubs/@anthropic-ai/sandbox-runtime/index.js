@@ -6,7 +6,15 @@
 
 export class SandboxManager {
   static isEnabled() { return false; }
+  static isSupportedPlatform() { return false; }
   static getInstance() { return new SandboxManager(); }
+  static checkDependencies() { return { satisfied: true, missing: [] }; }
+  static wrapWithSandbox(cmd, args, opts) { return { cmd, args, opts }; }
+  static async initialize(config, callback) { if (callback) await callback(); }
+  static updateConfig() {}
+  static reset() {}
+  static getFsReadConfig() { return undefined; }
+  static getFsWriteConfig() { return undefined; }
   isEnabled() { return false; }
   getConfig() { return {}; }
   getDependencyChecks() { return []; }

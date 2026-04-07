@@ -1,3 +1,2 @@
-// Auto-generated stub for missing module
-export type isSkillSearchEnabled = any
-export const isSkillSearchEnabled: any = undefined as any
+// Stub — skill search feature check not available in this build
+export function isSkillSearchEnabled() { return false }
