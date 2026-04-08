@@ -11,7 +11,7 @@ const CLICKY_APP = join(
   'Build',
   'Products',
   'Release',
-  'leanring-buddy.app',
+  'Clicky.app',
 )
 const CLICKY_REPO = 'https://github.com/farzaa/clicky.git'
 
@@ -87,7 +87,7 @@ async function handleStart(): Promise<string> {
       // Using execSync here because we need cd + stderr redirect in a single shell command.
       // All arguments are hardcoded constants (no user input), so shell injection is not a concern.
       const buildOutput = execSync(
-        `cd ${JSON.stringify(CLICKY_DIR)} && xcodebuild -scheme leanring-buddy -configuration Release -derivedDataPath build 2>&1`,
+        `cd ${JSON.stringify(CLICKY_DIR)} && xcodebuild -scheme leanring-buddy -configuration Release -derivedDataPath build CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO 2>&1`,
         { encoding: 'utf-8', timeout: 300000 },
       )
       if (buildOutput.includes('BUILD SUCCEEDED')) {
