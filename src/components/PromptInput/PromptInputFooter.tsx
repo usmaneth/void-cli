@@ -140,6 +140,7 @@ function PromptInputFooter({
   }
   return <>
       {mode === 'prompt' && !isLoading && !isPasting && !isSearching && <SessionHUD />}
+      {mode === 'prompt' && !isLoading && !isPasting && !isSearching && <CostFooter />}
       <Box flexDirection={isNarrow ? 'column' : 'row'} justifyContent={isNarrow ? 'flex-start' : 'space-between'} paddingX={2} gap={isNarrow ? 0 : 1}>
         <Box flexDirection="column" flexShrink={isNarrow ? 0 : 1}>
           {mode === 'prompt' && !isShort && !exitMessage.show && !isPasting && statusLineShouldDisplay(settings) && <StatusLine messagesRef={messagesRef} lastAssistantMessageId={lastAssistantMessageId} vimMode={vimMode} />}

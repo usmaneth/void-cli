@@ -1,6 +1,7 @@
 // biome-ignore-all assist/source/organizeImports: ANT-ONLY import markers must not be reordered
 import architect from './architect/command.js'
 import board from './board/command.js'
+import councilCmd from './council/command.js'
 import contextsync from './contextsync/command.js'
 import healthCmd from './health/command.js'
 import messages from './messaging/command.js'
@@ -28,6 +29,7 @@ import { context, contextNonInteractive } from './commands/context/index.js'
 import cost from './commands/cost/index.js'
 import diff from './commands/diff/index.js'
 import ctx_viz from './commands/ctx_viz/index.js'
+import diagnose from './commands/diagnose/index.js'
 import doctor from './commands/doctor/index.js'
 import memory from './commands/memory/index.js'
 import help from './commands/help/index.js'
@@ -145,6 +147,7 @@ import files from './commands/files/index.js'
 import branch from './commands/branch/index.js'
 import agents from './commands/agents/index.js'
 import plugin from './commands/plugin/index.js'
+import provider from './commands/provider/index.js'
 import reloadPlugins from './commands/reload-plugins/index.js'
 import checkpoint from './checkpoints/checkpointCommand.js'
 import rewind from './commands/rewind/index.js'
@@ -314,11 +317,13 @@ const COMMANDS = memoize((): Command[] => [
   completionCommand,
   config,
   contextsync,
+  councilCmd,
   copy,
   desktop,
   context,
   contextNonInteractive,
   cost,
+  diagnose,
   diff,
   diffReview,
   doctor,
@@ -355,6 +360,7 @@ const COMMANDS = memoize((): Command[] => [
   outputStyle,
   remoteEnv,
   plugin,
+  provider,
   pr_comments,
   releaseNotes,
   reloadPlugins,

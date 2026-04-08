@@ -70,6 +70,33 @@ import {
  * 4. Fallback region (us-east5)
  */
 
+/**
+ * Reads the OpenRouter API key from macOS keychain as a fallback when the
+ * OPENROUTER_API_KEY env var is not set. Uses the same keychain service name
+ * as the /provider command (Void-openrouter).
+ */
+let _cachedOpenRouterKey: string | null | undefined
+function getOpenRouterKeyFromKeychain(): string | null {
+  if (_cachedOpenRouterKey !== undefined) return _cachedOpenRouterKey
+  if (process.platform !== 'darwin') {
+    _cachedOpenRouterKey = null
+    return null
+  }
+  try {
+    const { execFileSync } = require('child_process')
+    const username = process.env.USER || require('os').userInfo().username
+    const result = (execFileSync as typeof import('child_process').execFileSync)(
+      'security',
+      ['find-generic-password', '-s', 'Void-openrouter', '-a', username, '-w'],
+      { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] },
+    )
+    _cachedOpenRouterKey = (result as string).trim() || null
+  } catch {
+    _cachedOpenRouterKey = null
+  }
+  return _cachedOpenRouterKey
+}
+
 function createStderrLogger(): ClientOptions['logger'] {
   return {
     error: (msg, ...args) =>
@@ -303,14 +330,15 @@ export async function getAnthropicClient({
   // 2. Model contains '/': Auto-route to OpenRouter (e.g. "openai/gpt-4o", "thudm/glm-4")
   //    This allows both Anthropic and OpenRouter to coexist in the same session.
   const isOpenRouterModel = model && model.includes('/')
+  // Resolve OpenRouter key: env var first, then macOS keychain fallback
+  const openrouterKey = process.env.OPENROUTER_API_KEY || getOpenRouterKeyFromKeychain()
   if (
     isEnvTruthy(process.env.VOID_USE_OPENROUTER) ||
-    (isOpenRouterModel && process.env.OPENROUTER_API_KEY)
+    (isOpenRouterModel && openrouterKey)
   ) {
-    const openrouterKey = process.env.OPENROUTER_API_KEY
     if (!openrouterKey) {
       throw new Error(
-        'OPENROUTER_API_KEY environment variable is required for OpenRouter models',
+        'OpenRouter API key is required. Set OPENROUTER_API_KEY env var or run /provider add openrouter <key>',
       )
     }
     const { createOpenAIShimClient } = await import('./openaiShim.js')

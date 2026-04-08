@@ -11,6 +11,7 @@
  * /council remove <id>     — Remove a member by ID
  * /council list            — List available presets
  */
+import type { Command, LocalCommandResult } from '../types/command.js'
 import {
   activatePreset,
   addCouncilMember,
@@ -234,6 +235,29 @@ export async function handleCouncilCommand(
       }
   }
 }
+
+/**
+ * Local command call adapter for the slash command system.
+ */
+export async function call(
+  args: string,
+): Promise<LocalCommandResult> {
+  const result = await handleCouncilCommand(args)
+  return { type: 'text', value: result.output }
+}
+
+const councilCmd = {
+  type: 'local',
+  name: 'council',
+  description: 'Multi-model council mode — query multiple LLMs and pick a consensus',
+  argumentHint: '<on|off|preset|status|method|ask|add|remove|list> [args]',
+  isEnabled: () => true,
+  supportsNonInteractive: false,
+  isHidden: false,
+  load: () => import('./command.js'),
+} satisfies Command
+
+export default councilCmd
 
 function formatMs(ms: number): string {
   if (ms < 1000) return `${ms}ms`
