@@ -15,6 +15,8 @@ export class SandboxManager {
   static reset() {}
   static getFsReadConfig() { return undefined; }
   static getFsWriteConfig() { return undefined; }
+  static annotateStderrWithSandboxFailures(command, stderr) { return stderr || ''; }
+  static isSandboxingEnabled() { return false; }
   isEnabled() { return false; }
   getConfig() { return {}; }
   getDependencyChecks() { return []; }
