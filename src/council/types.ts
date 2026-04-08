@@ -12,8 +12,8 @@ export type CouncilMember = {
   name: string
   /** Model identifier (e.g., 'anthropic/claude-sonnet-4', 'openai/gpt-4o') */
   model: string
-  /** Provider: 'anthropic' for direct, 'openrouter' for OpenRouter */
-  provider: 'anthropic' | 'openrouter'
+  /** Provider: 'anthropic' for direct, 'openrouter' for OpenRouter, 'local' for Ollama/llama.cpp, 'runpod' for ephemeral GPU */
+  provider: 'anthropic' | 'openrouter' | 'local' | 'runpod'
   /** Weight in consensus voting (0-1, default 1) */
   weight: number
   /** Whether this member can execute tools */

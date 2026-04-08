@@ -43,6 +43,61 @@ async function queryMember(
       .join('\n')
     inputTokens = response.usage?.input_tokens ?? 0
     outputTokens = response.usage?.output_tokens ?? 0
+  } else if (member.provider === 'runpod') {
+    // Use RunPod ephemeral GPU via OpenAI-compatible API
+    const { loadRunPodConfig, getPod } = await import('../services/runpod/client.js')
+    const config = loadRunPodConfig()
+    if (!config?.activePodId) throw new Error('No active RunPod pod — start one first')
+    const pod = await getPod(config.activePodId)
+    if (!pod.apiEndpoint) throw new Error('RunPod pod has no API endpoint')
+    const podBaseURL = `${pod.apiEndpoint}/v1`
+    const response = await fetch(`${podBaseURL}/chat/completions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: member.model.replace('runpod:', ''),
+        messages: [
+          ...(systemPrompt ? [{ role: 'system' as const, content: systemPrompt }] : []),
+          { role: 'user' as const, content: prompt },
+        ],
+        max_tokens: 4096,
+      }),
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(`RunPod model error (${response.status}): ${errorText}`)
+    }
+
+    const data = await response.json() as any
+    content = data.choices?.[0]?.message?.content ?? ''
+    inputTokens = data.usage?.prompt_tokens ?? 0
+    outputTokens = data.usage?.completion_tokens ?? 0
+  } else if (member.provider === 'local') {
+    // Use local Ollama / llama.cpp via OpenAI-compatible API
+    const localBaseURL = process.env.VOID_LOCAL_BASE_URL || 'http://localhost:11434/v1'
+    const response = await fetch(`${localBaseURL}/chat/completions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: member.model.replace('local:', ''),
+        messages: [
+          ...(systemPrompt ? [{ role: 'system' as const, content: systemPrompt }] : []),
+          { role: 'user' as const, content: prompt },
+        ],
+        max_tokens: 4096,
+      }),
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(`Local model error (${response.status}): ${errorText}`)
+    }
+
+    const data = await response.json() as any
+    content = data.choices?.[0]?.message?.content ?? ''
+    inputTokens = data.usage?.prompt_tokens ?? 0
+    outputTokens = data.usage?.completion_tokens ?? 0
   } else {
     // Use OpenRouter via fetch (OpenAI Chat Completions format)
     let apiKey = process.env.OPENROUTER_API_KEY
@@ -118,6 +173,12 @@ function estimateCost(model: string, inputTokens: number, outputTokens: number):
     'meta-llama/llama-4-maverick': { input: 0.5, output: 1.5 },
     'qwen/qwen3-235b-a22b': { input: 0.8, output: 2 },
     'deepseek/deepseek-chat-v3-0324': { input: 0.5, output: 1.5 },
+    // Local models are free
+    'local:qwen2.5-coder:32b': { input: 0, output: 0 },
+    'local:qwen2.5-coder:14b': { input: 0, output: 0 },
+    'local:qwen2.5-coder:7b': { input: 0, output: 0 },
+    'local:codestral:22b': { input: 0, output: 0 },
+    'local:deepseek-coder-v2:16b': { input: 0, output: 0 },
   }
 
   const pricing = PRICING[model] ?? { input: 1, output: 3 }

@@ -324,6 +324,100 @@ export async function getAnthropicClient({
     return new AnthropicVertex(vertexArgs) as unknown as Anthropic
   }
 
+  // RunPod ephemeral GPU routing: spin up a pod if needed, then use OpenAI shim.
+  // Activated by VOID_USE_RUNPOD=1 or model prefixed with 'runpod:'
+  const isRunPodModel = model?.startsWith('runpod:')
+  if (isEnvTruthy(process.env.VOID_USE_RUNPOD) || isRunPodModel) {
+    const { loadRunPodConfig, getPod, launchModelPod } = await import('../runpod/client.js')
+    const { createOpenAIShimClient } = await import('./openaiShim.js')
+    const config = loadRunPodConfig()
+    const runpodModel = isRunPodModel
+      ? model!.slice(7)
+      : config?.defaultModel || 'qwen2.5-coder:32b'
+
+    let podEndpoint: string
+
+    // Check if there's already an active pod
+    if (config?.activePodId) {
+      try {
+        const pod = await getPod(config.activePodId)
+        if (pod.status === 'RUNNING' && pod.apiEndpoint) {
+          podEndpoint = `${pod.apiEndpoint}/v1`
+        } else {
+          // Pod exists but not running — launch fresh
+          const { modelEndpoint } = await launchModelPod(runpodModel, {
+            onStatus: (s) => logForDebugging(`[RunPod] ${s}`),
+          })
+          podEndpoint = modelEndpoint
+        }
+      } catch {
+        // Pod not found — launch fresh
+        const { modelEndpoint } = await launchModelPod(runpodModel, {
+          onStatus: (s) => logForDebugging(`[RunPod] ${s}`),
+        })
+        podEndpoint = modelEndpoint
+      }
+    } else {
+      const { modelEndpoint } = await launchModelPod(runpodModel, {
+        onStatus: (s) => logForDebugging(`[RunPod] ${s}`),
+      })
+      podEndpoint = modelEndpoint
+    }
+
+    const shimClient = createOpenAIShimClient({
+      apiKey: 'runpod', // Pod doesn't need auth
+      baseURL: podEndpoint,
+      defaultHeaders: {
+        ...defaultHeaders,
+        'X-Title': 'Void CLI (RunPod)',
+      },
+      timeout: ARGS.timeout,
+    })
+
+    // Strip 'runpod:' prefix from model names
+    const wrapCreate = (original: any) => (params: any, options?: any) => {
+      const resolvedModel = params.model?.startsWith('runpod:')
+        ? params.model.slice(7)
+        : params.model || runpodModel
+      return original({ ...params, model: resolvedModel }, options)
+    }
+    shimClient.messages.create = wrapCreate(shimClient.messages.create)
+    shimClient.beta.messages.create = wrapCreate(shimClient.beta.messages.create)
+    return shimClient as unknown as Anthropic
+  }
+
+  // Local model routing: use the OpenAI-compatible shim for Ollama / llama.cpp.
+  // Activated by:
+  // 1. VOID_USE_LOCAL=1: All queries go to the local server
+  // 2. Model prefixed with 'local:' (e.g. 'local:qwen2.5-coder:32b')
+  const isLocalModel = model?.startsWith('local:')
+  if (isEnvTruthy(process.env.VOID_USE_LOCAL) || isLocalModel) {
+    const { createOpenAIShimClient } = await import('./openaiShim.js')
+    const localBaseURL =
+      process.env.VOID_LOCAL_BASE_URL || 'http://localhost:11434/v1'
+    const localDefaultModel =
+      process.env.VOID_LOCAL_MODEL || 'qwen2.5-coder:32b'
+    const shimClient = createOpenAIShimClient({
+      apiKey: 'ollama', // Ollama ignores this but the field is required
+      baseURL: localBaseURL,
+      defaultHeaders: {
+        ...defaultHeaders,
+        'X-Title': 'Void CLI (Local)',
+      },
+      timeout: ARGS.timeout,
+    })
+    // Wrap the shim to strip 'local:' prefix and apply default local model
+    const wrapCreate = (original: any) => (params: any, options?: any) => {
+      const resolvedModel = params.model?.startsWith('local:')
+        ? params.model.slice(6)
+        : params.model || localDefaultModel
+      return original({ ...params, model: resolvedModel }, options)
+    }
+    shimClient.messages.create = wrapCreate(shimClient.messages.create)
+    shimClient.beta.messages.create = wrapCreate(shimClient.beta.messages.create)
+    return shimClient as unknown as Anthropic
+  }
+
   // OpenRouter routing: use the OpenAI-compatible shim for non-Claude models.
   // Two modes:
   // 1. VOID_USE_OPENROUTER=1: OpenRouter is the default provider for ALL models

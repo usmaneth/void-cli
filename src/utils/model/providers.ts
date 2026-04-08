@@ -1,18 +1,22 @@
 import type { AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS } from '../../services/analytics/index.js'
 import { isEnvTruthy } from '../envUtils.js'
 
-export type APIProvider = 'firstParty' | 'bedrock' | 'vertex' | 'foundry' | 'openrouter'
+export type APIProvider = 'firstParty' | 'bedrock' | 'vertex' | 'foundry' | 'openrouter' | 'local' | 'runpod'
 
 export function getAPIProvider(): APIProvider {
-  return isEnvTruthy(process.env.VOID_USE_BEDROCK)
-    ? 'bedrock'
-    : isEnvTruthy(process.env.VOID_USE_VERTEX)
-      ? 'vertex'
-      : isEnvTruthy(process.env.VOID_USE_FOUNDRY)
-        ? 'foundry'
-        : isEnvTruthy(process.env.VOID_USE_OPENROUTER)
-          ? 'openrouter'
-          : 'firstParty'
+  return isEnvTruthy(process.env.VOID_USE_RUNPOD)
+    ? 'runpod'
+    : isEnvTruthy(process.env.VOID_USE_LOCAL)
+      ? 'local'
+      : isEnvTruthy(process.env.VOID_USE_BEDROCK)
+      ? 'bedrock'
+      : isEnvTruthy(process.env.VOID_USE_VERTEX)
+        ? 'vertex'
+        : isEnvTruthy(process.env.VOID_USE_FOUNDRY)
+          ? 'foundry'
+          : isEnvTruthy(process.env.VOID_USE_OPENROUTER)
+            ? 'openrouter'
+            : 'firstParty'
 }
 
 export function getAPIProviderForStatsig(): AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS {

@@ -1,7 +1,10 @@
 import type { ModelName } from './model.js'
 import type { APIProvider } from './providers.js'
 
-export type ModelConfig = Record<APIProvider, ModelName>
+// Local and RunPod providers use their own model names (e.g. 'local:qwen2.5-coder:32b'),
+// not Claude model IDs, so they are optional in model configs.
+type CloudProvider = Exclude<APIProvider, 'local' | 'runpod'>
+export type ModelConfig = Record<CloudProvider, ModelName> & Partial<Record<'local' | 'runpod', ModelName>>
 
 // OpenRouter model IDs use provider/model format (e.g. "anthropic/claude-opus-4.6").
 // For non-Claude models, users specify the OpenRouter model ID via --model or

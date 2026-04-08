@@ -146,6 +146,36 @@ export const COUNCIL_PRESETS: Record<string, CouncilPreset> = {
       },
     ],
   },
+  'local': {
+    name: 'Local',
+    description: 'Local models via Ollama — no API keys, no cost',
+    members: [
+      {
+        id: 'qwen-coder',
+        name: 'Qwen 2.5 Coder 32B',
+        model: 'local:qwen2.5-coder:32b',
+        provider: 'local',
+        weight: 1,
+        canExecuteTools: true,
+        role: 'Primary local coding model',
+      },
+    ],
+  },
+  'runpod': {
+    name: 'RunPod GPU',
+    description: 'Ephemeral GPU pod — run large models on-demand, E2E encrypted',
+    members: [
+      {
+        id: 'runpod-glm',
+        name: 'GLM-5.1',
+        model: 'runpod:glm-5.1-iq2',
+        provider: 'runpod',
+        weight: 1,
+        canExecuteTools: true,
+        role: 'Primary model on ephemeral GPU',
+      },
+    ],
+  },
 }
 
 const DEFAULT_CONFIG: CouncilConfig = {
