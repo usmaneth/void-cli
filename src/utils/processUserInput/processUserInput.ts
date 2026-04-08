@@ -139,6 +139,37 @@ export async function processUserInput({
   skipAttachments?: boolean
 }): Promise<ProcessUserInputBaseResult> {
   const inputString = typeof input === 'string' ? input : null
+
+  // Void Council Mode: when council is active and input is a regular message
+  // (not a slash command), run the council query and show results instead of
+  // sending to the main model directly.
+  if (inputString && !inputString.startsWith('/') && !inputString.startsWith('!') && mode === 'prompt') {
+    try {
+      const { isCouncilActive } = await import('../../council/config.js')
+      if (isCouncilActive()) {
+        const { queryCouncil } = await import('../../council/orchestrator.js')
+        const result = await queryCouncil(inputString)
+        const councilOutput = result.responses
+          .map((r) => {
+            const isWinner = r.memberId === result.winner.memberId
+            const prefix = isWinner ? '★' : '◇'
+            return `${prefix} ${r.memberName} (${r.latencyMs}ms, $${r.costUSD.toFixed(4)}):\n${r.content}`
+          })
+          .join('\n\n')
+        const summary = `⚡ Council Results (${result.method}):\n\n${councilOutput}\n\n─── Winner: ${result.winner.memberName} ───\nTotal: ${result.totalLatencyMs}ms · $${result.totalCostUSD.toFixed(4)}`
+        return {
+          messages: [
+            { role: 'user', content: inputString, type: 'user', uuid: crypto.randomUUID(), timestamp: new Date().toISOString() } as any,
+            { role: 'assistant', message: { content: [{ type: 'text', text: summary }] }, type: 'assistant', uuid: crypto.randomUUID(), timestamp: new Date().toISOString() } as any,
+          ],
+          shouldQuery: false,
+        } as any
+      }
+    } catch {
+      // Council not available or errored — fall through to normal processing
+    }
+  }
+
   // Immediately show the user input prompt while we are still processing the input.
   // Skip for isMeta (system-generated prompts like scheduled tasks) — those
   // should run invisibly.
