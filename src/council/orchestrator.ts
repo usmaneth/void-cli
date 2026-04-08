@@ -28,9 +28,9 @@ async function queryMember(
   let outputTokens = 0
 
   if (member.provider === 'anthropic') {
-    // Use Anthropic SDK directly
-    const { default: Anthropic } = await import('@anthropic-ai/sdk')
-    const client = new Anthropic()
+    // Use the existing Void API client (handles OAuth, retries, etc.)
+    const { getAnthropicClient } = await import('../services/api/client.js')
+    const client = await getAnthropicClient({ maxRetries: 1 })
     const response = await client.messages.create({
       model: member.model.replace('anthropic/', ''),
       max_tokens: 4096,
@@ -45,8 +45,15 @@ async function queryMember(
     outputTokens = response.usage?.output_tokens ?? 0
   } else {
     // Use OpenRouter via fetch (OpenAI Chat Completions format)
-    const apiKey = process.env.OPENROUTER_API_KEY
-    if (!apiKey) throw new Error('OPENROUTER_API_KEY not set')
+    let apiKey = process.env.OPENROUTER_API_KEY
+    if (!apiKey) {
+      // Fallback: read from macOS keychain
+      try {
+        const { execFileSync } = await import('child_process')
+        apiKey = execFileSync('security', ['find-generic-password', '-s', 'Void-openrouter', '-w'], { encoding: 'utf-8' }).trim()
+      } catch {}
+    }
+    if (!apiKey) throw new Error('OPENROUTER_API_KEY not set — run /provider add openrouter <key>')
 
     const baseURL = process.env.OPENROUTER_BASE_URL || 'https://openrouter.ai/api/v1'
     const response = await fetch(`${baseURL}/chat/completions`, {
