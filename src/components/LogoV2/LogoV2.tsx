@@ -252,8 +252,8 @@ export function LogoV2() {
   }
   const layoutMode = getLayoutMode(columns);
   const userTheme = resolveThemeSetting(getGlobalConfig().theme);
-  const borderTitle = ` ${color("claude", userTheme)("V O I D")} ${color("inactive", userTheme)(`v${version}`)} `;
-  const compactBorderTitle = color("claude", userTheme)(" V O I D ");
+  const borderTitle = ` ${color("claude", userTheme)("◈ V O I D ◈")} ${color("inactive", userTheme)(`v${version}`)} `;
+  const compactBorderTitle = color("claude", userTheme)(" ◈ V O I D ◈ ");
   if (layoutMode === "compact") {
     let welcomeMessage = formatWelcomeMessage(username);
     if (stringWidth(welcomeMessage) > columns - 4) {
@@ -330,7 +330,7 @@ export function LogoV2() {
       t18 = $[42];
       t19 = $[43];
     }
-    return <><OffscreenFreeze><Box flexDirection="column" borderStyle="round" borderColor="claude" borderText={t11} paddingX={1} paddingY={1} alignItems="center" width={columns}><Text bold={true}>{welcomeMessage}</Text>{t12}{t13}<Text dimColor={true}>{billingType}</Text><Text dimColor={true}>{agentName ? `@${agentName} · ${truncatedCwd}` : truncatedCwd}</Text></Box></OffscreenFreeze>{t14}{t15}{t16}{t17}{t18}{t19}</>;
+    return <><OffscreenFreeze><Box flexDirection="column" borderStyle="double" borderColor="claude" borderText={t11} paddingX={1} paddingY={1} alignItems="center" width={columns}><Text bold={true}>{welcomeMessage}</Text>{t12}{t13}<Text dimColor={true}>{billingType}</Text><Text dimColor={true}>{agentName ? `@${agentName} · ${truncatedCwd}` : truncatedCwd}</Text></Box></OffscreenFreeze>{t14}{t15}{t16}{t17}{t18}{t19}</>;
   }
   const welcomeMessage_0 = formatWelcomeMessage(username);
   const modelLine = !process.env.IS_DEMO && config.oauthAccount?.organizationName ? `${modelDisplayName} · ${billingType} · ${config.oauthAccount.organizationName}` : `${modelDisplayName} · ${billingType}`;
@@ -345,7 +345,7 @@ export function LogoV2() {
   const T0 = OffscreenFreeze;
   const T1 = Box;
   const t11 = "column";
-  const t12 = "round";
+  const t12 = "double";
   const t13 = "claude";
   let t14;
   if ($[44] !== borderTitle) {
@@ -406,7 +406,7 @@ export function LogoV2() {
   }
   let t23;
   if ($[56] !== leftWidth || $[57] !== t18 || $[58] !== t22) {
-    t23 = <Box flexDirection="column" width={leftWidth} justifyContent="space-between" alignItems="center" minHeight={9}>{t18}{t19}{t22}</Box>;
+    t23 = <Box flexDirection="column" justifyContent="space-between" alignItems="center" minHeight={9}>{t18}{t19}{t22}</Box>;
     $[56] = leftWidth;
     $[57] = t18;
     $[58] = t22;
@@ -416,13 +416,13 @@ export function LogoV2() {
   }
   let t24;
   if ($[60] !== layoutMode) {
-    t24 = layoutMode === "horizontal" && <Box height="100%" borderStyle="single" borderColor="claude" borderDimColor={true} borderTop={false} borderBottom={false} borderLeft={false} />;
+    t24 = false;
     $[60] = layoutMode;
     $[61] = t24;
   } else {
     t24 = $[61];
   }
-  const t25 = layoutMode === "horizontal" && <FeedColumn feeds={showOnboarding ? [createProjectOnboardingFeed(getSteps()), createRecentActivityFeed(activities)] : showGuestPassesUpsell ? [createRecentActivityFeed(activities), createGuestPassesFeed()] : showOverageCreditUpsell ? [createRecentActivityFeed(activities), createOverageCreditFeed()] : [createRecentActivityFeed(activities), createWhatsNewFeed(changelog)]} maxWidth={rightWidth} />;
+  const t25 = false;
   let t26;
   if ($[62] !== T2 || $[63] !== t15 || $[64] !== t23 || $[65] !== t24 || $[66] !== t25) {
     t26 = <T2 flexDirection={t15} paddingX={t16} gap={t17}>{t23}{t24}{t25}</T2>;
@@ -437,7 +437,7 @@ export function LogoV2() {
   }
   let t27;
   if ($[68] !== T1 || $[69] !== t14 || $[70] !== t26) {
-    t27 = <T1 flexDirection={t11} borderStyle={t12} borderColor={t13} borderText={t14}>{t26}</T1>;
+    t27 = <T1 flexDirection={t11} borderStyle={t12} borderColor={t13} borderText={t14} width={columns} alignItems="center">{t26}</T1>;
     $[68] = T1;
     $[69] = t14;
     $[70] = t26;
