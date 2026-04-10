@@ -10,14 +10,14 @@ type Props = {
   pose?: ClawdPose;
 };
 
-// Void portal mascot — a simple diamond/portal shape.
+// Void portal mascot — a dramatic void/portal shape.
 // Replaces the original pig mascot. Pose parameter is accepted
 // for API compatibility but the portal art does not change per pose.
 export function Clawd(t0: Props | undefined) {
   const $ = _c(4);
   let t1;
   if ($[0] === Symbol.for("react.memo_cache_sentinel")) {
-    t1 = <Box flexDirection="column" alignItems="center"><Text color="cyan">{"   ◊   "}</Text><Text color="cyan">{"  ╱ ╲  "}</Text><Text color="cyan">{" ╱ ◈ ╲ "}</Text><Text color="cyan">{"╲     ╱"}</Text><Text color="cyan">{" ╲   ╱ "}</Text><Text color="cyan">{"  ╲ ╱  "}</Text><Text color="cyan">{"   ◊   "}</Text></Box>;
+    t1 = <Box flexDirection="column" alignItems="center"><Text color="claude">{"     ·  ∴  ·     "}</Text><Text color="claude">{"   ∵ ░░░░░ ∴   "}</Text><Text color="claude">{"  ∴ ░▓▓▓▓▓░ ∵  "}</Text><Text color="claude">{" · ░▓█ V █▓░ · "}</Text><Text color="claude">{"  ∴ ░▓▓▓▓▓░ ∵  "}</Text><Text color="claude">{"   ∵ ░░░░░ ∴   "}</Text><Text color="claude">{"     ·  ∴  ·     "}</Text></Box>;
     $[0] = t1;
   } else {
     t1 = $[0];

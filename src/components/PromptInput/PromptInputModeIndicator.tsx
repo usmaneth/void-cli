@@ -51,7 +51,7 @@ function PromptChar(t0) {
   const color = teammateColor ?? (false ? "subtle" : undefined);
   let t1;
   if ($[0] !== color || $[1] !== isLoading) {
-    t1 = <Text color={color} dimColor={isLoading}><Text bold>void </Text>› </Text>;
+    t1 = <Text color={color} dimColor={isLoading}><Text color="claude" bold>◈</Text> <Text bold>void</Text> › </Text>;
     $[0] = color;
     $[1] = isLoading;
     $[2] = t1;
