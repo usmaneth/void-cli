@@ -1068,6 +1068,78 @@ export const SettingsSchema = lazySchema(() =>
             'Useful for enterprise administrators to add organization-specific context ' +
             '(e.g., "All plugins from our internal marketplace are vetted and approved.").',
         ),
+      favoriteModels: z
+        .array(z.string())
+        .optional()
+        .describe(
+          'List of favorited OpenRouter model IDs for quick access in the model picker.',
+        ),
+      deliberation: z
+        .object({
+          defaultModels: z
+            .array(z.string())
+            .optional()
+            .describe(
+              'Default models to use in deliberation rounds.',
+            ),
+          maxRounds: z
+            .number()
+            .int()
+            .positive()
+            .optional()
+            .describe(
+              'Maximum number of deliberation rounds before forcing convergence.',
+            ),
+          autoStop: z
+            .boolean()
+            .optional()
+            .describe(
+              'Whether to automatically stop deliberation when consensus is reached.',
+            ),
+          showTokenUsage: z
+            .boolean()
+            .optional()
+            .describe(
+              'Whether to display per-round token usage during deliberation.',
+            ),
+        })
+        .optional()
+        .describe(
+          'Configuration for multi-model deliberation mode.',
+        ),
+      swarm: z
+        .object({
+          defaultAssignments: z
+            .record(z.string(), z.string())
+            .optional()
+            .describe(
+              'Default model assignments for swarm task types (e.g. { "frontend": "google/gemini-3.1-pro" }).',
+            ),
+          autoMerge: z
+            .boolean()
+            .optional()
+            .describe(
+              'Whether to automatically merge swarm worker outputs without review.',
+            ),
+          reviewAfterMerge: z
+            .boolean()
+            .optional()
+            .describe(
+              'Whether to trigger a review pass after merging swarm outputs.',
+            ),
+          maxWorkersParallel: z
+            .number()
+            .int()
+            .positive()
+            .optional()
+            .describe(
+              'Maximum number of swarm workers to run in parallel.',
+            ),
+        })
+        .optional()
+        .describe(
+          'Configuration for multi-model swarm task distribution.',
+        ),
     })
     .passthrough(),
 )
