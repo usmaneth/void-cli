@@ -8,6 +8,8 @@ import messages from './messaging/command.js'
 import mission from './mission/command.js'
 import orchestrate from './orchestrator/command.js'
 import workstream from './workstream/command.js'
+import swarmCmd from './commands/swarm/swarm.js'
+import designCmd from './commands/design/design.js'
 import { completionCommand, doctorDiagCommand } from './completions/command.js'
 import repomapCommand from './repomap/command.js'
 import deliberate from './commands/deliberate/index.js'
@@ -322,6 +324,7 @@ const COMMANDS = memoize((): Command[] => [
   contextsync,
   councilCmd,
   copy,
+  designCmd,
   desktop,
   context,
   contextNonInteractive,
@@ -396,6 +399,7 @@ const COMMANDS = memoize((): Command[] => [
   vim,
   watchCmd,
   workstream,
+  swarmCmd,
   ...(webCmd ? [webCmd] : []),
   ...(forkCmd ? [forkCmd] : []),
   ...(buddy ? [buddy] : []),
