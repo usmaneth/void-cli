@@ -1,7 +1,6 @@
 import * as React from 'react'
 import { Box, Text } from '../ink.js'
 import { useTerminalSize } from '../hooks/useTerminalSize.js'
-import { ProgressBar } from '../components/design-system/ProgressBar.js'
 import type { DeliberationState, ModelResponse } from './types.js'
 
 export type ModelStatus = 'waiting' | 'streaming' | 'done' | 'error'
@@ -13,25 +12,7 @@ type DeliberationRendererProps = {
   currentModel: string | null
 }
 
-const MODEL_COLORS = [
-  'claude',
-  'suggestion',
-  'success',
-  'warning',
-  'cyan_FOR_SUBAGENTS_ONLY',
-  'pink_FOR_SUBAGENTS_ONLY',
-] as const
-
-const STATUS_ICONS: Record<ModelStatus, string> = {
-  waiting: '○',
-  streaming: '◉',
-  done: '●',
-  error: '✕',
-}
-
-function getModelColor(index: number): string {
-  return MODEL_COLORS[index % MODEL_COLORS.length]!
-}
+// ── Formatting ──────────────────────────────────────────────────────────────
 
 function formatUSD(cost: number): string {
   if (cost < 0.001) return `$${cost.toFixed(4)}`
@@ -44,69 +25,116 @@ function formatMs(ms: number): string {
   return `${(ms / 1000).toFixed(1)}s`
 }
 
-function formatTokens(count: number): string {
-  if (count >= 1_000_000) return `${(count / 1_000_000).toFixed(1)}M`
-  if (count >= 1_000) return `${(count / 1_000).toFixed(1)}k`
-  return String(count)
+function formatTokens(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`
+  return String(n)
 }
 
-function getConvergenceLabel(state: DeliberationState): {
-  color: string
-  label: string
-} {
-  if (state.status === 'converged') {
-    return { color: 'success', label: 'converged' }
-  }
+// ── Colors ──────────────────────────────────────────────────────────────────
 
-  const lastRound = state.rounds.at(-1)
-  if (lastRound?.converged) {
-    return { color: 'success', label: 'aligning' }
-  }
+const PALETTE = ['magenta', 'green', 'cyan', 'yellow', 'blue'] as const
 
-  return { color: 'warning', label: 'debating' }
+function modelColor(index: number): string {
+  return PALETTE[index % PALETTE.length]!
 }
 
-function getResponseContext(response: ModelResponse): string {
-  if (response.respondingTo.length === 0) return 'initial position'
-  if (response.respondingTo.length === 1) {
-    return `responding to ${response.respondingTo[0]}`
-  }
-  return `incorporating ${response.respondingTo.length} models`
+function convergenceLabel(state: DeliberationState): { color: string; text: string } {
+  if (state.status === 'converged') return { color: 'green', text: 'CONVERGED' }
+  if (state.status === 'complete') return { color: 'green', text: 'COMPLETE' }
+  if (state.status === 'stopped') return { color: 'yellow', text: 'STOPPED' }
+  const last = state.rounds.at(-1)
+  if (last?.converged) return { color: 'green', text: 'ALIGNING' }
+  return { color: 'yellow', text: 'DEBATING' }
 }
 
-type ResponseCardProps = {
-  key?: React.Key
-  response: ModelResponse
-  color: string
+// ── Progress bar ────────────────────────────────────────────────────────────
+
+function ProgressText({ ratio, width }: { ratio: number; width: number }): React.JSX.Element {
+  const filled = Math.round(ratio * width)
+  return (
+    <Text>
+      <Text color="magenta">{'█'.repeat(filled)}</Text>
+      <Text color="gray">{'░'.repeat(width - filled)}</Text>
+    </Text>
+  )
 }
+
+// ── Response card ───────────────────────────────────────────────────────────
 
 function ResponseCard({
   response,
   color,
-}: ResponseCardProps): React.JSX.Element {
+  roundNum,
+}: {
+  key?: React.Key
+  response: ModelResponse
+  color: string
+  roundNum: number
+}): React.JSX.Element {
+  const ctx = response.respondingTo.length === 0
+    ? 'initial position'
+    : response.respondingTo.length === 1
+      ? `responding to ${response.respondingTo[0]}`
+      : `incorporating ${response.respondingTo.length} models`
+
   return (
-    <Box
-      flexDirection="column"
-      borderStyle="round"
-      borderColor={color}
-      paddingX={1}
-      paddingY={0}
-      marginBottom={1}
-    >
-      <Box justifyContent="space-between">
-        <Text bold color={color}>
-          {response.model}
-        </Text>
-        <Text dimColor>{getResponseContext(response)}</Text>
-      </Box>
-      <Text dimColor>
-        {formatMs(response.latencyMs)} · {formatTokens(response.tokens.input)}↑{' '}
-        {formatTokens(response.tokens.output)}↓ · {formatUSD(response.costUSD)}
+    <Box flexDirection="column" marginBottom={0}>
+      <Text>
+        <Text color={color}>{'  ┌ '}</Text>
+        <Text bold color={color}>{response.model}</Text>
+        <Text dimColor>{' Round '}{roundNum}{' · '}{ctx}</Text>
       </Text>
-      <Text wrap="wrap">{response.content}</Text>
+      <Text>
+        <Text color={color}>{'  │ '}</Text>
+        <Text dimColor>{formatMs(response.latencyMs)}{' · '}{formatTokens(response.tokens.input)}{'↑ '}{formatTokens(response.tokens.output)}{'↓ · '}{formatUSD(response.costUSD)}</Text>
+      </Text>
+      {response.content.split('\n').map((line, i) => (
+        <Text key={i}>
+          <Text color={color}>{'  │ '}</Text>
+          <Text wrap="wrap">{line}</Text>
+        </Text>
+      ))}
+      <Text color={color}>{'  └'}</Text>
     </Box>
   )
 }
+
+// ── Live streaming card ─────────────────────────────────────────────────────
+
+function StreamingCard({
+  model,
+  content,
+  color,
+}: {
+  model: string
+  content: string
+  color: string
+}): React.JSX.Element {
+  const lines = content.split('\n').slice(-10) // Show last 10 lines
+  return (
+    <Box flexDirection="column" marginBottom={0}>
+      <Text>
+        <Text color={color}>{'  ┌ '}</Text>
+        <Text bold color={color}>{model}</Text>
+        <Text bold color="yellow">{' STREAMING'}</Text>
+      </Text>
+      {lines.map((line, i) => (
+        <Text key={i}>
+          <Text color={color}>{'  │ '}</Text>
+          <Text wrap="wrap">{line}</Text>
+        </Text>
+      ))}
+      <Text>
+        <Text color={color}>{'  │ '}</Text>
+        <Text color="yellow">{'▌'}</Text>
+      </Text>
+      <Text color={color}>{'  └'}</Text>
+    </Box>
+  )
+}
+
+// ── Main renderer ───────────────────────────────────────────────────────────
 
 export function DeliberationRenderer({
   state,
@@ -117,104 +145,92 @@ export function DeliberationRenderer({
   const { columns } = useTerminalSize()
 
   if (!state) {
-    return (
-      <Box paddingX={1}>
-        <Text dimColor>Initializing deliberation...</Text>
-      </Box>
-    )
+    return <Box paddingX={1}><Text dimColor>Initializing deliberation...</Text></Box>
   }
 
-  const progressWidth = Math.max(16, Math.min(columns - 28, 36))
-  const roundProgress =
-    state.config.maxRounds === 0 ? 0 : state.currentRound / state.config.maxRounds
-  const convergence = getConvergenceLabel(state)
+  const conv = convergenceLabel(state)
+  const roundProgress = state.config.maxRounds === 0
+    ? 0
+    : state.currentRound / state.config.maxRounds
+  const barW = Math.max(16, Math.min(columns - 30, 36))
+  const sep = '─'.repeat(Math.max(10, columns - 6))
 
   return (
-    <Box flexDirection="column" paddingX={1}>
+    <Box
+      flexDirection="column"
+      borderStyle="double"
+      borderColor="magenta"
+      paddingX={1}
+      paddingY={0}
+      width={columns}
+    >
+      {/* Title bar */}
       <Box justifyContent="space-between">
-        <Text bold color="claude">
-          DELIBERATION ROOM
-        </Text>
-        <Text bold color={convergence.color}>
-          {convergence.label.toUpperCase()}
-        </Text>
-      </Box>
-      <Text dimColor wrap="truncate-end">
-        Topic: {state.config.topic}
-      </Text>
-      <Box marginTop={1}>
-        <ProgressBar
-          ratio={Math.min(1, roundProgress)}
-          width={progressWidth}
-          fillColor="claude"
-          emptyColor="inactive"
-        />
-        <Text> </Text>
-        <Text bold>
-          Round {Math.max(1, state.currentRound)}/{state.config.maxRounds}
-        </Text>
-      </Box>
-      <Text dimColor>
-        {state.config.models.length} models · total cost {formatUSD(state.totalCostUSD)}
-      </Text>
-      <Box flexDirection="column" marginTop={1} marginBottom={1}>
-        {state.config.models.map((model, index) => {
-          const status = modelStatuses.get(model) ?? 'waiting'
-          const color = getModelColor(index)
-          return (
-            <Text key={model} color={status === 'error' ? 'error' : color}>
-              {STATUS_ICONS[status]} <Text bold color={color}>{model}</Text>
-              <Text dimColor>{` · ${status}`}</Text>
-            </Text>
-          )
-        })}
+        <Text bold color="magenta">{'◈ D E L I B E R A T I O N   R O O M'}</Text>
+        <Text bold color={conv.color}>{conv.text}</Text>
       </Box>
 
+      {/* Topic */}
+      <Text dimColor wrap="truncate-end">Topic: {state.config.topic}</Text>
+
+      {/* Models + status icons */}
+      <Text dimColor>
+        Models: {state.config.models.map((m, i) => {
+          const status = modelStatuses.get(m) ?? 'waiting'
+          const icons: Record<ModelStatus, string> = { waiting: '○', streaming: '◉', done: '●', error: '✕' }
+          return `${icons[status]} ${m}`
+        }).join(' · ')}
+      </Text>
+
+      {/* Round progress */}
+      <Box marginTop={0}>
+        <Text dimColor>Round </Text>
+        <ProgressText ratio={Math.min(1, roundProgress)} width={barW} />
+        <Text bold>{' '}{Math.max(1, state.currentRound)}/{state.config.maxRounds}</Text>
+      </Box>
+
+      {/* Separator */}
+      <Text dimColor>{sep}</Text>
+
+      {/* Completed rounds */}
       {state.rounds.map(round => (
-        <Box key={`round-${round.number}`} flexDirection="column">
-          <Box marginBottom={1}>
-            <Text bold dimColor>
-              Round {round.number}
-            </Text>
-            {round.converged ? (
-              <Text bold color="success">
-                {' '}· convergence detected
-              </Text>
-            ) : null}
+        <Box key={`r-${round.number}`} flexDirection="column">
+          <Box>
+            <Text bold dimColor>{'Round '}{round.number}</Text>
+            {round.converged ? <Text bold color="green">{' · convergence detected'}</Text> : null}
           </Box>
-          {round.responses.map((response, index) => (
+          {round.responses.map((response, ri) => (
             <ResponseCard
-              key={`${round.number}-${response.model}`}
+              key={`${round.number}-${ri}`}
               response={response}
-              color={getModelColor(state.config.models.indexOf(response.model) >= 0 ? state.config.models.indexOf(response.model) : index)}
+              color={modelColor(
+                state.config.models.indexOf(response.model) >= 0
+                  ? state.config.models.indexOf(response.model)
+                  : ri
+              )}
+              roundNum={round.number}
             />
           ))}
         </Box>
       ))}
 
+      {/* Live streaming */}
       {currentModel && streamingContent.has(currentModel) ? (
-        <Box flexDirection="column">
-          <Text bold dimColor>
-            Live response
-          </Text>
-          <Box
-            flexDirection="column"
-            borderStyle="round"
-            borderColor={getModelColor(state.config.models.indexOf(currentModel))}
-            paddingX={1}
-          >
-            <Box justifyContent="space-between">
-              <Text bold color={getModelColor(state.config.models.indexOf(currentModel))}>
-                {currentModel}
-              </Text>
-              <Text bold color="warning">
-                STREAMING
-              </Text>
-            </Box>
-            <Text wrap="wrap">{streamingContent.get(currentModel)}</Text>
-          </Box>
-        </Box>
+        <StreamingCard
+          model={currentModel}
+          content={streamingContent.get(currentModel)!}
+          color={modelColor(state.config.models.indexOf(currentModel))}
+        />
       ) : null}
+
+      {/* Separator + stats */}
+      <Text dimColor>{sep}</Text>
+      <Text dimColor>
+        {state.config.models.length}{' models · total cost '}{formatUSD(state.totalCostUSD)}
+      </Text>
+
+      {/* Hotkeys */}
+      <Text dimColor>ctrl+c stop · ctrl+s save transcript · enter inject thoughts</Text>
     </Box>
   )
 }

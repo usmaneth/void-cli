@@ -1,7 +1,6 @@
 import * as React from 'react'
 import { Box, Text } from '../ink.js'
 import { useTerminalSize } from '../hooks/useTerminalSize.js'
-import { ProgressBar } from '../components/design-system/ProgressBar.js'
 import type { SwarmPhase, SwarmState, Workstream, WorkstreamTask } from './types.js'
 
 type SwarmRendererProps = {
@@ -9,34 +8,7 @@ type SwarmRendererProps = {
   workerMessages: Map<string, string>
 }
 
-const PHASE_LABELS: Record<SwarmPhase, string> = {
-  idle: 'idle',
-  decomposing: 'decomposing',
-  working: 'building',
-  merging: 'merging',
-  reviewing: 'reviewing',
-  complete: 'complete',
-  failed: 'failed',
-}
-
-const PHASE_COLORS: Record<SwarmPhase, string> = {
-  idle: 'inactive',
-  decomposing: 'warning',
-  working: 'claude',
-  merging: 'merged',
-  reviewing: 'suggestion',
-  complete: 'success',
-  failed: 'error',
-}
-
-const MODEL_FALLBACK_COLORS = [
-  'claude',
-  'suggestion',
-  'success',
-  'warning',
-  'cyan_FOR_SUBAGENTS_ONLY',
-  'pink_FOR_SUBAGENTS_ONLY',
-] as const
+// ── Formatting helpers ──────────────────────────────────────────────────────
 
 function formatUSD(cost: number): string {
   if (cost < 0.001) return `$${cost.toFixed(4)}`
@@ -45,222 +17,219 @@ function formatUSD(cost: number): string {
 }
 
 function formatDuration(ms: number): string {
-  const totalSeconds = Math.max(0, Math.round(ms / 1000))
-  const minutes = Math.floor(totalSeconds / 60)
-  const seconds = totalSeconds % 60
-  if (minutes === 0) return `${seconds}s`
-  return `${minutes}m ${seconds}s`
+  const s = Math.max(0, Math.round(ms / 1000))
+  const m = Math.floor(s / 60)
+  return m === 0 ? `${s}s` : `${m}m ${s % 60}s`
 }
 
-function getModelColor(model: string, index: number): string {
-  if (model.startsWith('google/')) return 'success'
-  if (model.startsWith('openai/')) return 'suggestion'
-  if (model.startsWith('anthropic/') || model.startsWith('claude')) {
-    return 'claude'
+// ── Colors ──────────────────────────────────────────────────────────────────
+
+const PHASE_LABEL: Record<SwarmPhase, string> = {
+  idle: 'IDLE',
+  decomposing: 'DECOMPOSING',
+  working: 'BUILDING',
+  merging: 'MERGING',
+  reviewing: 'REVIEWING',
+  complete: 'COMPLETE',
+  failed: 'FAILED',
+}
+
+function phaseColor(phase: SwarmPhase): string {
+  switch (phase) {
+    case 'working': return 'claude'
+    case 'merging': return 'warning'
+    case 'reviewing': return 'suggestion'
+    case 'complete': return 'success'
+    case 'failed': return 'error'
+    default: return 'claude'
   }
-  return MODEL_FALLBACK_COLORS[index % MODEL_FALLBACK_COLORS.length]!
 }
 
-function estimateWorkstreamCost(workstream: Workstream): number {
-  const taskWeight = Math.max(1, workstream.tasks.length)
-  if (workstream.model.startsWith('google/')) return taskWeight * 0.004
-  if (workstream.model.startsWith('openai/')) return taskWeight * 0.006
-  if (workstream.model.startsWith('anthropic/') || workstream.model.startsWith('claude')) {
-    return taskWeight * 0.008
+function modelColor(model: string, i: number): string {
+  if (model.startsWith('google/')) return 'green'
+  if (model.startsWith('openai/')) return 'cyan'
+  if (model.startsWith('claude') || model.startsWith('anthropic/')) return 'magenta'
+  const palette = ['magenta', 'cyan', 'green', 'yellow', 'blue'] as const
+  return palette[i % palette.length]!
+}
+
+function statusArrow(status: string): { icon: string; color: string } {
+  switch (status) {
+    case 'running': return { icon: '▶', color: 'yellow' }
+    case 'done': return { icon: '✓', color: 'green' }
+    case 'failed': return { icon: '✕', color: 'red' }
+    default: return { icon: '○', color: 'gray' }
   }
-  return taskWeight * 0.005
 }
 
-function getTaskCounts(tasks: WorkstreamTask[]): {
-  done: number
-  total: number
-  inProgress: number
-} {
-  return tasks.reduce(
-    (acc, task) => {
-      if (task.status === 'done') acc.done += 1
-      if (task.status === 'in-progress') acc.inProgress += 1
-      acc.total += 1
-      return acc
-    },
-    { done: 0, total: 0, inProgress: 0 },
+function taskIcon(task: WorkstreamTask): { ch: string; color: string } {
+  switch (task.status) {
+    case 'done': return { ch: '●', color: 'green' }
+    case 'in-progress': return { ch: '◐', color: 'yellow' }
+    case 'failed': return { ch: '✕', color: 'red' }
+    default: return { ch: '○', color: 'gray' }
+  }
+}
+
+// ── Progress bar (pure text, no dependency) ─────────────────────────────────
+
+function ProgressText({ ratio, width }: { ratio: number; width: number }): React.JSX.Element {
+  const filled = Math.round(ratio * width)
+  const empty = width - filled
+  return (
+    <Text>
+      <Text color="green">{'█'.repeat(filled)}</Text>
+      <Text color="gray">{'░'.repeat(empty)}</Text>
+    </Text>
   )
 }
 
-function getOverallProgress(state: SwarmState): number {
-  const allTasks = state.workstreams.flatMap(workstream => workstream.tasks)
-  const taskTotal = allTasks.length
-  const done = allTasks.filter(task => task.status === 'done').length
-  const inProgress = allTasks.filter(task => task.status === 'in-progress').length
-  const buildProgress =
-    taskTotal === 0 ? 0 : (done + inProgress * 0.35) / Math.max(1, taskTotal)
-
-  switch (state.phase) {
-    case 'decomposing':
-      return 0.08
-    case 'working':
-      return 0.1 + buildProgress * 0.72
-    case 'merging':
-      return 0.88
-    case 'reviewing':
-      return 0.95
-    case 'complete':
-      return 1
-    case 'failed':
-      return Math.max(0.1, 0.1 + buildProgress * 0.6)
-    default:
-      return 0
-  }
-}
-
-function getEstimatedTotalCost(state: SwarmState): number {
-  const completedEstimate = state.workstreams.reduce((sum, workstream) => {
-    if (workstream.status === 'pending') return sum
-    return sum + estimateWorkstreamCost(workstream)
-  }, 0)
-  return Math.max(state.totalCostUSD, completedEstimate)
-}
-
-function getTaskIcon(task: WorkstreamTask): { color: string; icon: string } {
-  if (task.status === 'done') return { color: 'success', icon: '✓' }
-  if (task.status === 'in-progress') return { color: 'warning', icon: '◐' }
-  if (task.status === 'failed') return { color: 'error', icon: '✕' }
-  return { color: 'inactive', icon: '○' }
-}
-
-type WorkerPanelProps = {
-  key?: React.Key
-  workstream: Workstream
-  index: number
-  message?: string
-}
+// ── Worker panel ────────────────────────────────────────────────────────────
 
 function WorkerPanel({
-  workstream,
+  ws,
   index,
   message,
-}: WorkerPanelProps): React.JSX.Element {
-  const modelColor = getModelColor(workstream.model, index)
-  const statusColor =
-    workstream.status === 'done'
-      ? 'success'
-      : workstream.status === 'failed'
-        ? 'error'
-        : workstream.status === 'running'
-          ? 'warning'
-          : 'inactive'
-  const counts = getTaskCounts(workstream.tasks)
-  const activeTask = workstream.tasks.find(task => task.status === 'in-progress')
-  const workerCost = workstream.status === 'pending' ? 0 : estimateWorkstreamCost(workstream)
+}: {
+  key?: React.Key
+  ws: Workstream
+  index: number
+  message?: string
+}): React.JSX.Element {
+  const color = modelColor(ws.model, index)
+  const sa = statusArrow(ws.status)
+  const done = ws.tasks.filter(t => t.status === 'done').length
+  const branch = ws.worktreeBranch ? `worktree: ${ws.worktreeBranch}` : ''
 
   return (
-    <Box
-      flexDirection="column"
-      borderStyle="round"
-      borderColor={modelColor}
-      paddingX={1}
-      paddingY={0}
-      marginBottom={1}
-    >
-      <Box justifyContent="space-between">
-        <Text bold color={modelColor}>
-          {workstream.name}
-        </Text>
-        <Text bold color={statusColor}>
-          {workstream.status.toUpperCase()}
-        </Text>
-      </Box>
-      <Text dimColor>
-        {workstream.domain} · {workstream.model} · {counts.done}/{counts.total} tasks · est.{' '}
-        {formatUSD(workerCost)}
+    <Box flexDirection="column" marginBottom={0}>
+      {/* Header line: ┌ Name → Model   worktree: branch */}
+      <Text>
+        <Text color={color}>{'  ┌ '}</Text>
+        <Text bold color={color}>{ws.name}</Text>
+        <Text color={color}>{' → '}</Text>
+        <Text color={color}>{ws.model}</Text>
+        {branch ? <Text dimColor>{'  '}{branch}</Text> : null}
       </Text>
-      <Text wrap="truncate-end" dimColor>
-        {message ?? workstream.description}
+
+      {/* Status line */}
+      <Text>
+        <Text color={color}>{'  │ '}</Text>
+        <Text color={sa.color}>{sa.icon}</Text>
+        <Text dimColor>{' '}{ws.status.toUpperCase()}{' · '}{done}/{ws.tasks.length} tasks</Text>
+        {message ? <Text dimColor>{' · '}{message}</Text> : null}
       </Text>
-      {activeTask?.file && (
-        <Text dimColor wrap="truncate-end">
-          Active file: {activeTask.file}
-        </Text>
-      )}
-      <Box flexDirection="column" marginTop={1}>
-        {workstream.tasks.map(task => {
-          const { color, icon } = getTaskIcon(task)
-          return (
-            <Text key={`${workstream.id}-${task.description}`} color={color} wrap="truncate-end">
-              {icon} <Text color={undefined}>{task.description}</Text>
-              {task.file ? <Text dimColor>{` (${task.file})`}</Text> : null}
-            </Text>
-          )
-        })}
-      </Box>
+
+      {/* Task list */}
+      {ws.tasks.map((task, ti) => {
+        const ti2 = taskIcon(task)
+        return (
+          <Text key={`${ws.id}-${ti}`}>
+            <Text color={color}>{'  │ '}</Text>
+            <Text color={ti2.color}>{ti2.ch}</Text>
+            <Text>{' '}{task.description}</Text>
+            {task.file ? <Text dimColor>{` (${task.file})`}</Text> : null}
+          </Text>
+        )
+      })}
+
+      {/* Footer */}
+      <Text color={color}>{'  └'}</Text>
     </Box>
   )
 }
 
-export function SwarmRenderer({
-  state,
-  workerMessages,
-}: SwarmRendererProps): React.JSX.Element {
+// ── Main renderer ───────────────────────────────────────────────────────────
+
+export function SwarmRenderer({ state, workerMessages }: SwarmRendererProps): React.JSX.Element {
   const { columns } = useTerminalSize()
 
   if (!state) {
-    return (
-      <Box paddingX={1}>
-        <Text dimColor>Initializing swarm...</Text>
-      </Box>
-    )
+    return <Box paddingX={1}><Text dimColor>Initializing swarm...</Text></Box>
   }
 
-  const progress = getOverallProgress(state)
-  const progressPct = Math.round(progress * 100)
-  const progressWidth = Math.max(20, Math.min(columns - 28, 48))
+  const allTasks = state.workstreams.flatMap(ws => ws.tasks)
+  const totalTasks = allTasks.length
+  const doneTasks = allTasks.filter(t => t.status === 'done').length
+  const inProgress = allTasks.filter(t => t.status === 'in-progress').length
+  const buildRatio = totalTasks === 0 ? 0 : (doneTasks + inProgress * 0.35) / totalTasks
+
+  let ratio = 0
+  switch (state.phase) {
+    case 'decomposing': ratio = 0.08; break
+    case 'working': ratio = 0.1 + buildRatio * 0.72; break
+    case 'merging': ratio = 0.88; break
+    case 'reviewing': ratio = 0.95; break
+    case 'complete': ratio = 1; break
+    case 'failed': ratio = Math.max(0.1, 0.1 + buildRatio * 0.6); break
+  }
+
+  const pct = Math.round(ratio * 100)
   const elapsed = formatDuration(Date.now() - state.startTime)
-  const estimatedCost = getEstimatedTotalCost(state)
-  const doneWorkers = state.workstreams.filter(workstream => workstream.status === 'done').length
+  const cost = state.workstreams.reduce((sum, ws) => {
+    if (ws.status === 'pending') return sum
+    const w = Math.max(1, ws.tasks.length)
+    if (ws.model.startsWith('google/')) return sum + w * 0.004
+    if (ws.model.startsWith('openai/')) return sum + w * 0.006
+    if (ws.model.startsWith('claude') || ws.model.startsWith('anthropic/')) return sum + w * 0.008
+    return sum + w * 0.005
+  }, state.totalCostUSD)
+  const doneWorkers = state.workstreams.filter(ws => ws.status === 'done').length
+  const barW = Math.max(20, Math.min(columns - 30, 48))
+  const sep = '─'.repeat(Math.max(10, columns - 6))
 
   return (
-    <Box flexDirection="column" paddingX={1}>
+    <Box
+      flexDirection="column"
+      borderStyle="double"
+      borderColor="magenta"
+      paddingX={1}
+      paddingY={0}
+      width={columns}
+    >
+      {/* Title bar */}
       <Box justifyContent="space-between">
-        <Text bold color="claude">
-          SWARM
-        </Text>
-        <Text bold color={PHASE_COLORS[state.phase]}>
-          {PHASE_LABELS[state.phase].toUpperCase()}
-        </Text>
+        <Text bold color="magenta">{'◈ S W A R M'}</Text>
+        <Text bold color={phaseColor(state.phase)}>{PHASE_LABEL[state.phase]}</Text>
       </Box>
-      <Text dimColor wrap="truncate-end">
-        Coordinator {state.config.coordinator} · {state.workstreams.length} workers · elapsed {elapsed}
+
+      {/* Coordinator + description */}
+      <Text dimColor>
+        {'Coordinator: '}{state.config.coordinator}{' · '}{state.workstreams.length}{' workers · elapsed '}{elapsed}
       </Text>
-      <Text dimColor wrap="truncate-end">
-        {state.config.description}
-      </Text>
-      <Box marginTop={1}>
-        <ProgressBar
-          ratio={progress}
-          width={progressWidth}
-          fillColor={PHASE_COLORS[state.phase]}
-          emptyColor="inactive"
+      <Text dimColor wrap="truncate-end">{state.config.description}</Text>
+
+      {/* Separator */}
+      <Text dimColor>{sep}</Text>
+
+      {/* Worker panels */}
+      {state.workstreams.map((ws, i) => (
+        <WorkerPanel
+          key={ws.id}
+          ws={ws}
+          index={i}
+          message={workerMessages.get(ws.id)}
         />
-        <Text> </Text>
-        <Text bold color={PHASE_COLORS[state.phase]}>
-          {progressPct}%
-        </Text>
+      ))}
+
+      {/* Separator */}
+      <Text dimColor>{sep}</Text>
+
+      {/* Progress bar */}
+      <Box>
+        <Text dimColor>{'Progress: '}</Text>
+        <ProgressText ratio={ratio} width={barW} />
+        <Text bold color={phaseColor(state.phase)}>{' '}{pct}%</Text>
       </Box>
+
+      {/* Stats line */}
       <Text dimColor>
-        {doneWorkers}/{state.workstreams.length} workers finished · est. cost {formatUSD(estimatedCost)}
+        {doneWorkers}/{state.workstreams.length}{' workers finished · Est. cost '}{formatUSD(cost)}{' · Elapsed '}{elapsed}
       </Text>
-      <Box marginTop={1} flexDirection="column">
-        {state.workstreams.map((workstream, index) => (
-          <WorkerPanel
-            key={workstream.id}
-            workstream={workstream}
-            index={index}
-            message={workerMessages.get(workstream.id)}
-          />
-        ))}
-      </Box>
+
+      {/* Hotkeys */}
       <Text dimColor>
-        Phases: decomposing → building → merging → reviewing
+        {'enter inject guidance · ctrl+c abort · tab switch focus'}
       </Text>
     </Box>
   )
