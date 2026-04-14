@@ -20,6 +20,7 @@ export const ALLOWED_OFFICIAL_MARKETPLACE_NAMES = new Set([
   'void-marketplace',
   'claude-code-plugins',
   'void-plugins-official',
+  'claude-plugins-official',
   'anthropic-marketplace',
   'anthropic-plugins',
   'agent-skills',
