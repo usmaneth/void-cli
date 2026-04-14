@@ -10,6 +10,7 @@ import orchestrate from './orchestrator/command.js'
 import workstream from './workstream/command.js'
 import { completionCommand, doctorDiagCommand } from './completions/command.js'
 import repomapCommand from './repomap/command.js'
+import deliberate from './commands/deliberate/index.js'
 import addDir from './commands/add-dir/index.js'
 import autofixPr from './commands/autofix-pr/index.js'
 import backfillSessions from './commands/backfill-sessions/index.js'
@@ -325,6 +326,7 @@ const COMMANDS = memoize((): Command[] => [
   context,
   contextNonInteractive,
   cost,
+  deliberate,
   diagnose,
   diff,
   diffReview,
