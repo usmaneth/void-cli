@@ -500,7 +500,11 @@ export function useTypeahead({
   // subsequent tests in the shard. The subscriber still registers so
   // fileSuggestions tests that trigger a refresh directly work correctly.
   useEffect(() => {
-    if (NODE_ENV !== 'test' && findGitRoot(getCwd())) {
+    // Check the user's actual launch directory, not the wrapper's CWD.
+    // The void wrapper cd's to the project root for module resolution,
+    // so getCwd() may return ~/void-cli even when launched from ~.
+    const launchDir = process.env.VOID_LAUNCH_CWD || getCwd();
+    if (NODE_ENV !== 'test' && findGitRoot(launchDir)) {
       startBackgroundCacheRefresh();
     }
     return onIndexBuildComplete(() => {
