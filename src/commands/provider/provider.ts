@@ -2,7 +2,7 @@ import { execFileSync } from 'child_process'
 import { userInfo } from 'os'
 import type { LocalCommandCall } from '../../types/command.js'
 
-const SUPPORTED_PROVIDERS = ['openrouter'] as const
+const SUPPORTED_PROVIDERS = ['openrouter', 'openai', 'gemini'] as const
 type ProviderName = (typeof SUPPORTED_PROVIDERS)[number]
 
 const KEYCHAIN_SERVICE_PREFIX = 'Void'
@@ -71,6 +71,10 @@ function hasEnvKey(provider: ProviderName): boolean {
   switch (provider) {
     case 'openrouter':
       return !!process.env.OPENROUTER_API_KEY
+    case 'openai':
+      return !!process.env.OPENAI_API_KEY
+    case 'gemini':
+      return !!process.env.GEMINI_API_KEY
   }
 }
 
@@ -117,7 +121,7 @@ function handleAdd(
   }
 
   if (!keyArg) {
-    return `Usage: /provider add ${provider} <api-key>\n\nGet your API key from:\n  openrouter: https://openrouter.ai/keys`
+    return `Usage: /provider add ${provider} <api-key>\n\nGet your API key from:\n  openrouter: https://openrouter.ai/keys\n  openai:     https://platform.openai.com/api-keys\n  gemini:     https://aistudio.google.com/apikey`
   }
 
   if (process.platform !== 'darwin') {
@@ -163,18 +167,39 @@ function handleStatus(): string {
   lines.push('  claude-sonnet-4-*    -> Anthropic')
   lines.push('  claude-opus-4-*      -> Anthropic')
 
-  // OpenRouter models
+  // Direct OpenAI models
+  const openaiStatus = getProviderStatus('openai')
+  const openaiAvailable = openaiStatus.startsWith('connected')
+  lines.push('')
+  lines.push(
+    `  openai/*             -> OpenAI direct ${openaiAvailable ? '(ready)' : '(no key configured)'}`,
+  )
+
+  // Direct Gemini models
+  const geminiStatus = getProviderStatus('gemini')
+  const geminiAvailable = geminiStatus.startsWith('connected')
+  lines.push(
+    `  google/*             -> Gemini direct ${geminiAvailable ? '(ready)' : '(no key configured)'}`,
+  )
+
+  // OpenRouter models (fallback for all vendor/model patterns)
   const orStatus = getProviderStatus('openrouter')
   const orAvailable = orStatus.startsWith('connected')
   lines.push('')
   lines.push(
     `  <vendor>/<model>     -> OpenRouter ${orAvailable ? '(ready)' : '(no key configured)'}`,
   )
-  lines.push('    e.g. openai/gpt-4o, google/gemini-2.5-pro')
+  lines.push('    Fallback for models without a direct provider key')
 
-  if (!orAvailable) {
+  const missingProviders: string[] = []
+  if (!openaiAvailable) missingProviders.push('openai')
+  if (!geminiAvailable) missingProviders.push('gemini')
+  if (!orAvailable) missingProviders.push('openrouter')
+  if (missingProviders.length > 0) {
     lines.push('')
-    lines.push('  To configure OpenRouter: /provider add openrouter <api-key>')
+    lines.push(
+      `  To configure: /provider add <${missingProviders.join('|')}> <api-key>`,
+    )
   }
 
   return lines.join('\n')
