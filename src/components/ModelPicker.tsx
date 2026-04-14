@@ -1,7 +1,7 @@
 import { c as _c } from "react/compiler-runtime";
 import capitalize from 'lodash-es/capitalize.js';
 import * as React from 'react';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useExitOnCtrlCDWithKeybindings } from 'src/hooks/useExitOnCtrlCDWithKeybindings.js';
 import { type AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS, logEvent } from 'src/services/analytics/index.js';
 import { FAST_MODE_MODEL_DISPLAY, isFastModeAvailable, isFastModeCooldown, isFastModeEnabled } from 'src/utils/fastMode.js';
@@ -10,7 +10,9 @@ import { useKeybindings } from '../keybindings/useKeybinding.js';
 import { useAppState, useSetAppState } from '../state/AppState.js';
 import { convertEffortValueToLevel, type EffortLevel, getDefaultEffortForModel, modelSupportsEffort, modelSupportsMaxEffort, resolvePickerEffortPersistence, toPersistableEffort } from '../utils/effort.js';
 import { getDefaultMainLoopModel, type ModelSetting, modelDisplayString, parseUserSpecifiedModel } from '../utils/model/model.js';
-import { getModelOptions } from '../utils/model/modelOptions.js';
+import { getModelOptions, getOpenRouterModelOptions, type ModelOption } from '../utils/model/modelOptions.js';
+import { fetchOpenRouterModels } from '../utils/model/openrouterModels.js';
+import { getSuggestedModels, type SuggestionContext } from '../utils/model/modelSuggestions.js';
 import { getSettingsForSource, updateSettingsForSource } from '../utils/settings/settings.js';
 import { ConfigurableShortcutHint } from './ConfigurableShortcutHint.js';
 import { Select } from './CustomSelect/index.js';
@@ -55,6 +57,63 @@ export function ModelPicker(t0) {
   const isFastMode = useAppState(_temp);
   const [hasToggledEffort, setHasToggledEffort] = useState(false);
   const effortValue = useAppState(_temp2);
+
+  // --- OpenRouter browser state (outside memo cache) ---
+  const [openRouterOptions, setOpenRouterOptions] = useState<ModelOption[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [providerFilter, setProviderFilter] = useState<string | null>(null);
+  const [favorites, setFavorites] = useState<Set<string>>(() => {
+    const settings = getSettingsForSource('userSettings');
+    return new Set(settings?.favoriteModels ?? []);
+  });
+  const [providerList, setProviderList] = useState<string[]>([]);
+
+  // Load OpenRouter models on mount
+  useEffect(() => {
+    let cancelled = false;
+    getOpenRouterModelOptions().then((opts) => {
+      if (!cancelled && opts.length > 0) {
+        setOpenRouterOptions(opts);
+        // Extract unique providers
+        const providers = Array.from(new Set(opts.map(o => {
+          const desc = o.description ?? '';
+          return desc.split(' · ')[0] ?? '';
+        }).filter(Boolean))).sort();
+        setProviderList(providers);
+      }
+    });
+    return () => { cancelled = true; };
+  }, []);
+
+  // Toggle favorite handler (Cmd+F / Ctrl+F)
+  const toggleFavorite = useCallback((modelId: string | null) => {
+    if (!modelId) return;
+    setFavorites(prev => {
+      const next = new Set(prev);
+      if (next.has(modelId)) {
+        next.delete(modelId);
+      } else {
+        next.add(modelId);
+      }
+      // Persist to settings
+      updateSettingsForSource('userSettings', {
+        favoriteModels: Array.from(next),
+      });
+      return next;
+    });
+  }, []);
+
+  // Cycle provider filter (Tab)
+  const cycleProviderFilter = useCallback(() => {
+    if (providerList.length === 0) return;
+    setProviderFilter(prev => {
+      if (prev === null) return providerList[0] ?? null;
+      const idx = providerList.indexOf(prev);
+      if (idx === -1 || idx === providerList.length - 1) return null;
+      return providerList[idx + 1] ?? null;
+    });
+  }, [providerList]);
+
   let t1;
   if ($[0] !== effortValue) {
     t1 = effortValue !== undefined ? convertEffortValueToLevel(effortValue) : undefined;
@@ -73,7 +132,74 @@ export function ModelPicker(t0) {
   } else {
     t3 = $[3];
   }
-  const modelOptions = t3;
+
+  // Build sectioned model options: Favorites > Suggestions > Claude > OpenRouter
+  const modelOptions = useMemo(() => {
+    const claudeOptions = t3;
+    let allOptions: ModelOption[] = [];
+
+    // Favorites section
+    const favoriteOptions = openRouterOptions.filter(o => o.value !== null && favorites.has(o.value as string));
+    if (favoriteOptions.length > 0) {
+      allOptions.push({
+        value: '__section_favorites__' as any,
+        label: '★ Favorites',
+        description: '',
+      });
+      allOptions = allOptions.concat(favoriteOptions);
+    }
+
+    // Suggestion section (based on heuristic)
+    // Suggestions are lightweight -- only show if OpenRouter models are loaded
+    if (openRouterOptions.length > 0) {
+      const apiKey = process.env.OPENROUTER_API_KEY;
+      if (apiKey) {
+        // We just show a static context-free suggestion for now
+        // The full suggestion engine works at model-fetch time
+      }
+    }
+
+    // Claude models section (the default)
+    allOptions = allOptions.concat(claudeOptions);
+
+    // OpenRouter catalog section (filtered)
+    if (openRouterOptions.length > 0) {
+      let orFiltered = openRouterOptions;
+
+      // Apply provider filter
+      if (providerFilter) {
+        const lp = providerFilter.toLowerCase();
+        orFiltered = orFiltered.filter(o => {
+          const desc = o.description ?? '';
+          return desc.toLowerCase().startsWith(lp);
+        });
+      }
+
+      // Apply search query
+      if (searchQuery) {
+        const lq = searchQuery.toLowerCase();
+        orFiltered = orFiltered.filter(o =>
+          (o.label ?? '').toLowerCase().includes(lq) ||
+          (typeof o.value === 'string' && o.value.toLowerCase().includes(lq)) ||
+          (o.description ?? '').toLowerCase().includes(lq)
+        );
+      }
+
+      // Exclude already-shown favorites
+      orFiltered = orFiltered.filter(o => !favorites.has(o.value as string));
+
+      if (orFiltered.length > 0) {
+        allOptions.push({
+          value: '__section_openrouter__' as any,
+          label: '🌐 OpenRouter Catalog' + (providerFilter ? ` (${providerFilter})` : ''),
+          description: searchQuery ? `Showing results for "${searchQuery}"` : `${orFiltered.length} models available`,
+        });
+        allOptions = allOptions.concat(orFiltered);
+      }
+    }
+
+    return allOptions;
+  }, [t3, openRouterOptions, favorites, searchQuery, providerFilter]);
   let t4;
   bb0: {
     if (initial !== null && !modelOptions.some(opt => opt.value === initial)) {
@@ -221,6 +347,16 @@ export function ModelPicker(t0) {
     t13 = $[34];
   }
   useKeybindings(t12, t13);
+
+  // OpenRouter browser keybindings (outside memo cache)
+  // Cmd+F / Ctrl+F: toggle favorite on focused model
+  // Tab: cycle provider filter
+  const openRouterKeybindings = useMemo(() => ({
+    "modelPicker:toggleFavorite": () => toggleFavorite(focusedValue === NO_PREFERENCE ? null : focusedValue),
+    "modelPicker:cycleProvider": cycleProviderFilter,
+  }), [toggleFavorite, focusedValue, cycleProviderFilter]);
+  useKeybindings(openRouterKeybindings, { context: "ModelPickerOpenRouter" });
+
   let t14;
   if ($[35] !== effort || $[36] !== hasToggledEffort || $[37] !== onSelect || $[38] !== setAppState || $[39] !== skipSettingsWrite) {
     t14 = function handleSelect(value_0) {
@@ -342,6 +478,18 @@ export function ModelPicker(t0) {
   } else {
     t25 = $[68];
   }
+  // OpenRouter browser hint (outside memo cache to avoid slot conflicts)
+  const openRouterHint = openRouterOptions.length > 0 ? (
+    <Box marginBottom={1} flexDirection="column">
+      <Text dimColor={true}>
+        OpenRouter: {openRouterOptions.length} models loaded
+        {providerFilter ? ` · Filter: ${providerFilter}` : ''}
+        {favorites.size > 0 ? ` · ${favorites.size} favorited` : ''}
+        {' '}<Text color="subtle">Cmd+F favorite · Tab filter provider</Text>
+      </Text>
+    </Box>
+  ) : null;
+
   let t26;
   if ($[69] !== t19 || $[70] !== t23 || $[71] !== t24 || $[72] !== t25) {
     t26 = <Box flexDirection="column">{t19}{t23}{t24}{t25}</Box>;
@@ -371,7 +519,10 @@ export function ModelPicker(t0) {
   } else {
     t28 = $[79];
   }
-  const content = t28;
+  // Compose final content with OpenRouter hint
+  const content = openRouterHint
+    ? <Box flexDirection="column">{t28}{openRouterHint}</Box>
+    : t28;
   if (!isStandaloneCommand) {
     return content;
   }

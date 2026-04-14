@@ -7,6 +7,8 @@ import {
 } from '../auth.js'
 import { getModelStrings } from './modelStrings.js'
 import { getAntModels } from './antModels.js'
+import type { OpenRouterModel } from './openrouterModels.js'
+import { fetchOpenRouterModels } from './openrouterModels.js'
 import {
   COST_TIER_3_15,
   COST_HAIKU_35,
@@ -538,4 +540,46 @@ function filterModelOptionsByAllowlist(options: ModelOption[]): ModelOption[] {
     opt =>
       opt.value === null || (opt.value !== null && isModelAllowed(opt.value)),
   )
+}
+
+/**
+ * Convert an OpenRouterModel into a ModelOption for the picker.
+ */
+export function openRouterModelToOption(m: OpenRouterModel): ModelOption {
+  const priceParts: string[] = []
+  if (m.pricing.prompt > 0) {
+    priceParts.push(`$${m.pricing.prompt.toFixed(2)}/1M in`)
+  }
+  if (m.pricing.completion > 0) {
+    priceParts.push(`$${m.pricing.completion.toFixed(2)}/1M out`)
+  }
+  const priceStr = priceParts.length > 0 ? ` · ${priceParts.join(', ')}` : ''
+  const ctxStr =
+    m.contextLength >= 1000
+      ? `${Math.round(m.contextLength / 1000)}k ctx`
+      : `${m.contextLength} ctx`
+
+  return {
+    value: m.id,
+    label: m.name,
+    description: `${m.provider} · ${ctxStr}${priceStr}`,
+    descriptionForModel: `${m.name} from ${m.provider} via OpenRouter (${ctxStr})`,
+  }
+}
+
+/**
+ * Fetch the OpenRouter catalog and return them as ModelOptions.
+ * Requires OPENROUTER_API_KEY in the environment.
+ */
+export async function getOpenRouterModelOptions(): Promise<ModelOption[]> {
+  const apiKey = process.env.OPENROUTER_API_KEY
+  if (!apiKey) {
+    return []
+  }
+  try {
+    const models = await fetchOpenRouterModels(apiKey)
+    return models.map(openRouterModelToOption)
+  } catch {
+    return []
+  }
 }
