@@ -87,12 +87,23 @@ function getProviderStatus(provider: ProviderName): string {
   return 'missing key'
 }
 
-function handleList(): string {
+async function handleList(): Promise<string> {
   const lines: string[] = ['Providers:', '']
 
-  // Anthropic (always present as the default)
+  // Anthropic (check OAuth first, then API key)
   const anthropicKey = process.env.ANTHROPIC_API_KEY
-  const anthropicStatus = anthropicKey ? 'connected (env var)' : 'missing key'
+  let anthropicStatus: string
+  if (anthropicKey) {
+    anthropicStatus = 'connected (env var)'
+  } else {
+    try {
+      const { getClaudeAIOAuthTokens } = await import('../../utils/auth.js')
+      const tokens = getClaudeAIOAuthTokens()
+      anthropicStatus = tokens ? 'connected (OAuth)' : 'missing key'
+    } catch {
+      anthropicStatus = 'missing key'
+    }
+  }
   lines.push(`  anthropic    ${anthropicStatus}`)
 
   // Additional providers
@@ -210,7 +221,7 @@ export const call: LocalCommandCall = async (args) => {
   const subcommand = parts[0]?.toLowerCase()
 
   if (!subcommand || subcommand === 'list') {
-    return { type: 'text', value: handleList() }
+    return { type: 'text', value: await handleList() }
   }
 
   switch (subcommand) {
