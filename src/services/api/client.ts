@@ -82,7 +82,7 @@ async function getKeyFromKeychain(provider: string): Promise<string | null> {
     _cachedKeychainKeys[provider] = null
     return null
   }
-  const { execFileNoThrow: execNoThrow } = await import('src/utils/execFileNoThrow.js')
+  const { execFileNoThrow: execNoThrow } = await import('../../utils/execFileNoThrow.js')
   const username = process.env.USER || (await import('os')).userInfo().username
   for (const args of [
     ['find-generic-password', '-s', `Void-${provider}`, '-a', username, '-w'],
