@@ -5,9 +5,16 @@
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
+# Always run from the project root — bun/node module resolution and
+# Ink's terminal handling can hang when CWD is outside the project
+# (e.g., running `void` from ~). The entrypoint reads VOID_LAUNCH_CWD
+# to know the user's original working directory.
+export VOID_LAUNCH_CWD="$PWD"
+cd "$ROOT_DIR"
+
 # If bun is available, use it directly on the TypeScript source (faster, no build needed)
 if command -v bun >/dev/null 2>&1; then
-  exec bun "$ROOT_DIR/src/entrypoints/cli.tsx" "$@"
+  exec bun src/entrypoints/cli.tsx "$@"
 fi
 
 # Fall back to Node.js with the compiled dist
