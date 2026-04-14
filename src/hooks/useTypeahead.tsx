@@ -21,7 +21,9 @@ import type { InlineGhostText, PromptInputMode } from '../types/textInputTypes.j
 import { isAgentSwarmsEnabled } from '../utils/agentSwarmsEnabled.js';
 import { generateProgressiveArgumentHint, parseArguments } from '../utils/argumentSubstitution.js';
 import { getShellCompletions, type ShellCompletionType } from '../utils/bash/shellCompletion.js';
+import { getCwd } from '../utils/cwd.js';
 import { formatLogMetadata } from '../utils/format.js';
+import { findGitRoot } from '../utils/git.js';
 import { getSessionIdFromLog, searchSessionsByCustomTitle } from '../utils/sessionStorage.js';
 import { applyCommandSuggestion, findMidInputSlashCommand, generateCommandSuggestions, getBestCommandMatch, isCommandInput } from '../utils/suggestions/commandSuggestions.js';
 import { getDirectoryCompletions, getPathCompletions, isPathLikeToken } from '../utils/suggestions/directoryCompletion.js';
@@ -487,13 +489,18 @@ export function useTypeahead({
   // search so partial upgrades to full. Clears the token ref so the same
   // query isn't discarded as stale.
   //
+  // Only pre-warm in git workspaces. Outside a repo (for example launching
+  // from ~), the fallback path scans the entire cwd with ripgrep which can
+  // be huge and noticeably interfere with the first prompt. Non-git dirs
+  // still build on demand the first time the user triggers file suggestions.
+  //
   // Skipped under NODE_ENV=test: REPL-mounting tests would spawn git ls-files
   // against the real CI workspace (270k+ files on Windows runners), and the
   // background build outlives the test — its setImmediate chain leaks into
   // subsequent tests in the shard. The subscriber still registers so
   // fileSuggestions tests that trigger a refresh directly work correctly.
   useEffect(() => {
-    if (NODE_ENV !== 'test') {
+    if (NODE_ENV !== 'test' && findGitRoot(getCwd())) {
       startBackgroundCacheRefresh();
     }
     return onIndexBuildComplete(() => {

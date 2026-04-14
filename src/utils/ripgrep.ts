@@ -7,7 +7,7 @@ import { logEvent } from 'src/services/analytics/index.js'
 import { fileURLToPath } from 'url'
 import { isInBundledMode } from './bundledMode.js'
 import { logForDebugging } from './debug.js'
-import { isEnvDefinedFalsy } from './envUtils.js'
+import { isEnvTruthy } from './envUtils.js'
 import { execFileNoThrow } from './execFileNoThrow.js'
 import { findExecutable } from './findExecutable.js'
 import { logError } from './log.js'
@@ -29,12 +29,12 @@ type RipgrepConfig = {
 }
 
 const getRipgrepConfig = memoize((): RipgrepConfig => {
-  const userWantsSystemRipgrep = isEnvDefinedFalsy(
-    process.env.USE_BUILTIN_RIPGREP,
-  )
+  const forceBuiltinRipgrep = isEnvTruthy(process.env.USE_BUILTIN_RIPGREP)
 
-  // Try system ripgrep if user wants it
-  if (userWantsSystemRipgrep) {
+  // Prefer a real rg on PATH unless the user explicitly forces the bundled
+  // fallback. Local source-linked runs don't ship src/utils/vendor/ripgrep,
+  // so defaulting to "builtin" breaks file-index warmup outside git repos.
+  if (!forceBuiltinRipgrep) {
     const { cmd: systemPath } = findExecutable('rg', [])
     if (systemPath !== 'rg') {
       // SECURITY: Use command name 'rg' instead of systemPath to prevent PATH hijacking
