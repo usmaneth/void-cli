@@ -2,7 +2,8 @@
 # Void CLI launcher
 # Supports both bun (fast, dev) and node (production) runtimes.
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+SCRIPT_PATH="$(python3 -c 'import os,sys; print(os.path.realpath(sys.argv[1]))' "$0")"
+SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 # Always run from the project root — bun/node module resolution and
@@ -14,7 +15,7 @@ cd "$ROOT_DIR"
 
 # If bun is available, use it directly on the TypeScript source (faster, no build needed)
 if command -v bun >/dev/null 2>&1; then
-  exec bun src/entrypoints/cli.tsx "$@"
+  exec bun ./src/entrypoints/cli.tsx "$@"
 fi
 
 # Fall back to Node.js with the compiled dist

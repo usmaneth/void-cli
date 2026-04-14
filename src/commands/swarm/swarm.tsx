@@ -19,11 +19,15 @@ import type {
   Workstream,
   WorkstreamTask,
 } from '../../swarm/types.js'
-import type { WorkstreamDomain } from '../../swarm/types.js'
+import {
+  DEFAULT_MODEL_ASSIGNMENTS,
+  type WorkstreamDomain,
+} from '../../swarm/types.js'
 import { decomposeTask } from '../../swarm/coordinator.js'
 import { SwarmRenderer } from '../../swarm/renderer.js'
 import { runWorker } from '../../swarm/worker.js'
 import { mergeWorktrees } from '../../swarm/merger.js'
+import { getSettingsForSource } from '../../utils/settings/settings.js'
 
 // ---------------------------------------------------------------------------
 // Argument parsing
@@ -34,6 +38,13 @@ type SwarmArgs = {
   modelOverrides: Partial<Record<WorkstreamDomain, string>>
   noMerge: boolean
   noReview: boolean
+}
+
+type ResolvedSwarmSettings = {
+  autoMerge: boolean
+  reviewAfterMerge: boolean
+  maxWorkersParallel: number
+  modelAssignments: Record<WorkstreamDomain, string>
 }
 
 function parseSwarmArgs(raw: string): SwarmArgs {
@@ -122,15 +133,18 @@ function createUsageMessage(): string {
 }
 
 function SwarmRunner({
-  args,
+  parsed,
+  settings,
   onDone,
 }: {
-  args: string
+  parsed: SwarmArgs
+  settings: ResolvedSwarmSettings
   onDone: LocalJSXCommandOnDone
 }): React.ReactNode {
   const repoRoot = process.cwd()
   const coordinatorModel = 'claude-opus-4-6'
-  const parsedRef = useRef(parseSwarmArgs(args))
+  const parsedRef = useRef(parsed)
+  const settingsRef = useRef(settings)
   const progressTicksRef = useRef<Map<string, number>>(new Map())
   const [state, setState] = useState<SwarmState | null>(null)
   const [workerMessages, setWorkerMessages] = useState<Map<string, string>>(
@@ -143,14 +157,15 @@ function SwarmRunner({
     const setInitialState = () => {
       if (cancelled) return
       const parsed = parsedRef.current
+      const resolvedSettings = settingsRef.current
       setState({
         config: {
           description: parsed.description,
           workstreams: [],
           coordinator: coordinatorModel,
-          autoMerge: !parsed.noMerge,
-          reviewAfterMerge: !parsed.noReview,
-          maxWorkersParallel: 4,
+          autoMerge: resolvedSettings.autoMerge,
+          reviewAfterMerge: resolvedSettings.reviewAfterMerge,
+          maxWorkersParallel: resolvedSettings.maxWorkersParallel,
         },
         phase: 'decomposing',
         workstreams: [],
@@ -176,6 +191,7 @@ function SwarmRunner({
 
     const run = async () => {
       const parsed = parsedRef.current
+      const resolvedSettings = settingsRef.current
       setInitialState()
 
       let workstreams: Workstream[]
@@ -190,9 +206,10 @@ function SwarmRunner({
       }
 
       for (const workstream of workstreams) {
-        if (parsed.modelOverrides[workstream.domain]) {
-          workstream.model = parsed.modelOverrides[workstream.domain]!
-        }
+        workstream.model =
+          parsed.modelOverrides[workstream.domain] ??
+          resolvedSettings.modelAssignments[workstream.domain] ??
+          workstream.model
       }
 
       const cloned = cloneWorkstreams(workstreams)
@@ -275,7 +292,7 @@ function SwarmRunner({
         },
       }
 
-      const maxParallel = 4
+      const maxParallel = resolvedSettings.maxWorkersParallel
       const batches: Workstream[][] = []
       for (let index = 0; index < workstreams.length; index += maxParallel) {
         batches.push(workstreams.slice(index, index + maxParallel))
@@ -304,7 +321,7 @@ function SwarmRunner({
       const failed = workstreams.filter(workstream => workstream.status === 'failed')
       let mergeResult: MergeResult | null = null
 
-      if (!parsed.noMerge && completed.length > 0) {
+      if (resolvedSettings.autoMerge && completed.length > 0) {
         if (!cancelled) {
           setState(prev => (prev ? { ...prev, phase: 'merging' } : prev))
         }
@@ -332,7 +349,7 @@ function SwarmRunner({
         }
       }
 
-      if (!parsed.noReview && completed.length > 0 && !cancelled) {
+      if (resolvedSettings.reviewAfterMerge && completed.length > 0 && !cancelled) {
         setState(prev => (prev ? { ...prev, phase: 'reviewing' } : prev))
         setWorkerMessages(prev => {
           const next = new Map(prev)
@@ -344,7 +361,7 @@ function SwarmRunner({
       if (!cancelled) {
         setState(prev => (prev ? { ...prev, phase: 'complete' } : prev))
         const mergeSummary =
-          parsed.noMerge || completed.length === 0
+          !resolvedSettings.autoMerge || completed.length === 0
             ? 'merge skipped'
             : mergeResult?.success === false
               ? `merged with ${mergeResult.conflicts} conflict(s)`
@@ -375,10 +392,31 @@ function SwarmRunner({
 
 export const call: LocalJSXCommandCall = async (onDone, _context, args) => {
   const parsed = parseSwarmArgs(args)
+  const settings = getSettingsForSource('userSettings')
+  const swarmSettings = settings?.swarm
+
   if (!parsed.description) {
     onDone(createUsageMessage(), { display: 'system' })
     return null
   }
 
-  return <SwarmRunner args={args} onDone={onDone} />
+  const modelAssignments: Record<WorkstreamDomain, string> = {
+    ...DEFAULT_MODEL_ASSIGNMENTS,
+    ...(swarmSettings?.defaultAssignments as
+      | Partial<Record<WorkstreamDomain, string>>
+      | undefined),
+  }
+
+  const resolvedSettings: ResolvedSwarmSettings = {
+    autoMerge: parsed.noMerge ? false : (swarmSettings?.autoMerge ?? true),
+    reviewAfterMerge: parsed.noReview
+      ? false
+      : (swarmSettings?.reviewAfterMerge ?? true),
+    maxWorkersParallel: swarmSettings?.maxWorkersParallel ?? 3,
+    modelAssignments,
+  }
+
+  return (
+    <SwarmRunner parsed={parsed} settings={resolvedSettings} onDone={onDone} />
+  )
 }

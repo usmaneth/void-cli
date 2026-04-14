@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "type": "module",
   "bin": {
-    "void": "./dist/entrypoints/cli.js"
+    "void": "./bin/void"
   },
   "scripts": {
     "build": "tsc && node scripts/postbuild.js",

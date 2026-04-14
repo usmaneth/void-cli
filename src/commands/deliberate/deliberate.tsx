@@ -19,6 +19,7 @@ import {
   DeliberationRenderer,
   type ModelStatus,
 } from '../../deliberation/renderer.js'
+import { getSettingsForSource } from '../../utils/settings/settings.js'
 
 // ── Default models for quick presets ────────────────────────────────────────
 
@@ -52,12 +53,17 @@ interface ParsedArgs {
   topic: string
   models: string[]
   rounds: number
+  hasModelOverride: boolean
+  hasRoundOverride: boolean
+  duo: boolean
 }
 
 function parseArgs(args: string): ParsedArgs {
   const tokens = args.trim().split(/\s+/)
   let models = DEFAULT_MODELS
   let rounds = DEFAULT_ROUNDS
+  let hasModelOverride = false
+  let hasRoundOverride = false
   const topicParts: string[] = []
   let isDuo = false
 
@@ -65,9 +71,11 @@ function parseArgs(args: string): ParsedArgs {
     const token = tokens[i]!
     if (token === '--models' && tokens[i + 1]) {
       models = tokens[i + 1]!.split(',').map((m) => m.trim()).filter(Boolean)
+      hasModelOverride = true
       i++
     } else if (token === '--rounds' && tokens[i + 1]) {
       rounds = Math.max(1, Math.min(20, parseInt(tokens[i + 1]!, 10) || DEFAULT_ROUNDS))
+      hasRoundOverride = true
       i++
     } else if (token === '--duo') {
       isDuo = true
@@ -84,6 +92,9 @@ function parseArgs(args: string): ParsedArgs {
     topic: topicParts.join(' '),
     models,
     rounds,
+    hasModelOverride,
+    hasRoundOverride,
+    duo: isDuo,
   }
 }
 
@@ -248,6 +259,8 @@ function DeliberationRunner({
 
 export const call: LocalJSXCommandCall = async (onDone, _context, args) => {
   const parsed = parseArgs(args)
+  const settings = getSettingsForSource('userSettings')
+  const deliberationSettings = settings?.deliberation
 
   if (!parsed.topic) {
     onDone(
@@ -264,10 +277,16 @@ export const call: LocalJSXCommandCall = async (onDone, _context, args) => {
 
   const config: DeliberationConfig = {
     topic: parsed.topic,
-    models: parsed.models,
-    maxRounds: parsed.rounds,
-    autoStop: true,
-    showTokenUsage: true,
+    models:
+      parsed.duo || parsed.hasModelOverride
+        ? parsed.models
+        : (deliberationSettings?.defaultModels?.filter(Boolean) ?? DEFAULT_MODELS),
+    maxRounds:
+      parsed.hasRoundOverride
+        ? parsed.rounds
+        : (deliberationSettings?.maxRounds ?? DEFAULT_ROUNDS),
+    autoStop: deliberationSettings?.autoStop ?? true,
+    showTokenUsage: deliberationSettings?.showTokenUsage ?? true,
   }
 
   return <DeliberationRunner config={config} onDone={onDone} />

@@ -314,6 +314,14 @@ export const DEFAULT_BINDINGS: KeybindingBlock[] = [
       right: 'modelPicker:increaseEffort',
     },
   },
+  {
+    context: 'ModelPickerOpenRouter',
+    bindings: {
+      tab: 'modelPicker:cycleProvider',
+      'ctrl+f': 'modelPicker:toggleFavorite',
+      'cmd+f': 'modelPicker:toggleFavorite',
+    },
+  },
   // Select component navigation (used by /model, /resume, permission prompts, etc.)
   {
     context: 'Select',

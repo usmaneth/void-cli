@@ -27,6 +27,7 @@ export const KEYBINDING_CONTEXTS = [
   'MessageSelector',
   'DiffDialog',
   'ModelPicker',
+  'ModelPickerOpenRouter',
   'Select',
   'Plugin',
 ] as const
@@ -54,6 +55,8 @@ export const KEYBINDING_CONTEXT_DESCRIPTIONS: Record<
   MessageSelector: 'When the message selector (rewind) is open',
   DiffDialog: 'When the diff dialog is open',
   ModelPicker: 'When the model picker is open',
+  ModelPickerOpenRouter:
+    'When extended OpenRouter model picker shortcuts are active',
   Select: 'When a select/list component is focused',
   Plugin: 'When the plugin dialog is open',
 }
@@ -153,6 +156,8 @@ export const KEYBINDING_ACTIONS = [
   // Model picker actions (ant-only)
   'modelPicker:decreaseEffort',
   'modelPicker:increaseEffort',
+  'modelPicker:toggleFavorite',
+  'modelPicker:cycleProvider',
   // Select component actions (distinct from confirm: to avoid collisions)
   'select:next',
   'select:previous',
