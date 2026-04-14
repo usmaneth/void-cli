@@ -5,7 +5,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useExitOnCtrlCDWithKeybindings } from 'src/hooks/useExitOnCtrlCDWithKeybindings.js';
 import { type AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS, logEvent } from 'src/services/analytics/index.js';
 import { FAST_MODE_MODEL_DISPLAY, isFastModeAvailable, isFastModeCooldown, isFastModeEnabled } from 'src/utils/fastMode.js';
-import { Box, Text } from '../ink.js';
+import { Box, Text, useInput } from '../ink.js';
+import { useTerminalSize } from '../hooks/useTerminalSize.js';
 import { useKeybindings } from '../keybindings/useKeybinding.js';
 import { useAppState, useSetAppState } from '../state/AppState.js';
 import { convertEffortValueToLevel, type EffortLevel, getDefaultEffortForModel, modelSupportsEffort, modelSupportsMaxEffort, resolvePickerEffortPersistence, toPersistableEffort } from '../utils/effort.js';
@@ -478,18 +479,55 @@ export function ModelPicker(t0) {
   } else {
     t25 = $[68];
   }
-  // OpenRouter browser hint (outside memo cache to avoid slot conflicts)
-  const openRouterHint = openRouterOptions.length > 0 ? (
-    <Box marginBottom={1} flexDirection="column">
-      <Text dimColor={true}>
-        OpenRouter: {openRouterOptions.length} models loaded
-        {providerFilter ? ` · Filter: ${providerFilter}` : ''}
-        {favorites.size > 0 ? ` · ${favorites.size} favorited` : ''}
-        {' '}<Text color="subtle">Cmd+F favorite · Tab filter provider</Text>
-      </Text>
-    </Box>
-  ) : null;
+  // ── Build the framed model browser UI matching the design mockup ──
+  const { columns } = useTerminalSize();
+  const sep = '─'.repeat(Math.max(10, (isStandaloneCommand ? columns - 6 : 60)));
 
+  // Handle live search input: any printable char appends, backspace removes
+  useInput((input, key) => {
+    if (key.backspace || key.delete) {
+      setSearchQuery(prev => prev.slice(0, -1));
+    } else if (input && !key.ctrl && !key.meta && !key.return && !key.escape && !key.tab && !key.upArrow && !key.downArrow) {
+      setSearchQuery(prev => prev + input);
+    }
+  });
+
+  // Filter tabs display
+  const filterTabs = (() => {
+    const tabs = ['All', ...providerList.slice(0, 6)];
+    return tabs.map(tab => {
+      const isActive = (tab === 'All' && !providerFilter) || tab === providerFilter;
+      if (isActive) {
+        return <Text key={tab} backgroundColor="#7c3aed" color="white">{` ${tab} `}</Text>;
+      }
+      return <Text key={tab} dimColor>{` ${tab} `}</Text>;
+    });
+  })();
+
+  // Suggestions section
+  const suggestionSection = openRouterOptions.length > 0 ? (() => {
+    const rawModels = openRouterOptions.map(o => ({
+      id: typeof o.value === 'string' ? o.value : '',
+      name: o.label ?? '',
+      provider: (o.description ?? '').split(' · ')[0] ?? '',
+      contextLength: 0,
+      pricing: { prompt: 0, completion: 0 },
+    }));
+    const suggested = getSuggestedModels({}, rawModels);
+    if (suggested && suggested.length > 0) {
+      return (
+        <Box flexDirection="column" marginBottom={1}>
+          <Text color="#38bdf8" bold>{'💡 Suggested'}<Text dimColor>{` (${suggested[0]?.label ?? 'general'})`}</Text></Text>
+          {suggested.slice(0, 2).map(s => (
+            <Text key={s.model.id} dimColor>{'  › '}<Text color="#e2e8f0">{s.model.name}</Text></Text>
+          ))}
+        </Box>
+      );
+    }
+    return null;
+  })() : null;
+
+  // Build inner content
   let t26;
   if ($[69] !== t19 || $[70] !== t23 || $[71] !== t24 || $[72] !== t25) {
     t26 = <Box flexDirection="column">{t19}{t23}{t24}{t25}</Box>;
@@ -510,31 +548,71 @@ export function ModelPicker(t0) {
   } else {
     t27 = $[76];
   }
-  let t28;
-  if ($[77] !== t26 || $[78] !== t27) {
-    t28 = <Box flexDirection="column">{t26}{t27}</Box>;
-    $[77] = t26;
-    $[78] = t27;
-    $[79] = t28;
-  } else {
-    t28 = $[79];
-  }
-  // Compose final content with OpenRouter hint
-  const content = openRouterHint
-    ? <Box flexDirection="column">{t28}{openRouterHint}</Box>
-    : t28;
+
+  // Compose the full model browser frame
+  const framedContent = (
+    <Box
+      flexDirection="column"
+      borderStyle="double"
+      borderColor="#7c3aed"
+      paddingX={1}
+      paddingY={0}
+      width={isStandaloneCommand ? columns : undefined}
+    >
+      {/* Title */}
+      <Text bold color="#7c3aed">{'◈ M O D E L   B R O W S E R'}</Text>
+
+      {/* Search input */}
+      <Box>
+        <Text color="#a78bfa">{'Search: '}</Text>
+        <Text backgroundColor="#1e293b" color="#e2e8f0">
+          {searchQuery ? ` ${searchQuery}▌ ` : ' ▌ '}
+        </Text>
+      </Box>
+
+      {/* Separator */}
+      <Text dimColor>{sep}</Text>
+
+      {/* Suggestions */}
+      {suggestionSection}
+
+      {/* Filter tabs */}
+      {providerList.length > 0 ? (
+        <Box marginBottom={1}>
+          <Text dimColor>{'Filter: '}</Text>
+          {filterTabs}
+        </Box>
+      ) : null}
+
+      {/* Select list + effort + fast mode */}
+      {t26}
+
+      {/* Exit hint */}
+      {t27}
+
+      {/* Separator */}
+      <Text dimColor>{sep}</Text>
+
+      {/* Stats line */}
+      <Text dimColor>
+        {openRouterOptions.length > 0
+          ? `${openRouterOptions.length} models loaded`
+          : 'OpenRouter: not connected'}
+        {favorites.size > 0 ? ` · ★ ${favorites.size} favorited` : ''}
+        {providerFilter ? ` · Filter: ${providerFilter}` : ''}
+      </Text>
+
+      {/* Hotkeys */}
+      <Text dimColor>
+        {'↑↓ navigate · enter select · ⌘+F favorite · tab filter · esc cancel'}
+      </Text>
+    </Box>
+  );
+
   if (!isStandaloneCommand) {
-    return content;
+    return framedContent;
   }
-  let t29;
-  if ($[80] !== content) {
-    t29 = <Pane color="permission">{content}</Pane>;
-    $[80] = content;
-    $[81] = t29;
-  } else {
-    t29 = $[81];
-  }
-  return t29;
+  return framedContent;
 }
 function _temp4() {}
 function _temp3(opt_0) {

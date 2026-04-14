@@ -37,21 +37,21 @@ const PHASE_LABEL: Record<SwarmPhase, string> = {
 
 function phaseColor(phase: SwarmPhase): string {
   switch (phase) {
-    case 'awaiting_approval': return 'yellow'
-    case 'working': return 'claude'
-    case 'merging': return 'warning'
-    case 'reviewing': return 'suggestion'
-    case 'complete': return 'success'
-    case 'failed': return 'error'
-    default: return 'claude'
+    case 'awaiting_approval': return '#fbbf24'
+    case 'working': return '#a78bfa'
+    case 'merging': return '#fbbf24'
+    case 'reviewing': return '#38bdf8'
+    case 'complete': return '#22c55e'
+    case 'failed': return '#ef4444'
+    default: return '#a78bfa'
   }
 }
 
 function modelColor(model: string, i: number): string {
-  if (model.startsWith('google/')) return 'green'
-  if (model.startsWith('openai/')) return 'cyan'
-  if (model.startsWith('claude') || model.startsWith('anthropic/')) return 'magenta'
-  const palette = ['magenta', 'cyan', 'green', 'yellow', 'blue'] as const
+  if (model.startsWith('google/')) return '#22c55e'
+  if (model.startsWith('openai/')) return '#38bdf8'
+  if (model.startsWith('claude') || model.startsWith('anthropic/')) return '#a78bfa'
+  const palette = ['#a78bfa', '#38bdf8', '#22c55e', '#fbbf24', '#f472b6'] as const
   return palette[i % palette.length]!
 }
 
@@ -80,8 +80,8 @@ function ProgressText({ ratio, width }: { ratio: number; width: number }): React
   const empty = width - filled
   return (
     <Text>
-      <Text color="green">{'█'.repeat(filled)}</Text>
-      <Text color="gray">{'░'.repeat(empty)}</Text>
+      <Text color="#22c55e">{'█'.repeat(filled)}</Text>
+      <Text color="#374151">{'░'.repeat(empty)}</Text>
     </Text>
   )
 }
@@ -185,14 +185,14 @@ export function SwarmRenderer({ state, workerMessages }: SwarmRendererProps): Re
     <Box
       flexDirection="column"
       borderStyle="double"
-      borderColor="magenta"
+      borderColor="#7c3aed"
       paddingX={1}
       paddingY={0}
       width={columns}
     >
       {/* Title bar */}
       <Box justifyContent="space-between">
-        <Text bold color="magenta">{'◈ S W A R M'}</Text>
+        <Text bold color="#7c3aed">{'◈ S W A R M'}</Text>
         <Text bold color={phaseColor(state.phase)}>{PHASE_LABEL[state.phase]}</Text>
       </Box>
 
@@ -233,7 +233,7 @@ export function SwarmRenderer({ state, workerMessages }: SwarmRendererProps): Re
       {/* Approval prompt */}
       {state.phase === 'awaiting_approval' ? (
         <Box marginTop={1}>
-          <Text bold color="yellow">
+          <Text bold color="#fbbf24">
             {'Press Enter to approve and launch workers, or Ctrl+C to cancel'}
           </Text>
         </Box>

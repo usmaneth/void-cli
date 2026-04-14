@@ -33,19 +33,19 @@ function formatTokens(n: number): string {
 
 // ── Colors ──────────────────────────────────────────────────────────────────
 
-const PALETTE = ['magenta', 'green', 'cyan', 'yellow', 'blue'] as const
+const PALETTE = ['#a78bfa', '#22c55e', '#38bdf8', '#fbbf24', '#f472b6'] as const
 
 function modelColor(index: number): string {
   return PALETTE[index % PALETTE.length]!
 }
 
 function convergenceLabel(state: DeliberationState): { color: string; text: string } {
-  if (state.status === 'converged') return { color: 'green', text: 'CONVERGED' }
-  if (state.status === 'complete') return { color: 'green', text: 'COMPLETE' }
-  if (state.status === 'stopped') return { color: 'yellow', text: 'STOPPED' }
+  if (state.status === 'converged') return { color: '#22c55e', text: 'CONVERGED' }
+  if (state.status === 'complete') return { color: '#22c55e', text: 'COMPLETE' }
+  if (state.status === 'stopped') return { color: '#fbbf24', text: 'STOPPED' }
   const last = state.rounds.at(-1)
-  if (last?.converged) return { color: 'green', text: 'ALIGNING' }
-  return { color: 'yellow', text: 'DEBATING' }
+  if (last?.converged) return { color: '#22c55e', text: 'ALIGNING' }
+  return { color: '#fbbf24', text: 'DEBATING' }
 }
 
 // ── Progress bar ────────────────────────────────────────────────────────────
@@ -54,8 +54,8 @@ function ProgressText({ ratio, width }: { ratio: number; width: number }): React
   const filled = Math.round(ratio * width)
   return (
     <Text>
-      <Text color="magenta">{'█'.repeat(filled)}</Text>
-      <Text color="gray">{'░'.repeat(width - filled)}</Text>
+      <Text color="#7c3aed">{'█'.repeat(filled)}</Text>
+      <Text color="#374151">{'░'.repeat(width - filled)}</Text>
     </Text>
   )
 }
@@ -159,14 +159,14 @@ export function DeliberationRenderer({
     <Box
       flexDirection="column"
       borderStyle="double"
-      borderColor="magenta"
+      borderColor="#7c3aed"
       paddingX={1}
       paddingY={0}
       width={columns}
     >
       {/* Title bar */}
       <Box justifyContent="space-between">
-        <Text bold color="magenta">{'◈ D E L I B E R A T I O N   R O O M'}</Text>
+        <Text bold color="#7c3aed">{'◈ D E L I B E R A T I O N   R O O M'}</Text>
         <Text bold color={conv.color}>{conv.text}</Text>
       </Box>
 
