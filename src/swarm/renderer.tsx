@@ -27,6 +27,7 @@ function formatDuration(ms: number): string {
 const PHASE_LABEL: Record<SwarmPhase, string> = {
   idle: 'IDLE',
   decomposing: 'DECOMPOSING',
+  awaiting_approval: 'AWAITING APPROVAL',
   working: 'BUILDING',
   merging: 'MERGING',
   reviewing: 'REVIEWING',
@@ -36,6 +37,7 @@ const PHASE_LABEL: Record<SwarmPhase, string> = {
 
 function phaseColor(phase: SwarmPhase): string {
   switch (phase) {
+    case 'awaiting_approval': return 'yellow'
     case 'working': return 'claude'
     case 'merging': return 'warning'
     case 'reviewing': return 'suggestion'
@@ -157,6 +159,7 @@ export function SwarmRenderer({ state, workerMessages }: SwarmRendererProps): Re
   let ratio = 0
   switch (state.phase) {
     case 'decomposing': ratio = 0.08; break
+    case 'awaiting_approval': ratio = 0.1; break
     case 'working': ratio = 0.1 + buildRatio * 0.72; break
     case 'merging': ratio = 0.88; break
     case 'reviewing': ratio = 0.95; break
@@ -227,9 +230,20 @@ export function SwarmRenderer({ state, workerMessages }: SwarmRendererProps): Re
         {doneWorkers}/{state.workstreams.length}{' workers finished · Est. cost '}{formatUSD(cost)}{' · Elapsed '}{elapsed}
       </Text>
 
+      {/* Approval prompt */}
+      {state.phase === 'awaiting_approval' ? (
+        <Box marginTop={1}>
+          <Text bold color="yellow">
+            {'Press Enter to approve and launch workers, or Ctrl+C to cancel'}
+          </Text>
+        </Box>
+      ) : null}
+
       {/* Hotkeys */}
       <Text dimColor>
-        {'enter inject guidance · ctrl+c abort · tab switch focus'}
+        {state.phase === 'awaiting_approval'
+          ? 'enter approve · ctrl+c cancel'
+          : 'enter inject guidance · ctrl+c abort · tab switch focus'}
       </Text>
     </Box>
   )

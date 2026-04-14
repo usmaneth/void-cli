@@ -6,7 +6,8 @@
  *   /swarm <feature description> [--models domain=model,...] [--no-merge] [--no-review]
  */
 import * as React from 'react'
-import { memo, useEffect, useRef, useState } from 'react'
+import { memo, useCallback, useEffect, useRef, useState } from 'react'
+import { useInput } from '../../ink.js'
 import type {
   Command,
   LocalJSXCommandCall,
@@ -150,6 +151,8 @@ function SwarmRunner({
   const [workerMessages, setWorkerMessages] = useState<Map<string, string>>(
     () => new Map(),
   )
+  const [awaitingApproval, setAwaitingApproval] = useState(false)
+  const approvalResolveRef = useRef<(() => void) | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -214,17 +217,27 @@ function SwarmRunner({
 
       const cloned = cloneWorkstreams(workstreams)
       if (!cancelled) {
+        // Show decomposition plan and wait for user approval
         setState(prev => {
           if (!prev) return prev
           return {
             ...prev,
-            config: {
-              ...prev.config,
-              workstreams: cloned,
-            },
-            phase: 'working',
+            config: { ...prev.config, workstreams: cloned },
+            phase: 'awaiting_approval',
             workstreams: cloned,
           }
+        })
+        setAwaitingApproval(true)
+        await new Promise<void>(resolve => {
+          approvalResolveRef.current = resolve
+        })
+        setAwaitingApproval(false)
+        if (cancelled) return
+
+        // Approved — start building
+        setState(prev => {
+          if (!prev) return prev
+          return { ...prev, phase: 'working' }
         })
       }
 
@@ -386,6 +399,14 @@ function SwarmRunner({
       cancelled = true
     }
   }, [onDone, repoRoot])
+
+  // Handle Enter key for approval
+  useInput((_input, key) => {
+    if (key.return && awaitingApproval && approvalResolveRef.current) {
+      approvalResolveRef.current()
+      approvalResolveRef.current = null
+    }
+  })
 
   return <SwarmRenderer state={state} workerMessages={workerMessages} />
 }

@@ -93,6 +93,7 @@ export type SwarmConfig = {
 export type SwarmPhase =
   | 'idle'
   | 'decomposing'
+  | 'awaiting_approval'
   | 'working'
   | 'merging'
   | 'reviewing'

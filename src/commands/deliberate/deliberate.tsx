@@ -7,7 +7,10 @@
  *   /deliberate --duo <topic>
  */
 import * as React from 'react'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { useInput } from '../../ink.js'
+import { writeFile, mkdir } from 'fs/promises'
+import { join } from 'path'
 import type { LocalJSXCommandCall, LocalJSXCommandOnDone } from '../../types/command.js'
 import type {
   DeliberationConfig,
@@ -244,6 +247,40 @@ function DeliberationRunner({
       cancelled = true
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Ctrl+S: save transcript to file
+  const stateRef = useRef(state)
+  stateRef.current = state
+
+  useInput((_input, key) => {
+    if (key.ctrl && _input === 's' && stateRef.current) {
+      const s = stateRef.current
+      const lines: string[] = [
+        `# Deliberation Transcript`,
+        `Topic: ${s.config.topic}`,
+        `Models: ${s.config.models.join(', ')}`,
+        `Status: ${s.status}`,
+        `Total cost: $${s.totalCostUSD.toFixed(4)}`,
+        '',
+      ]
+      for (const round of s.rounds) {
+        lines.push(`## Round ${round.number}${round.converged ? ' (converged)' : ''}`)
+        lines.push('')
+        for (const resp of round.responses) {
+          lines.push(`### ${resp.model}`)
+          lines.push(`_${resp.latencyMs}ms · ${resp.tokens.input}↑ ${resp.tokens.output}↓ · $${resp.costUSD.toFixed(4)}_`)
+          lines.push('')
+          lines.push(resp.content)
+          lines.push('')
+        }
+      }
+      const filename = `deliberation-${Date.now()}.md`
+      const dir = join(process.cwd(), '.void')
+      void mkdir(dir, { recursive: true }).then(() =>
+        writeFile(join(dir, filename), lines.join('\n'))
+      )
+    }
+  })
 
   return (
     <DeliberationRenderer
