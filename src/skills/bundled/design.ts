@@ -8,12 +8,12 @@ export function registerDesignSkill(): void {
     aliases: ['designer', 'fronty'],
     whenToUse:
       'Visual improvement requests, UI redesigns, design-first mockups, or when the user wants beautiful/polished/modern/premium interfaces. Trigger on: "make it look better", "redesign", "10x the UI", "beautiful", "polished", editing .tsx with layout work',
-    userInvocable: true,
+    userInvocable: false,
     async getPromptForCommand(args) {
       return [
         {
           type: 'text' as const,
-          text: `The user wants the designer agent to work on: "${args}"\n\nLaunch the designer agent (Gemini 3.1 Pro) using Agent tool with subagent_type="designer". The designer reads existing components and design tokens, then writes beautiful production-grade UI code. You handle types, state, and testing after.`,
+          text: `This looks like a design task. Suggest the user run: /design ${args}\n\nThe /design command launches the Gemini 3.1 Pro designer agent for beautiful, production-grade UI work.`,
         },
       ]
     },
