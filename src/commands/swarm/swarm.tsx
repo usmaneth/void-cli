@@ -5,11 +5,23 @@
  * Usage:
  *   /swarm <feature description> [--models domain=model,...] [--no-merge] [--no-review]
  */
-
-import type { Command, LocalCommandCall, LocalCommandResult } from '../../types/command.js'
-import type { SwarmCallbacks, SwarmState, Workstream } from '../../swarm/types.js'
+import * as React from 'react'
+import { memo, useEffect, useRef, useState } from 'react'
+import type {
+  Command,
+  LocalJSXCommandCall,
+  LocalJSXCommandOnDone,
+} from '../../types/command.js'
+import type {
+  MergeResult,
+  SwarmCallbacks,
+  SwarmState,
+  Workstream,
+  WorkstreamTask,
+} from '../../swarm/types.js'
 import type { WorkstreamDomain } from '../../swarm/types.js'
 import { decomposeTask } from '../../swarm/coordinator.js'
+import { SwarmRenderer } from '../../swarm/renderer.js'
 import { runWorker } from '../../swarm/worker.js'
 import { mergeWorktrees } from '../../swarm/merger.js'
 
@@ -64,175 +76,309 @@ function parseSwarmArgs(raw: string): SwarmArgs {
 // Command implementation
 // ---------------------------------------------------------------------------
 
-export const call: LocalCommandCall = async (args, _context) => {
-  const parsed = parseSwarmArgs(args)
-
-  if (!parsed.description) {
-    return {
-      type: 'text',
-      value: [
-        'Usage: /swarm <feature description> [options]',
-        '',
-        'Options:',
-        '  --models domain=model,...   Override model for a domain',
-        '  --no-merge                  Skip auto-merge after workers complete',
-        '  --no-review                 Skip review pass after merge',
-        '',
-        'Example:',
-        '  /swarm Add user authentication with JWT tokens',
-        '  /swarm Refactor API layer --models backend=openai/gpt-5.4,tests=claude-sonnet-4-6',
-      ].join('\n'),
-    }
-  }
-
-  const repoRoot = process.cwd()
-  const coordinatorModel = 'claude-opus-4-6'
-  const lines: string[] = []
-
-  const log = (msg: string) => {
-    lines.push(msg)
-  }
-
-  // Phase 1: Decompose
-  log('--- Phase 1: Decomposing task ---')
-  log(`Coordinator model: ${coordinatorModel}`)
-  log(`Feature: ${parsed.description}`)
-  log('')
-
-  let workstreams: Workstream[]
-  try {
-    workstreams = await decomposeTask(
-      parsed.description,
-      '', // codebase context — could be enhanced later
-      coordinatorModel,
-    )
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err)
-    return { type: 'text', value: `Decomposition failed: ${msg}` }
-  }
-
-  // Apply model overrides
-  for (const ws of workstreams) {
-    if (parsed.modelOverrides[ws.domain]) {
-      ws.model = parsed.modelOverrides[ws.domain]!
-    }
-  }
-
-  log(`Decomposed into ${workstreams.length} workstreams:`)
-  for (const ws of workstreams) {
-    log(`  [${ws.domain}] ${ws.name} — ${ws.model}`)
-    log(`    ${ws.description}`)
-    log(`    Scope: ${ws.scope.join(', ') || '(unrestricted)'}`)
-    log(`    Tasks: ${ws.tasks.length}`)
-  }
-  log('')
-
-  // Phase 2: Dispatch workers
-  log('--- Phase 2: Dispatching workers ---')
-
-  const maxParallel = 4
-  const state: SwarmState = {
-    config: {
-      description: parsed.description,
-      workstreams,
-      coordinator: coordinatorModel,
-      autoMerge: !parsed.noMerge,
-      reviewAfterMerge: !parsed.noReview,
-      maxWorkersParallel: maxParallel,
-    },
-    phase: 'working',
-    workstreams,
-    totalCostUSD: 0,
-    startTime: Date.now(),
-  }
-
-  const callbacks: SwarmCallbacks = {
-    onWorkerStart: ws => log(`  [START] ${ws.name} (${ws.model})`),
-    onWorkerProgress: (ws, msg) => log(`  [PROGRESS] ${ws.name}: ${msg}`),
-    onWorkerComplete: ws => log(`  [DONE] ${ws.name}`),
-    onWorkerFailed: (ws, err) => log(`  [FAILED] ${ws.name}: ${err.message}`),
-  }
-
-  // Run workers in parallel batches
-  const batches: Workstream[][] = []
-  for (let i = 0; i < workstreams.length; i += maxParallel) {
-    batches.push(workstreams.slice(i, i + maxParallel))
-  }
-
-  for (const batch of batches) {
-    const results = await Promise.allSettled(
-      batch.map(ws => runWorker(ws, repoRoot, callbacks)),
-    )
-    for (const r of results) {
-      if (r.status === 'rejected') {
-        log(`  Worker error: ${r.reason}`)
-      }
-    }
-  }
-
-  const completed = workstreams.filter(ws => ws.status === 'done')
-  const failed = workstreams.filter(ws => ws.status === 'failed')
-  log('')
-  log(`Workers complete: ${completed.length} done, ${failed.length} failed`)
-  log('')
-
-  // Phase 3: Merge
-  if (!parsed.noMerge && completed.length > 0) {
-    log('--- Phase 3: Merging worktrees ---')
-    state.phase = 'merging'
-
-    try {
-      const mergeResult = await mergeWorktrees(workstreams, repoRoot)
-      if (mergeResult.success) {
-        log('  All branches merged cleanly.')
-      } else {
-        log(`  Merged with ${mergeResult.conflicts} conflict(s) (auto-resolved).`)
-        log(`  Conflict files: ${mergeResult.conflictFiles.join(', ')}`)
-      }
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err)
-      log(`  Merge failed: ${msg}`)
-    }
-    log('')
-  } else if (parsed.noMerge) {
-    log('--- Phase 3: Merge skipped (--no-merge) ---')
-    log('')
-  }
-
-  // Phase 4: Review (placeholder — just reports status)
-  if (!parsed.noReview && completed.length > 0) {
-    log('--- Phase 4: Review ---')
-    state.phase = 'reviewing'
-    log('  Review pass: run /review or /diff to inspect the merged result.')
-    log('')
-  }
-
-  // Summary
-  const elapsed = ((Date.now() - state.startTime) / 1000).toFixed(1)
-  state.phase = 'complete'
-  log('--- Swarm Complete ---')
-  log(`  Duration: ${elapsed}s`)
-  log(`  Workstreams: ${completed.length} done, ${failed.length} failed`)
-  if (completed.length > 0 && !parsed.noMerge) {
-    log('  Changes merged into current branch.')
-  }
-
-  return { type: 'text', value: lines.join('\n') }
+function cloneTasks(tasks: WorkstreamTask[]): WorkstreamTask[] {
+  return tasks.map(task => ({ ...task }))
 }
 
-// ---------------------------------------------------------------------------
-// Command registration
-// ---------------------------------------------------------------------------
+function cloneWorkstreams(workstreams: Workstream[]): Workstream[] {
+  return workstreams.map(workstream => ({
+    ...workstream,
+    tasks: cloneTasks(workstream.tasks),
+  }))
+}
 
-const swarmCommand = {
-  type: 'local',
-  name: 'swarm',
-  description: 'Decompose a feature into parallel workstreams with multi-model agents',
-  argumentHint: '<feature description> [--models domain=model,...] [--no-merge] [--no-review]',
-  isEnabled: () => true,
-  supportsNonInteractive: true,
-  isHidden: false,
-  load: () => Promise.resolve({ call }),
-} satisfies Command
+function updateWorkstreamTaskProgress(
+  tasks: WorkstreamTask[],
+  progressStep: number,
+): WorkstreamTask[] {
+  if (tasks.length === 0) return tasks
+  const clampedIndex = Math.min(progressStep, tasks.length - 1)
 
-export default swarmCommand
+  return tasks.map((task, index) => {
+    if (index < clampedIndex) return { ...task, status: 'done' }
+    if (index === clampedIndex) {
+      return {
+        ...task,
+        status: task.status === 'done' ? 'done' : 'in-progress',
+      }
+    }
+    return { ...task, status: 'pending' }
+  })
+}
+
+function createUsageMessage(): string {
+  return [
+    'Usage: /swarm <feature description> [options]',
+    '',
+    'Options:',
+    '  --models domain=model,...   Override model for a domain',
+    '  --no-merge                  Skip auto-merge after workers complete',
+    '  --no-review                 Skip review pass after merge',
+    '',
+    'Example:',
+    '  /swarm Add user authentication with JWT tokens',
+    '  /swarm Refactor API layer --models backend=openai/gpt-5.4,tests=claude-sonnet-4-6',
+  ].join('\n')
+}
+
+function SwarmRunner({
+  args,
+  onDone,
+}: {
+  args: string
+  onDone: LocalJSXCommandOnDone
+}): React.ReactNode {
+  const repoRoot = process.cwd()
+  const coordinatorModel = 'claude-opus-4-6'
+  const parsedRef = useRef(parseSwarmArgs(args))
+  const progressTicksRef = useRef<Map<string, number>>(new Map())
+  const [state, setState] = useState<SwarmState | null>(null)
+  const [workerMessages, setWorkerMessages] = useState<Map<string, string>>(
+    () => new Map(),
+  )
+
+  useEffect(() => {
+    let cancelled = false
+
+    const setInitialState = () => {
+      if (cancelled) return
+      const parsed = parsedRef.current
+      setState({
+        config: {
+          description: parsed.description,
+          workstreams: [],
+          coordinator: coordinatorModel,
+          autoMerge: !parsed.noMerge,
+          reviewAfterMerge: !parsed.noReview,
+          maxWorkersParallel: 4,
+        },
+        phase: 'decomposing',
+        workstreams: [],
+        totalCostUSD: 0,
+        startTime: Date.now(),
+      })
+    }
+
+    const updateOneWorkstream = (
+      workstreamId: string,
+      updater: (workstream: Workstream) => Workstream,
+    ) => {
+      setState(prev => {
+        if (!prev) return prev
+        return {
+          ...prev,
+          workstreams: prev.workstreams.map(workstream =>
+            workstream.id === workstreamId ? updater(workstream) : workstream,
+          ),
+        }
+      })
+    }
+
+    const run = async () => {
+      const parsed = parsedRef.current
+      setInitialState()
+
+      let workstreams: Workstream[]
+      try {
+        workstreams = await decomposeTask(parsed.description, '', coordinatorModel)
+      } catch (err) {
+        if (!cancelled) {
+          const message = err instanceof Error ? err.message : String(err)
+          onDone(`Decomposition failed: ${message}`, { display: 'system' })
+        }
+        return
+      }
+
+      for (const workstream of workstreams) {
+        if (parsed.modelOverrides[workstream.domain]) {
+          workstream.model = parsed.modelOverrides[workstream.domain]!
+        }
+      }
+
+      const cloned = cloneWorkstreams(workstreams)
+      if (!cancelled) {
+        setState(prev => {
+          if (!prev) return prev
+          return {
+            ...prev,
+            config: {
+              ...prev.config,
+              workstreams: cloned,
+            },
+            phase: 'working',
+            workstreams: cloned,
+          }
+        })
+      }
+
+      const callbacks: SwarmCallbacks = {
+        onWorkerStart: workstream => {
+          if (cancelled) return
+          setWorkerMessages(prev => {
+            const next = new Map(prev)
+            next.set(workstream.id, `Starting ${workstream.model}`)
+            return next
+          })
+          updateOneWorkstream(workstream.id, current => ({
+            ...current,
+            status: 'running',
+            worktreeBranch: workstream.worktreeBranch,
+            worktreePath: workstream.worktreePath,
+            tasks: updateWorkstreamTaskProgress(current.tasks, 0),
+          }))
+        },
+        onWorkerProgress: (workstream, message) => {
+          if (cancelled) return
+          setWorkerMessages(prev => {
+            const next = new Map(prev)
+            next.set(workstream.id, message)
+            return next
+          })
+          const nextStep = progressTicksRef.current.get(workstream.id) ?? 0
+          progressTicksRef.current.set(workstream.id, nextStep + 1)
+          updateOneWorkstream(workstream.id, current => ({
+            ...current,
+            worktreeBranch: workstream.worktreeBranch,
+            worktreePath: workstream.worktreePath,
+            tasks: updateWorkstreamTaskProgress(current.tasks, nextStep),
+          }))
+        },
+        onWorkerComplete: workstream => {
+          if (cancelled) return
+          setWorkerMessages(prev => {
+            const next = new Map(prev)
+            next.set(workstream.id, 'Worker finished and changes are ready for merge')
+            return next
+          })
+          updateOneWorkstream(workstream.id, current => ({
+            ...current,
+            status: 'done',
+            worktreeBranch: workstream.worktreeBranch,
+            worktreePath: workstream.worktreePath,
+            tasks: current.tasks.map(task => ({ ...task, status: 'done' })),
+          }))
+        },
+        onWorkerFailed: (workstream, error) => {
+          if (cancelled) return
+          setWorkerMessages(prev => {
+            const next = new Map(prev)
+            next.set(workstream.id, error.message)
+            return next
+          })
+          updateOneWorkstream(workstream.id, current => ({
+            ...current,
+            status: 'failed',
+            tasks: current.tasks.map(task =>
+              task.status === 'done' ? task : { ...task, status: 'failed' },
+            ),
+          }))
+        },
+      }
+
+      const maxParallel = 4
+      const batches: Workstream[][] = []
+      for (let index = 0; index < workstreams.length; index += maxParallel) {
+        batches.push(workstreams.slice(index, index + maxParallel))
+      }
+
+      for (const batch of batches) {
+        const results = await Promise.allSettled(
+          batch.map(workstream => runWorker(workstream, repoRoot, callbacks)),
+        )
+        if (cancelled) return
+        for (const result of results) {
+          if (result.status === 'rejected') {
+            setState(prev =>
+              prev
+                ? {
+                    ...prev,
+                    totalCostUSD: prev.totalCostUSD,
+                  }
+                : prev,
+            )
+          }
+        }
+      }
+
+      const completed = workstreams.filter(workstream => workstream.status === 'done')
+      const failed = workstreams.filter(workstream => workstream.status === 'failed')
+      let mergeResult: MergeResult | null = null
+
+      if (!parsed.noMerge && completed.length > 0) {
+        if (!cancelled) {
+          setState(prev => (prev ? { ...prev, phase: 'merging' } : prev))
+        }
+        try {
+          mergeResult = await mergeWorktrees(workstreams, repoRoot)
+          if (!cancelled) {
+            const message = mergeResult.success
+              ? 'Merged all workstreams cleanly'
+              : `Merged with ${mergeResult.conflicts} conflict(s)`
+            setWorkerMessages(prev => {
+              const next = new Map(prev)
+              next.set('__merge__', message)
+              return next
+            })
+          }
+        } catch (err) {
+          if (!cancelled) {
+            const message = err instanceof Error ? err.message : String(err)
+            setWorkerMessages(prev => {
+              const next = new Map(prev)
+              next.set('__merge__', `Merge failed: ${message}`)
+              return next
+            })
+          }
+        }
+      }
+
+      if (!parsed.noReview && completed.length > 0 && !cancelled) {
+        setState(prev => (prev ? { ...prev, phase: 'reviewing' } : prev))
+        setWorkerMessages(prev => {
+          const next = new Map(prev)
+          next.set('__review__', 'Reviewing merged result')
+          return next
+        })
+      }
+
+      if (!cancelled) {
+        setState(prev => (prev ? { ...prev, phase: 'complete' } : prev))
+        const mergeSummary =
+          parsed.noMerge || completed.length === 0
+            ? 'merge skipped'
+            : mergeResult?.success === false
+              ? `merged with ${mergeResult.conflicts} conflict(s)`
+              : 'merged cleanly'
+        onDone(
+          `Swarm complete: ${completed.length} workstream(s) done, ${failed.length} failed, ${mergeSummary}`,
+          { display: 'system' },
+        )
+      }
+    }
+
+    void run().catch(err => {
+      if (!cancelled) {
+        setState(prev => (prev ? { ...prev, phase: 'failed' } : prev))
+        onDone(`Swarm failed: ${err.message ?? String(err)}`, {
+          display: 'system',
+        })
+      }
+    })
+
+    return () => {
+      cancelled = true
+    }
+  }, [onDone, repoRoot])
+
+  return <SwarmRenderer state={state} workerMessages={workerMessages} />
+}
+
+export const call: LocalJSXCommandCall = async (onDone, _context, args) => {
+  const parsed = parseSwarmArgs(args)
+  if (!parsed.description) {
+    onDone(createUsageMessage(), { display: 'system' })
+    return null
+  }
+
+  return <SwarmRunner args={args} onDone={onDone} />
+}

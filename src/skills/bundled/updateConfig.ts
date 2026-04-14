@@ -91,7 +91,7 @@ Set \`commit\` or \`pr\` to empty string \`""\` to hide that attribution.
   }
 }
 \`\`\`
-Plugin syntax: \`plugin-name@source\` where source is \`void-marketplace\`, \`void-plugins-official\`, or \`builtin\`.
+Plugin syntax: \`plugin-name@source\` where source is \`void-marketplace\`, \`claude-plugins-official\`, or \`builtin\`.
 
 ### Other Settings
 - \`language\`: Preferred response language (e.g., "japanese")

@@ -28,7 +28,7 @@ type SafeString = AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS
 const GCS_BASE =
   'https://downloads.claude.ai/claude-code-releases/plugins/claude-plugins-official'
 
-// Zip arc paths are seed-dir-relative (marketplaces/void-plugins-official/…)
+// Zip arc paths are seed-dir-relative (marketplaces/claude-plugins-official/…)
 // so the titanium seed machinery can use the same zip. Strip this prefix when
 // extracting for a laptop install.
 const ARC_PREFIX = 'marketplaces/claude-plugins-official/'

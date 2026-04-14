@@ -182,7 +182,7 @@ export function getDeclaredMarketplaces(): Record<string, DeclaredMarketplace> {
   }
 
   // Lowest precedence: implicit < --add-dir < merged settings.
-  // An explicit extraKnownMarketplaces entry for void-plugins-official
+  // An explicit extraKnownMarketplaces entry for claude-plugins-official
   // in --add-dir or settings wins.
   return {
     ...implicit,
@@ -2534,7 +2534,7 @@ export async function refreshMarketplace(
             : redactUrlCredentials(source.url)
         const reason =
           name === 'claude-code-plugins'
-            ? `We've deprecated "claude-code-plugins" in favor of "void-plugins-official".`
+            ? `We've deprecated "claude-code-plugins" in favor of "claude-plugins-official".`
             : `This marketplace may have been deprecated or moved to a new location.`
         throw new Error(
           `The marketplace.json file is no longer present in this repository.\n\n` +

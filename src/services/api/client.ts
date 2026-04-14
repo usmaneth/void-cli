@@ -84,14 +84,23 @@ async function getKeyFromKeychain(provider: string): Promise<string | null> {
   }
   const { execFileNoThrow: execNoThrow } = await import('src/utils/execFileNoThrow.js')
   const username = process.env.USER || (await import('os')).userInfo().username
-  const result = await execNoThrow(
-    'security',
+  for (const args of [
     ['find-generic-password', '-s', `Void-${provider}`, '-a', username, '-w'],
-    { timeout: 5000, preserveOutputOnError: false, useCwd: false },
-  )
-  const key = result.code === 0 && result.stdout.trim() ? result.stdout.trim() : null
-  _cachedKeychainKeys[provider] = key
-  return key
+    ['find-generic-password', '-s', `Void-${provider}`, '-w'],
+  ]) {
+    const result = await execNoThrow('security', args, {
+      timeout: 5000,
+      preserveOutputOnError: false,
+      useCwd: false,
+    })
+    if (result.code === 0 && result.stdout.trim()) {
+      const key = result.stdout.trim()
+      _cachedKeychainKeys[provider] = key
+      return key
+    }
+  }
+  _cachedKeychainKeys[provider] = null
+  return null
 }
 
 /**

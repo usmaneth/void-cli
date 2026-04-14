@@ -7,18 +7,18 @@
  *   /deliberate --duo <topic>
  */
 import * as React from 'react'
-import { useState, useEffect, memo } from 'react'
-import { Box, Text } from '../../ink.js'
-import { useTerminalSize } from '../../hooks/useTerminalSize.js'
+import { useState, useEffect } from 'react'
 import type { LocalJSXCommandCall, LocalJSXCommandOnDone } from '../../types/command.js'
 import type {
   DeliberationConfig,
   DeliberationState,
-  ModelResponse,
-  Round,
 } from '../../deliberation/types.js'
 import type { DeliberationCallbacks } from '../../deliberation/engine.js'
 import { runDeliberation } from '../../deliberation/engine.js'
+import {
+  DeliberationRenderer,
+  type ModelStatus,
+} from '../../deliberation/renderer.js'
 
 // ── Default models for quick presets ────────────────────────────────────────
 
@@ -31,27 +31,7 @@ const DEFAULT_MODELS = DUO_MODELS
 
 const DEFAULT_ROUNDS = 5
 
-// ── Model colors for visual distinction ─────────────────────────────────────
-
-const MODEL_COLORS: string[] = [
-  'cyan',
-  'magenta',
-  'yellow',
-  'green',
-  'blue',
-  'red',
-]
-
-function getModelColor(index: number): string {
-  return MODEL_COLORS[index % MODEL_COLORS.length]!
-}
-
 // ── Format helpers ──────────────────────────────────────────────────────────
-
-function formatMs(ms: number): string {
-  if (ms < 1000) return `${ms}ms`
-  return `${(ms / 1000).toFixed(1)}s`
-}
 
 function formatUSD(cost: number): string {
   if (cost < 0.001) return `$${cost.toFixed(5)}`
@@ -64,11 +44,6 @@ function formatTokens(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
   if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`
   return String(n)
-}
-
-function truncate(text: string, maxLen: number): string {
-  if (text.length <= maxLen) return text
-  return text.slice(0, maxLen - 1) + '...'
 }
 
 // ── Arg parsing ─────────────────────────────────────────────────────────────
@@ -111,186 +86,6 @@ function parseArgs(args: string): ParsedArgs {
     rounds,
   }
 }
-
-// ── Status indicator ────────────────────────────────────────────────────────
-
-type ModelStatus = 'waiting' | 'streaming' | 'done' | 'error'
-
-const STATUS_ICONS: Record<ModelStatus, string> = {
-  waiting: '○',
-  streaming: '◉',
-  done: '●',
-  error: '✗',
-}
-
-// ── Deliberation Display Component ──────────────────────────────────────────
-
-interface DeliberationDisplayProps {
-  state: DeliberationState | null
-  modelStatuses: Map<string, ModelStatus>
-  streamingContent: Map<string, string>
-  currentModel: string | null
-  onDone: LocalJSXCommandOnDone
-}
-
-function DeliberationDisplayImpl({
-  state,
-  modelStatuses,
-  streamingContent,
-  currentModel,
-}: DeliberationDisplayProps): React.ReactNode {
-  const { columns } = useTerminalSize()
-  const width = Math.min(columns - 4, 100)
-  const divider = '\u2500'.repeat(width)
-
-  if (!state) {
-    return (
-      <Box paddingX={1}>
-        <Text dimColor>Initializing deliberation...</Text>
-      </Box>
-    )
-  }
-
-  const { config, rounds, currentRound, status, totalCostUSD } = state
-
-  return (
-    <Box flexDirection="column">
-      {/* Header */}
-      <Box flexDirection="column" paddingX={1}>
-        <Text dimColor>{divider}</Text>
-        <Box>
-          <Text bold color="cyan">
-            DELIBERATION ROOM
-          </Text>
-          <Text dimColor>
-            {' \u00b7 '}Round {currentRound}/{config.maxRounds}
-            {' \u00b7 '}{config.models.length} models
-            {' \u00b7 '}{formatUSD(totalCostUSD)}
-          </Text>
-          {status !== 'running' && (
-            <Text bold color={status === 'converged' ? 'green' : 'yellow'}>
-              {' \u00b7 '}{status.toUpperCase()}
-            </Text>
-          )}
-        </Box>
-        <Box marginLeft={2} flexDirection="column">
-          <Text dimColor wrap="truncate">
-            Topic: {truncate(config.topic, width - 10)}
-          </Text>
-        </Box>
-        <Text dimColor>{divider}</Text>
-      </Box>
-
-      {/* Model status indicators */}
-      <Box flexDirection="column" paddingX={2} marginBottom={0}>
-        {config.models.map((model, i) => {
-          const ms = modelStatuses.get(model) ?? 'waiting'
-          const icon = STATUS_ICONS[ms]
-          const color = getModelColor(i)
-          return (
-            <Box key={model}>
-              <Text color={ms === 'error' ? 'red' : ms === 'done' ? 'green' : color}>
-                {icon}
-              </Text>
-              <Text> </Text>
-              <Text bold color={color}>
-                {model}
-              </Text>
-              {ms === 'streaming' && (
-                <Text dimColor> streaming...</Text>
-              )}
-            </Box>
-          )
-        })}
-      </Box>
-
-      {/* Completed round responses */}
-      {rounds.map((round) => (
-        <Box key={round.number} flexDirection="column" paddingX={1}>
-          <Box marginTop={1}>
-            <Text bold dimColor>
-              {'\u2500\u2500\u2500'} Round {round.number} {'\u2500\u2500\u2500'}
-            </Text>
-            {round.converged && (
-              <Text color="green" bold>
-                {' '}CONVERGED
-              </Text>
-            )}
-          </Box>
-          {round.responses.map((response, ri) => {
-            const modelIndex = config.models.indexOf(response.model)
-            const color = getModelColor(modelIndex >= 0 ? modelIndex : ri)
-            return (
-              <Box
-                key={`${round.number}-${response.model}`}
-                flexDirection="column"
-                paddingX={1}
-                marginTop={0}
-              >
-                <Box>
-                  <Text bold color={color}>
-                    {response.model}
-                  </Text>
-                  <Text dimColor>
-                    {' \u00b7 '}
-                    {formatMs(response.latencyMs)}
-                    {' \u00b7 '}
-                    {formatTokens(response.tokens.input)}{'\u2191'}{' '}
-                    {formatTokens(response.tokens.output)}{'\u2193'}
-                    {' \u00b7 '}
-                    {formatUSD(response.costUSD)}
-                  </Text>
-                </Box>
-                <Box marginLeft={2}>
-                  <Text wrap="wrap">
-                    {truncate(response.content, width * 6)}
-                  </Text>
-                </Box>
-              </Box>
-            )
-          })}
-        </Box>
-      ))}
-
-      {/* Current streaming content */}
-      {currentModel && streamingContent.has(currentModel) && (
-        <Box flexDirection="column" paddingX={2} marginTop={1}>
-          <Box>
-            <Text bold color={getModelColor(config.models.indexOf(currentModel))}>
-              {currentModel}
-            </Text>
-            <Text dimColor> (streaming)</Text>
-          </Box>
-          <Box marginLeft={2}>
-            <Text wrap="wrap">
-              {truncate(streamingContent.get(currentModel) ?? '', width * 3)}
-            </Text>
-          </Box>
-        </Box>
-      )}
-
-      {/* Footer on completion */}
-      {status !== 'running' && (
-        <Box flexDirection="column" paddingX={1} marginTop={1}>
-          <Text dimColor>{divider}</Text>
-          <Box>
-            <Text bold color="cyan">
-              SUMMARY
-            </Text>
-            <Text dimColor>
-              {' \u00b7 '}{rounds.length} round{rounds.length !== 1 ? 's' : ''}
-              {' \u00b7 '}{formatUSD(totalCostUSD)} total
-              {status === 'converged' && ' \u00b7 Models converged'}
-            </Text>
-          </Box>
-          <Text dimColor>{divider}</Text>
-        </Box>
-      )}
-    </Box>
-  )
-}
-
-const DeliberationDisplay = memo(DeliberationDisplayImpl)
 
 // ── Deliberation Runner Component ───────────────────────────────────────────
 
@@ -440,12 +235,11 @@ function DeliberationRunner({
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <DeliberationDisplay
+    <DeliberationRenderer
       state={state}
       modelStatuses={modelStatuses}
       streamingContent={streamingContent}
       currentModel={currentModel}
-      onDone={onDone}
     />
   )
 }

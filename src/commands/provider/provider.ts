@@ -1,6 +1,7 @@
 import { execFileSync } from 'child_process'
 import { userInfo } from 'os'
 import type { LocalCommandCall } from '../../types/command.js'
+import { getClaudeAIOAuthTokens } from '../../utils/auth.js'
 
 const SUPPORTED_PROVIDERS = ['openrouter', 'openai', 'gemini'] as const
 type ProviderName = (typeof SUPPORTED_PROVIDERS)[number]
@@ -21,18 +22,25 @@ function getUsername(): string {
 
 function readKeyFromKeychain(provider: ProviderName): string | null {
   if (process.platform !== 'darwin') return null
-  try {
-    const service = getKeychainService(provider)
-    const username = getUsername()
-    const result = execFileSync(
-      'security',
-      ['find-generic-password', '-s', service, '-a', username, '-w'],
-      { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] },
-    )
-    return result.trim() || null
-  } catch {
-    return null
+  const service = getKeychainService(provider)
+  const username = getUsername()
+
+  for (const args of [
+    ['find-generic-password', '-s', service, '-a', username, '-w'],
+    ['find-generic-password', '-s', service, '-w'],
+  ]) {
+    try {
+      const result = execFileSync('security', args, {
+        encoding: 'utf-8',
+        stdio: ['pipe', 'pipe', 'pipe'],
+      })
+      return result.trim() || null
+    } catch {
+      continue
+    }
   }
+
+  return null
 }
 
 function storeKeyInKeychain(provider: ProviderName, key: string): boolean {
@@ -96,13 +104,8 @@ async function handleList(): Promise<string> {
   if (anthropicKey) {
     anthropicStatus = 'connected (env var)'
   } else {
-    try {
-      const { getClaudeAIOAuthTokens } = await import('../../utils/auth.js')
-      const tokens = getClaudeAIOAuthTokens()
-      anthropicStatus = tokens ? 'connected (OAuth)' : 'missing key'
-    } catch {
-      anthropicStatus = 'missing key'
-    }
+    const tokens = getClaudeAIOAuthTokens()
+    anthropicStatus = tokens ? 'connected (OAuth)' : 'missing key'
   }
   lines.push(`  anthropic    ${anthropicStatus}`)
 

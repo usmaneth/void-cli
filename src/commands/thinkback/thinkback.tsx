@@ -28,7 +28,7 @@ import { USER_TYPE } from '../../buildConstants.js'
 // Marketplace and plugin identifiers - varies by user type
 const INTERNAL_MARKETPLACE_NAME = 'void-marketplace';
 const INTERNAL_MARKETPLACE_REPO = 'anthropics/void-marketplace';
-const OFFICIAL_MARKETPLACE_REPO = 'anthropics/void-plugins-official';
+const OFFICIAL_MARKETPLACE_REPO = 'anthropics/claude-plugins-official';
 function getMarketplaceName(): string {
   return USER_TYPE === 'ant' ? INTERNAL_MARKETPLACE_NAME : OFFICIAL_MARKETPLACE_NAME;
 }
