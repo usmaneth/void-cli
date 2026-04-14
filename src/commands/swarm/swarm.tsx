@@ -64,7 +64,7 @@ function parseSwarmArgs(raw: string): SwarmArgs {
 // Command implementation
 // ---------------------------------------------------------------------------
 
-const call: LocalCommandCall = async (args, _context) => {
+export const call: LocalCommandCall = async (args, _context) => {
   const parsed = parseSwarmArgs(args)
 
   if (!parsed.description) {

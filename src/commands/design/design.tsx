@@ -10,7 +10,6 @@
 
 import type { ContentBlockParam } from '@anthropic-ai/sdk/resources/messages.js'
 import type { Command } from '../../commands.js'
-import { assembleDesignContext } from '../../agents/designer/context.js'
 
 function buildDesignPrompt(topic: string, context: string): string {
   return [
@@ -87,6 +86,7 @@ const design: Command = {
   argumentHint: '<topic> | --review',
   async getPromptForCommand(args): Promise<ContentBlockParam[]> {
     const cwd = process.cwd()
+    const { assembleDesignContext } = await import('../../agents/designer/context.js')
     const designCtx = await assembleDesignContext(cwd)
     const contextStr = formatDesignContext(designCtx)
 
