@@ -440,65 +440,65 @@ const lightDaltonizedTheme: Theme = {
  * from users' custom terminal ANSI color definitions
  */
 const darkTheme: Theme = {
-  autoAccept: 'rgb(175,135,255)', // Electric violet
-  bashBorder: 'rgb(253,93,177)', // Bright pink
+  autoAccept: 'rgb(167,139,250)', // Vivid violet
+  bashBorder: 'rgb(244,114,182)', // Rose pink
   claude: 'rgb(139,92,246)', // Void purple #8B5CF6
   claudeShimmer: 'rgb(167,139,250)', // Lighter void purple for shimmer effect
-  claudeBlue_FOR_SYSTEM_SPINNER: 'rgb(147,165,255)', // Blue for system spinner
-  claudeBlueShimmer_FOR_SYSTEM_SPINNER: 'rgb(177,195,255)', // Lighter blue for system spinner shimmer
-  permission: 'rgb(177,185,249)', // Light blue-purple
-  permissionShimmer: 'rgb(207,215,255)', // Lighter blue-purple for shimmer
-  planMode: 'rgb(72,150,140)', // Muted sage green
-  ide: 'rgb(71,130,200)', // Muted blue
-  promptBorder: 'rgb(136,136,136)', // Medium gray
-  promptBorderShimmer: 'rgb(166,166,166)', // Lighter gray for shimmer
-  text: 'rgb(255,255,255)', // White
-  inverseText: 'rgb(0,0,0)', // Black
-  inactive: 'rgb(153,153,153)', // Light gray
-  inactiveShimmer: 'rgb(193,193,193)', // Lighter gray for shimmer effect
-  subtle: 'rgb(80,80,80)', // Dark gray
-  suggestion: 'rgb(177,185,249)', // Light blue-purple
-  remember: 'rgb(177,185,249)', // Light blue-purple
-  background: 'rgb(0,204,204)', // Bright cyan
-  success: 'rgb(78,186,101)', // Bright green
-  error: 'rgb(255,107,128)', // Bright red
-  warning: 'rgb(255,193,7)', // Bright amber
-  merged: 'rgb(175,135,255)', // Electric violet (matches autoAccept)
-  warningShimmer: 'rgb(255,223,57)', // Lighter amber for shimmer
-  diffAdded: 'rgb(34,92,43)', // Dark green
-  diffRemoved: 'rgb(122,41,54)', // Dark red
-  diffAddedDimmed: 'rgb(71,88,74)', // Very dark green
-  diffRemovedDimmed: 'rgb(105,72,77)', // Very dark red
-  diffAddedWord: 'rgb(56,166,96)', // Medium green
-  diffRemovedWord: 'rgb(179,89,107)', // Softer red (less intense than bright red)
+  claudeBlue_FOR_SYSTEM_SPINNER: 'rgb(129,140,248)', // Indigo for system spinner
+  claudeBlueShimmer_FOR_SYSTEM_SPINNER: 'rgb(165,180,252)', // Lighter indigo for system spinner shimmer
+  permission: 'rgb(165,180,252)', // Soft indigo
+  permissionShimmer: 'rgb(199,210,254)', // Lighter indigo for shimmer
+  planMode: 'rgb(52,211,153)', // Emerald green
+  ide: 'rgb(96,165,250)', // Sky blue
+  promptBorder: 'rgb(107,114,128)', // Cool gray-500
+  promptBorderShimmer: 'rgb(156,163,175)', // Cool gray-400 for shimmer
+  text: 'rgb(248,250,252)', // Slate-50, slightly softer than pure white
+  inverseText: 'rgb(15,23,42)', // Slate-900, rich dark
+  inactive: 'rgb(148,163,184)', // Slate-400
+  inactiveShimmer: 'rgb(203,213,225)', // Slate-300 for shimmer effect
+  subtle: 'rgb(51,65,85)', // Slate-700
+  suggestion: 'rgb(165,180,252)', // Soft indigo
+  remember: 'rgb(165,180,252)', // Soft indigo
+  background: 'rgb(34,211,238)', // Cyan-400
+  success: 'rgb(52,211,153)', // Emerald-400
+  error: 'rgb(251,113,133)', // Rose-400
+  warning: 'rgb(251,191,36)', // Amber-400
+  merged: 'rgb(167,139,250)', // Vivid violet (matches autoAccept)
+  warningShimmer: 'rgb(252,211,77)', // Amber-300 for shimmer
+  diffAdded: 'rgb(22,78,40)', // Emerald dark
+  diffRemoved: 'rgb(110,30,48)', // Rose dark
+  diffAddedDimmed: 'rgb(45,70,52)', // Muted green
+  diffRemovedDimmed: 'rgb(85,55,62)', // Muted rose
+  diffAddedWord: 'rgb(52,211,153)', // Emerald-400
+  diffRemovedWord: 'rgb(251,113,133)', // Rose-400
   // Agent colors
-  red_FOR_SUBAGENTS_ONLY: 'rgb(220,38,38)', // Red 600
-  blue_FOR_SUBAGENTS_ONLY: 'rgb(37,99,235)', // Blue 600
-  green_FOR_SUBAGENTS_ONLY: 'rgb(22,163,74)', // Green 600
-  yellow_FOR_SUBAGENTS_ONLY: 'rgb(202,138,4)', // Yellow 600
-  purple_FOR_SUBAGENTS_ONLY: 'rgb(147,51,234)', // Purple 600
-  orange_FOR_SUBAGENTS_ONLY: 'rgb(234,88,12)', // Orange 600
-  pink_FOR_SUBAGENTS_ONLY: 'rgb(219,39,119)', // Pink 600
-  cyan_FOR_SUBAGENTS_ONLY: 'rgb(8,145,178)', // Cyan 600
+  red_FOR_SUBAGENTS_ONLY: 'rgb(239,68,68)', // Red 500
+  blue_FOR_SUBAGENTS_ONLY: 'rgb(59,130,246)', // Blue 500
+  green_FOR_SUBAGENTS_ONLY: 'rgb(34,197,94)', // Green 500
+  yellow_FOR_SUBAGENTS_ONLY: 'rgb(234,179,8)', // Yellow 500
+  purple_FOR_SUBAGENTS_ONLY: 'rgb(168,85,247)', // Purple 500
+  orange_FOR_SUBAGENTS_ONLY: 'rgb(249,115,22)', // Orange 500
+  pink_FOR_SUBAGENTS_ONLY: 'rgb(236,72,153)', // Pink 500
+  cyan_FOR_SUBAGENTS_ONLY: 'rgb(6,182,212)', // Cyan 500
   // Grove colors
-  professionalBlue: 'rgb(106,155,204)',
+  professionalBlue: 'rgb(96,165,250)',
   // Chrome colors
-  chromeYellow: 'rgb(251,188,4)', // Chrome yellow
+  chromeYellow: 'rgb(251,191,36)', // Amber-400
   // TUI V2 colors
   clawd_body: 'rgb(139,92,246)', // Void purple
-  clawd_background: 'rgb(0,0,0)',
-  userMessageBackground: 'rgb(55, 55, 55)', // Lighter grey for better visual contrast
-  userMessageBackgroundHover: 'rgb(70, 70, 70)',
-  messageActionsBackground: 'rgb(44, 50, 62)', // cool gray, slight blue
-  selectionBg: 'rgb(38, 79, 120)', // classic dark-mode selection blue (VS Code dark default); light fgs stay readable
-  bashMessageBackgroundColor: 'rgb(65, 60, 65)',
+  clawd_background: 'rgb(2,6,23)', // Near-black with blue tint
+  userMessageBackground: 'rgb(30, 41, 59)', // Slate-800 — rich dark blue-gray
+  userMessageBackgroundHover: 'rgb(51, 65, 85)', // Slate-700
+  messageActionsBackground: 'rgb(30, 41, 59)', // Slate-800
+  selectionBg: 'rgb(30, 58, 138)', // Blue-900 — deep selection blue
+  bashMessageBackgroundColor: 'rgb(30, 27, 38)', // Slight purple tint
 
-  memoryBackgroundColor: 'rgb(55, 65, 70)',
-  rate_limit_fill: 'rgb(177,185,249)', // Light blue-purple
-  rate_limit_empty: 'rgb(80,83,112)', // Medium blue-purple
-  fastMode: 'rgb(255,120,20)', // Electric orange for dark bg
-  fastModeShimmer: 'rgb(255,165,70)', // Lighter orange for shimmer
-  briefLabelYou: 'rgb(122,180,232)', // Light blue
+  memoryBackgroundColor: 'rgb(23, 37, 48)', // Deep teal-tinted dark
+  rate_limit_fill: 'rgb(139,92,246)', // Void purple
+  rate_limit_empty: 'rgb(51,65,85)', // Slate-700
+  fastMode: 'rgb(251,146,60)', // Orange-400
+  fastModeShimmer: 'rgb(253,186,116)', // Orange-300
+  briefLabelYou: 'rgb(96,165,250)', // Blue-400
   briefLabelClaude: 'rgb(139,92,246)', // Void purple
   rainbow_red: 'rgb(235,95,87)',
   rainbow_orange: 'rgb(245,139,87)',

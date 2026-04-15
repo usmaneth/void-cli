@@ -6,15 +6,23 @@ import { Box, Text, useTheme } from '../ink.js'
 // ── Gutter colors by message type ──────────────────────────────────────────
 
 const GUTTER_COLORS: Record<string, string> = {
-  assistant: 'blue',
-  user: 'green',
-  system: 'yellow',
-  tool: 'cyan',
-  error: 'red',
+  assistant: 'claude',
+  user: 'success',
+  system: 'warning',
+  tool: 'suggestion',
+  error: 'error',
+}
+
+const GUTTER_ICONS: Record<string, string> = {
+  assistant: '┃',
+  user: '┃',
+  system: '┊',
+  tool: '┃',
+  error: '┃',
 }
 
 export function getGutterColor(type: string): string {
-  return GUTTER_COLORS[type] ?? 'gray'
+  return GUTTER_COLORS[type] ?? 'inactive'
 }
 
 // ── MessageGutter ──────────────────────────────────────────────────────────
@@ -26,16 +34,15 @@ type MessageGutterProps = {
   children: React.ReactNode
 }
 
-const GUTTER_CHAR = '│'
-
 function MessageGutterImpl({ type, children }: MessageGutterProps) {
   const color = getGutterColor(type)
   const dimmed = type === 'system'
+  const gutterChar = GUTTER_ICONS[type] ?? '┃'
 
   return (
     <Box flexDirection="row">
       <Text color={color} dimColor={dimmed}>
-        {GUTTER_CHAR}
+        {gutterChar}
       </Text>
       <Text> </Text>
       <Box flexDirection="column" flexGrow={1}>
@@ -55,6 +62,7 @@ type MessageDividerProps = {
 }
 
 const DIVIDER_CHAR = '─'
+const DIVIDER_DOT = '·'
 
 function MessageDividerImpl({ label }: MessageDividerProps) {
   const { columns } = useTerminalSize()
@@ -73,14 +81,18 @@ function MessageDividerImpl({ label }: MessageDividerProps) {
 
     return (
       <Box>
-        <Text dimColor>{left}{labelWithPadding}{right}</Text>
+        <Text dimColor>{left}</Text>
+        <Text color="claude">{labelWithPadding}</Text>
+        <Text dimColor>{right}</Text>
       </Box>
     )
   }
 
+  // Use a dotted pattern for unlabeled dividers — more refined look
+  const pattern = (DIVIDER_CHAR + DIVIDER_CHAR + DIVIDER_DOT).repeat(Math.ceil(availableWidth / 3)).slice(0, availableWidth)
   return (
     <Box>
-      <Text dimColor>{DIVIDER_CHAR.repeat(availableWidth)}</Text>
+      <Text dimColor>{pattern}</Text>
     </Box>
   )
 }

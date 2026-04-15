@@ -2,12 +2,20 @@ import React from 'react';
 import { Box, Text } from 'src/ink.js';
 
 const VOID_LOGO = `
- ╔══════════════════════════════╗
- ║  ░▒▓  V · O · I · D  ▓▒░   ║
- ╚══════════════════════════════╝
+  ┌─────────────────────────────────┐
+  │                                 │
+  │   ▀▄   ▄▀  ▄▀▀▀▄  █  ▄▀▀▀▄    │
+  │    ▀▄ ▄▀   █   █  █  █   █    │
+  │     ▀█▀    ▀▄▄▄▀  █  ▀▄▄▄▀    │
+  │                                 │
+  │         ░▒▓ V O I D ▓▒░        │
+  │                                 │
+  └─────────────────────────────────┘
 `.trimEnd();
 
-const SEPARATOR = '─'.repeat(40);
+const SEPARATOR_LEFT = '━━━━━━━━━━━━━━━━';
+const SEPARATOR_RIGHT = '━━━━━━━━━━━━━━━━';
+const SEPARATOR_DIAMOND = '◆';
 
 declare const MACRO: { VERSION: string };
 
@@ -16,13 +24,18 @@ export function WelcomeV2() {
 
   return (
     <Box flexDirection="column" alignItems="center" paddingTop={1} paddingBottom={1}>
-      <Text color="cyan">{VOID_LOGO}</Text>
+      <Text color="claude">{VOID_LOGO}</Text>
       <Box marginTop={1}>
-        <Text bold>Welcome to Void</Text>
+        <Text bold color="claude">void</Text>
         {version ? <Text dimColor> v{version}</Text> : null}
       </Box>
       <Box marginTop={1}>
-        <Text dimColor>{SEPARATOR}</Text>
+        <Text dimColor>{SEPARATOR_LEFT}</Text>
+        <Text color="claude"> {SEPARATOR_DIAMOND} </Text>
+        <Text dimColor>{SEPARATOR_RIGHT}</Text>
+      </Box>
+      <Box marginTop={1}>
+        <Text dimColor italic>your infinite dev agent</Text>
       </Box>
     </Box>
   );
