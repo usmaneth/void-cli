@@ -22,6 +22,10 @@ import {
   DeliberationRenderer,
   type ModelStatus,
 } from '../../deliberation/renderer.js'
+import {
+  extractFriendlyModelsFromText,
+  resolveFriendlyModelInput,
+} from '../../utils/model/friendlyModelResolver.js'
 import { getSettingsForSource } from '../../utils/settings/settings.js'
 
 // ── Default models for quick presets ────────────────────────────────────────
@@ -50,61 +54,17 @@ function formatTokens(n: number): string {
   return String(n)
 }
 
-// ── Model aliases ───────────────────────────────────────────────────────────
-// Maps natural-language model names to their API identifiers.
-// Order matters: longer/more-specific patterns must come first so they match
-// before shorter ones (e.g. "opus 4.6" before "opus").
-
-const MODEL_ALIASES: Array<{ pattern: RegExp; id: string }> = [
-  // Anthropic — Claude
-  { pattern: /\bopus\s*4[\.\s]*6\b/i, id: 'claude-opus-4-6' },
-  { pattern: /\bsonnet\s*4[\.\s]*6\b/i, id: 'claude-sonnet-4-6' },
-  { pattern: /\bhaiku\s*4[\.\s]*5\b/i, id: 'claude-haiku-4-5-20251001' },
-  { pattern: /\bopus\s*4\b/i, id: 'claude-opus-4-20250514' },
-  { pattern: /\bsonnet\s*4\b/i, id: 'claude-sonnet-4-20250514' },
-  { pattern: /\bclaude[\s-]*opus\b/i, id: 'claude-opus-4-6' },
-  { pattern: /\bclaude[\s-]*sonnet\b/i, id: 'claude-sonnet-4-6' },
-  { pattern: /\bclaude[\s-]*haiku\b/i, id: 'claude-haiku-4-5-20251001' },
-  { pattern: /\bopus\b/i, id: 'claude-opus-4-6' },
-  { pattern: /\bsonnet\b/i, id: 'claude-sonnet-4-6' },
-  { pattern: /\bhaiku\b/i, id: 'claude-haiku-4-5-20251001' },
-  // OpenAI
-  { pattern: /\bgpt[\s-]*5[\.\s]*4\b/i, id: 'openai/gpt-5.4' },
-  { pattern: /\bgpt[\s-]*5[\.\s]*3\b/i, id: 'openai/gpt-5.3' },
-  { pattern: /\bgpt[\s-]*5[\.\s]*2\b/i, id: 'openai/gpt-5.2' },
-  { pattern: /\bgpt[\s-]*4[\.\s]*1[\s-]*mini\b/i, id: 'openai/gpt-4.1-mini' },
-  { pattern: /\bgpt[\s-]*4[\.\s]*1\b/i, id: 'openai/gpt-4.1' },
-  { pattern: /\bgpt[\s-]*4[\s-]*o[\s-]*mini\b/i, id: 'openai/gpt-4o-mini' },
-  { pattern: /\bgpt[\s-]*4[\s-]*o\b/i, id: 'openai/gpt-4o' },
-  { pattern: /\bo3[\s-]*mini\b/i, id: 'openai/o3-mini' },
-  { pattern: /\bo3\b/i, id: 'openai/o3' },
-  { pattern: /\bo4[\s-]*mini\b/i, id: 'openai/o4-mini' },
-  // Google
-  { pattern: /\bgemini\s*3[\.\s]*1[\s-]*pro\b/i, id: 'google/gemini-3.1-pro' },
-  { pattern: /\bgemini\s*2[\.\s]*5[\s-]*pro\b/i, id: 'google/gemini-2.5-pro-preview' },
-  { pattern: /\bgemini\s*2[\.\s]*5[\s-]*flash\b/i, id: 'google/gemini-2.5-flash-preview' },
-  { pattern: /\bgemini[\s-]*pro\b/i, id: 'google/gemini-3.1-pro' },
-  { pattern: /\bgemini[\s-]*flash\b/i, id: 'google/gemini-2.5-flash-preview' },
-  { pattern: /\bgemini\b/i, id: 'google/gemini-3.1-pro' },
-  // GLM / Zhipu
-  { pattern: /\bglm[\s-]*5[\.\s]*1\b/i, id: 'thudm/glm-5.1' },
-  { pattern: /\bglm[\s-]*4\b/i, id: 'thudm/glm-4' },
-  { pattern: /\bglm\b/i, id: 'thudm/glm-5.1' },
-  // Meta
-  { pattern: /\bllama[\s-]*4[\s-]*maverick\b/i, id: 'meta-llama/llama-4-maverick' },
-  { pattern: /\bllama[\s-]*4\b/i, id: 'meta-llama/llama-4-maverick' },
-  { pattern: /\bmaverick\b/i, id: 'meta-llama/llama-4-maverick' },
-  // DeepSeek
-  { pattern: /\bdeepseek[\s-]*v3\b/i, id: 'deepseek/deepseek-chat-v3-0324' },
-  { pattern: /\bdeepseek[\s-]*r1\b/i, id: 'deepseek/deepseek-r1' },
-  { pattern: /\bdeepseek\b/i, id: 'deepseek/deepseek-chat-v3-0324' },
-  // Qwen
-  { pattern: /\bqwen[\s-]*3\b/i, id: 'qwen/qwen3-235b-a22b' },
-  { pattern: /\bqwen\b/i, id: 'qwen/qwen3-235b-a22b' },
-  // Mistral
-  { pattern: /\bmistral[\s-]*large\b/i, id: 'mistralai/mistral-large' },
-  { pattern: /\bmistral\b/i, id: 'mistralai/mistral-large' },
-]
+function cleanNaturalLanguageTopic(input: string): string {
+  return input
+    .replace(/\b(?:use|have|let|with|get|make|between|compare|versus|vs)\b/gi, ' ')
+    .replace(
+      /\b(?:to\s+(?:debate|discuss|deliberate|argue|talk|compare)|(?:debate|discuss|deliberate|argue|talk|compare)\s+(?:about|on|whether|if)?|(?:about|on|whether|if)\b)\s*/gi,
+      ' ',
+    )
+    .replace(/\b\d{1,2}\s*rounds?\b/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
 
 /**
  * Try to extract model names from natural language input.
@@ -116,37 +76,28 @@ const MODEL_ALIASES: Array<{ pattern: RegExp; id: string }> = [
 function extractModelsFromNaturalLanguage(
   input: string,
 ): { models: string[]; topic: string } | null {
-  // Match "use/have/let/with <models> to/about/debate/discuss/on <topic>"
   const connectorPattern = /\b(?:use|have|let|with|get|make|between)\b/i
   const topicSplitter = /\b(?:to\s+(?:debate|discuss|deliberate|argue|talk)|(?:debate|discuss|deliberate|argue)\s+(?:about|on|whether|if)?|(?:about|on|whether|if)\b)/i
 
   if (!connectorPattern.test(input)) return null
 
-  // Find the topic split point
   const splitMatch = topicSplitter.exec(input)
-  if (!splitMatch) return null
-
-  const modelSection = input.slice(0, splitMatch.index)
-  const topicSection = input.slice(splitMatch.index + splitMatch[0].length).trim()
-
-  if (!topicSection) return null
-
-  // Extract models from the model section
-  const models: string[] = []
-  let remaining = modelSection
-
-  for (const alias of MODEL_ALIASES) {
-    if (alias.pattern.test(remaining)) {
-      if (!models.includes(alias.id)) {
-        models.push(alias.id)
-        remaining = remaining.replace(alias.pattern, ' ')
-      }
+  if (splitMatch) {
+    const modelSection = input.slice(0, splitMatch.index)
+    const topicSection = input.slice(splitMatch.index + splitMatch[0].length).trim()
+    const extracted = extractFriendlyModelsFromText(modelSection)
+    if (extracted.models.length >= 2 && topicSection) {
+      return { models: extracted.models, topic: topicSection }
     }
   }
 
-  if (models.length === 0) return null
+  const extracted = extractFriendlyModelsFromText(input)
+  const topic = cleanNaturalLanguageTopic(extracted.remainingText)
+  if (extracted.models.length >= 2 && topic) {
+    return { models: extracted.models, topic }
+  }
 
-  return { models, topic: topicSection }
+  return null
 }
 
 // ── Arg parsing ─────────────────────────────────────────────────────────────
@@ -180,7 +131,10 @@ function parseArgs(args: string): ParsedArgs {
     for (let i = 0; i < tokens.length; i++) {
       const token = tokens[i]!
       if (token === '--models' && tokens[i + 1]) {
-        models = tokens[i + 1]!.split(',').map((m) => m.trim()).filter(Boolean)
+        models = tokens[i + 1]!
+          .split(',')
+          .map(m => resolveFriendlyModelInput(m.trim()) ?? m.trim())
+          .filter(Boolean)
         hasModelOverride = true
         i++
       } else if (token === '--rounds' && tokens[i + 1]) {

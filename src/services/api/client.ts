@@ -28,6 +28,7 @@ import {
   getVertexRegionForModel,
   isEnvTruthy,
 } from '../../utils/envUtils.js'
+import { getProviderKeyFromKeychain } from '../../utils/providerKeychain.js'
 
 /**
  * Environment variables for different client types:
@@ -69,50 +70,6 @@ import {
  * 3. Default region from config
  * 4. Fallback region (us-east5)
  */
-
-/**
- * Generic keychain lookup for provider API keys. Reads from macOS keychain
- * using the same service naming convention as the /provider command (Void-<provider>).
- * Results are cached per provider to avoid repeated subprocess calls.
- */
-const _cachedKeychainKeys: Record<string, string | null | undefined> = {}
-async function getKeyFromKeychain(provider: string): Promise<string | null> {
-  if (_cachedKeychainKeys[provider] !== undefined) return _cachedKeychainKeys[provider]!
-  if (process.platform !== 'darwin') {
-    _cachedKeychainKeys[provider] = null
-    return null
-  }
-  const { execFileNoThrow: execNoThrow } = await import('../../utils/execFileNoThrow.js')
-  const username = process.env.USER || (await import('os')).userInfo().username
-  for (const args of [
-    ['find-generic-password', '-s', `Void-${provider}`, '-a', username, '-w'],
-    ['find-generic-password', '-s', `Void-${provider}`, '-w'],
-  ]) {
-    const result = await execNoThrow('security', args, {
-      timeout: 5000,
-      preserveOutputOnError: false,
-      useCwd: false,
-    })
-    if (result.code === 0 && result.stdout.trim()) {
-      const key = result.stdout.trim()
-      _cachedKeychainKeys[provider] = key
-      return key
-    }
-  }
-  _cachedKeychainKeys[provider] = null
-  return null
-}
-
-/**
- * Reads the OpenRouter API key from macOS keychain as a fallback when the
- * OPENROUTER_API_KEY env var is not set.
- */
-let _cachedOpenRouterKey: string | null | undefined
-async function getOpenRouterKeyFromKeychain(): Promise<string | null> {
-  if (_cachedOpenRouterKey !== undefined) return _cachedOpenRouterKey
-  _cachedOpenRouterKey = await getKeyFromKeychain('openrouter')
-  return _cachedOpenRouterKey
-}
 
 function createStderrLogger(): ClientOptions['logger'] {
   return {
@@ -348,7 +305,8 @@ export async function getAnthropicClient({
   // Direct OpenAI routing: openai/* models -> OpenAI API
   // Strip the "openai/" prefix since OpenAI's API expects bare model names (e.g. "gpt-4o")
   if (model && model.startsWith('openai/')) {
-    const openaiKey = process.env.OPENAI_API_KEY || await getKeyFromKeychain('openai')
+    const openaiKey =
+      process.env.OPENAI_API_KEY || await getProviderKeyFromKeychain('openai')
     if (openaiKey) {
       const { createOpenAIShimClient } = await import('./openaiShim.js')
       return createOpenAIShimClient({
@@ -368,7 +326,8 @@ export async function getAnthropicClient({
   // Uses the native Gemini REST API for first-class thought_signature support
   // (required by Gemini 3+ thinking models for multi-turn function calling)
   if (model && model.startsWith('google/')) {
-    const geminiKey = process.env.GEMINI_API_KEY || await getKeyFromKeychain('gemini')
+    const geminiKey =
+      process.env.GEMINI_API_KEY || await getProviderKeyFromKeychain('gemini')
     if (geminiKey) {
       const { createGeminiShimClient } = await import('./geminiShim.js')
       return createGeminiShimClient({
@@ -387,7 +346,9 @@ export async function getAnthropicClient({
   //    Models that matched a direct provider above won't reach here.
   const isOpenRouterModel = model && model.includes('/')
   // Resolve OpenRouter key: env var first, then macOS keychain fallback
-  const openrouterKey = process.env.OPENROUTER_API_KEY || await getOpenRouterKeyFromKeychain()
+  const openrouterKey =
+    process.env.OPENROUTER_API_KEY ||
+    (await getProviderKeyFromKeychain('openrouter'))
   if (
     isEnvTruthy(process.env.VOID_USE_OPENROUTER) ||
     (isOpenRouterModel && openrouterKey)

@@ -19,6 +19,7 @@ import { getSettings_DEPRECATED } from '../settings/settings.js'
 import { checkOpus1mAccess, checkSonnet1mAccess } from './check1mAccess.js'
 import { getAPIProvider } from './providers.js'
 import { isModelAllowed } from './modelAllowlist.js'
+import { getProviderKeyFromKeychain } from '../providerKeychain.js'
 import {
   getCanonicalName,
   getClaudeAiUserDefaultModelDescription,
@@ -569,10 +570,12 @@ export function openRouterModelToOption(m: OpenRouterModel): ModelOption {
 
 /**
  * Fetch the OpenRouter catalog and return them as ModelOptions.
- * Requires OPENROUTER_API_KEY in the environment.
+ * Uses the configured OpenRouter key from the environment or macOS keychain.
  */
 export async function getOpenRouterModelOptions(): Promise<ModelOption[]> {
-  const apiKey = process.env.OPENROUTER_API_KEY
+  const apiKey =
+    process.env.OPENROUTER_API_KEY ||
+    (await getProviderKeyFromKeychain('openrouter'))
   if (!apiKey) {
     return []
   }

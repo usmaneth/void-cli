@@ -4,6 +4,7 @@ import { useTerminalSize } from '../hooks/useTerminalSize.js'
 import type { SwarmPhase, SwarmState, Workstream, WorkstreamTask } from './types.js'
 
 type SwarmRendererProps = {
+  isConfiguringModels?: boolean
   state: SwarmState | null
   workerMessages: Map<string, string>
 }
@@ -143,7 +144,11 @@ function WorkerPanel({
 
 // ── Main renderer ───────────────────────────────────────────────────────────
 
-export function SwarmRenderer({ state, workerMessages }: SwarmRendererProps): React.JSX.Element {
+export function SwarmRenderer({
+  state,
+  workerMessages,
+  isConfiguringModels = false,
+}: SwarmRendererProps): React.JSX.Element {
   const { columns } = useTerminalSize()
 
   if (!state) {
@@ -234,7 +239,9 @@ export function SwarmRenderer({ state, workerMessages }: SwarmRendererProps): Re
       {state.phase === 'awaiting_approval' ? (
         <Box marginTop={1}>
           <Text bold color="#fbbf24">
-            {'Press Enter to approve and launch workers, or Ctrl+C to cancel'}
+            {isConfiguringModels
+              ? 'Set worker model overrides, then press Enter to save them'
+              : 'Press Enter to approve, press M to configure models, or Ctrl+C to cancel'}
           </Text>
         </Box>
       ) : null}
@@ -242,7 +249,9 @@ export function SwarmRenderer({ state, workerMessages }: SwarmRendererProps): Re
       {/* Hotkeys */}
       <Text dimColor>
         {state.phase === 'awaiting_approval'
-          ? 'enter approve · ctrl+c cancel'
+          ? isConfiguringModels
+            ? 'enter save overrides · esc keep current assignments'
+            : 'enter approve · m configure models · ctrl+c cancel'
           : 'enter inject guidance · ctrl+c abort · tab switch focus'}
       </Text>
     </Box>

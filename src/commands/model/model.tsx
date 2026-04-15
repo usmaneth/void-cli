@@ -12,6 +12,7 @@ import { isBilledAsExtraUsage } from '../../utils/extraUsage.js';
 import { clearFastModeCooldown, isFastModeAvailable, isFastModeEnabled, isFastModeSupportedByModel } from '../../utils/fastMode.js';
 import { MODEL_ALIASES } from '../../utils/model/aliases.js';
 import { checkOpus1mAccess, checkSonnet1mAccess } from '../../utils/model/check1mAccess.js';
+import { resolveFriendlyModelInput } from '../../utils/model/friendlyModelResolver.js';
 import { getDefaultMainLoopModelSetting, isOpus1mMergeEnabled, renderDefaultModelSetting } from '../../utils/model/model.js';
 import { isModelAllowed } from '../../utils/model/modelAllowlist.js';
 import { validateModel } from '../../utils/model/validateModel.js';
@@ -138,24 +139,25 @@ function SetModelAndClose({
 }): React.ReactNode {
   const isFastMode = useAppState(s => s.fastMode);
   const setAppState = useSetAppState();
-  const model = args === 'default' ? null : args;
+  const rawModel = args === 'default' ? null : args.trim();
+  const resolvedModel = rawModel ? resolveFriendlyModelInput(rawModel) ?? rawModel : null;
   React.useEffect(() => {
     async function handleModelChange(): Promise<void> {
-      if (model && !isModelAllowed(model)) {
-        onDone(`Model '${model}' is not available. Your organization restricts model selection.`, {
+      if (resolvedModel && !isModelAllowed(resolvedModel)) {
+        onDone(`Model '${resolvedModel}' is not available. Your organization restricts model selection.`, {
           display: 'system'
         });
         return;
       }
 
       // @[MODEL LAUNCH]: Update check for 1M access.
-      if (model && isOpus1mUnavailable(model)) {
+      if (resolvedModel && isOpus1mUnavailable(resolvedModel)) {
         onDone(`Opus 4.6 with 1M context is not available for your account. Learn more: https://code.claude.com/docs/en/model-config#extended-context-with-1m`, {
           display: 'system'
         });
         return;
       }
-      if (model && isSonnet1mUnavailable(model)) {
+      if (resolvedModel && isSonnet1mUnavailable(resolvedModel)) {
         onDone(`Sonnet 4.6 with 1M context is not available for your account. Learn more: https://code.claude.com/docs/en/model-config#extended-context-with-1m`, {
           display: 'system'
         });
@@ -163,14 +165,14 @@ function SetModelAndClose({
       }
 
       // Skip validation for default model
-      if (!model) {
+      if (!resolvedModel) {
         setModel(null);
         return;
       }
 
       // Skip validation for known aliases - they're predefined and should work
-      if (isKnownAlias(model)) {
-        setModel(model);
+      if (rawModel && isKnownAlias(rawModel)) {
+        setModel(resolvedModel);
         return;
       }
 
@@ -181,11 +183,11 @@ function SetModelAndClose({
         const {
           valid,
           error: error_0
-        } = await validateModel(model);
+        } = await validateModel(resolvedModel);
         if (valid) {
-          setModel(model);
+          setModel(resolvedModel);
         } else {
-          onDone(error_0 || `Model '${model}' not found`, {
+          onDone(error_0 || `Model '${resolvedModel}' not found`, {
             display: 'system'
           });
         }
@@ -227,7 +229,7 @@ function SetModelAndClose({
       onDone(message);
     }
     void handleModelChange();
-  }, [model, onDone, setAppState]);
+  }, [onDone, rawModel, resolvedModel, setAppState]);
   return null;
 }
 function isKnownAlias(model: string): boolean {
