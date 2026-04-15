@@ -1,14 +1,11 @@
 import '../macros.js';
 import { feature } from '../bun-bundle-shim.js';
 
-// Restore user's original CWD when launched via the `void` wrapper.
-// The wrapper cd's to the project root for reliable module resolution,
-// then sets VOID_LAUNCH_CWD so we can restore the real working directory.
-// eslint-disable-next-line custom-rules/no-top-level-side-effects, custom-rules/no-process-env-top-level
-if (process.env.VOID_LAUNCH_CWD) {
-  // eslint-disable-next-line custom-rules/no-top-level-side-effects
-  try { process.chdir(process.env.VOID_LAUNCH_CWD); } catch {}
-}
+// NOTE: The void wrapper cd's to ~/void-cli for module resolution.
+// We do NOT chdir back to the user's launch dir here — doing so causes
+// downstream code (git ops, file indexing, session storage) to run from
+// potentially huge directories like ~, causing freezes.
+// VOID_LAUNCH_CWD is available for code that needs the original path.
 
 // Bugfix for corepack auto-pinning, which adds yarnpkg to peoples' package.jsons
 // eslint-disable-next-line custom-rules/no-top-level-side-effects
