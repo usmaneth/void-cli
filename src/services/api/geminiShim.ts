@@ -17,7 +17,11 @@ interface GeminiPart {
   text?: string
   inlineData?: { mimeType: string; data: string }
   functionCall?: { id?: string; name: string; args: Record<string, unknown> }
-  functionResponse?: { name: string; response: Record<string, unknown> }
+  functionResponse?: {
+    id?: string
+    name: string
+    response: Record<string, unknown>
+  }
   thoughtSignature?: string
 }
 
@@ -30,6 +34,7 @@ interface GeminiFunctionDeclaration {
   name: string
   description?: string
   parameters?: Record<string, unknown>
+  parametersJsonSchema?: Record<string, unknown>
 }
 
 interface GeminiRequest {
@@ -148,6 +153,7 @@ function convertAnthropicToGemini(messages: any[]): GeminiContent[] {
 
             parts.push({
               functionResponse: {
+                id: block.tool_use_id,
                 name,
                 response: { result: responseContent },
               },
@@ -208,6 +214,78 @@ function convertAnthropicToGemini(messages: any[]): GeminiContent[] {
   return result
 }
 
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+function sanitizeGeminiJsonSchema(schema: unknown): unknown {
+  if (Array.isArray(schema)) {
+    return schema.map(item => sanitizeGeminiJsonSchema(item))
+  }
+
+  if (!isPlainObject(schema)) {
+    return schema
+  }
+
+  const sanitized: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(schema)) {
+    switch (key) {
+      case '$schema':
+      case '$defs':
+      case 'definitions':
+      case 'propertyNames':
+      case 'patternProperties':
+      case 'exclusiveMinimum':
+      case 'exclusiveMaximum':
+      case 'oneOf':
+      case 'allOf':
+      case 'not':
+      case 'if':
+      case 'then':
+      case 'else':
+      case 'contains':
+      case 'minContains':
+      case 'maxContains':
+      case 'unevaluatedProperties':
+      case 'unevaluatedItems':
+      case 'dependentRequired':
+      case 'dependentSchemas':
+      case 'readOnly':
+      case 'writeOnly':
+      case 'deprecated':
+      case 'examples':
+      case 'contentEncoding':
+      case 'contentMediaType':
+      case 'contentSchema':
+        continue
+      case 'properties':
+        if (isPlainObject(value)) {
+          sanitized.properties = Object.fromEntries(
+            Object.entries(value).map(([propName, propSchema]) => [
+              propName,
+              sanitizeGeminiJsonSchema(propSchema),
+            ]),
+          )
+        }
+        continue
+      case 'items':
+      case 'additionalProperties':
+        sanitized[key] = sanitizeGeminiJsonSchema(value)
+        continue
+      case 'anyOf':
+      case 'prefixItems':
+        if (Array.isArray(value)) {
+          sanitized[key] = value.map(item => sanitizeGeminiJsonSchema(item))
+        }
+        continue
+      default:
+        sanitized[key] = value
+    }
+  }
+
+  return sanitized
+}
+
 function convertTools(
   tools: any[] | undefined,
 ): GeminiRequest['tools'] | undefined {
@@ -217,19 +295,13 @@ function convertTools(
     .filter(t => t.type !== 'server_tool_use')
     .map(tool => {
       const schema = tool.input_schema || {}
-      const params: Record<string, unknown> = { ...schema }
-      // Ensure required is present for proper validation
-      if (
-        params.properties &&
-        !params.required &&
-        typeof params.properties === 'object'
-      ) {
-        params.required = Object.keys(params.properties as object)
-      }
       return {
         name: tool.name,
         description: tool.description || '',
-        parameters: params,
+        parametersJsonSchema: sanitizeGeminiJsonSchema(schema) as Record<
+          string,
+          unknown
+        >,
       }
     })
 
