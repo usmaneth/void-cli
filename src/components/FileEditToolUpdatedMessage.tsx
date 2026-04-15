@@ -6,6 +6,8 @@ import { Box, Text } from '../ink.js';
 import { count } from '../utils/array.js';
 import { MessageResponse } from './MessageResponse.js';
 import { StructuredDiffList } from './StructuredDiffList.js';
+import { RichFileHeader } from './design-system/RichFileHeader.js';
+
 type Props = {
   filePath: string;
   structuredPatch: StructuredPatchHunk[];
@@ -100,7 +102,7 @@ export function FileEditToolUpdatedMessage(t0) {
   }
   let t8;
   if ($[19] !== t5 || $[20] !== t7) {
-    t8 = <MessageResponse><Box flexDirection="column">{t5}{t7}</Box></MessageResponse>;
+    t8 = <MessageResponse><Box flexDirection="column"><RichFileHeader filePath={filePath} stats={t5} />{t7}</Box></MessageResponse>;
     $[19] = t5;
     $[20] = t7;
     $[21] = t8;

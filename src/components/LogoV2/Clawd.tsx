@@ -17,7 +17,7 @@ export function Clawd(t0: Props | undefined) {
   const $ = _c(4);
   let t1;
   if ($[0] === Symbol.for("react.memo_cache_sentinel")) {
-    t1 = <Box flexDirection="column" alignItems="center"><Text color="claude">{"      ╱ · · · ╲      "}</Text><Text color="claude">{"    ╱ ·       · ╲    "}</Text><Text color="claude">{"  ╱ ·    ╱╲    · ╲  "}</Text><Text color="claude">{"  │    ◀ VO ▶    │  "}</Text><Text color="claude">{"  ╲ ·    ╲╱    · ╱  "}</Text><Text color="claude">{"    ╲ ·       · ╱    "}</Text><Text color="claude">{"      ╲ · · · ╱      "}</Text></Box>;
+    t1 = <Box flexDirection="column" alignItems="center"><Text color="claude">{"    ▲    "}</Text><Text color="claude">{"   ▼ ▲   "}</Text><Text color="claude">{"  ▲ ▼ ▲  "}</Text><Text color="claude">{" ◀ V O ▶ "}</Text><Text color="claude">{"  ▼ ▲ ▼  "}</Text><Text color="claude">{"   ▲ ▼   "}</Text><Text color="claude">{"    ▼    "}</Text></Box>;
     $[0] = t1;
   } else {
     t1 = $[0];

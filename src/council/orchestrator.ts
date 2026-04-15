@@ -30,12 +30,19 @@ async function queryMember(
   if (member.provider === 'anthropic') {
     // Use the existing Void API client (handles OAuth, retries, etc.)
     const { getAnthropicClient } = await import('../services/api/client.js')
+    const { isClaudeAISubscriber } = await import('../utils/auth.js')
+    const { OAUTH_BETA_HEADER } = await import('../constants/oauth.js')
     const client = await getAnthropicClient({ maxRetries: 1 })
-    const response = await client.messages.create({
+    const betas: string[] = []
+    if (isClaudeAISubscriber()) {
+      betas.push(OAUTH_BETA_HEADER)
+    }
+    const response = await client.beta.messages.create({
       model: member.model.replace('anthropic/', ''),
       max_tokens: 4096,
       system: systemPrompt || '',
       messages: [{ role: 'user', content: prompt }],
+      ...(betas.length > 0 && { betas }),
     })
     content = response.content
       .filter((b: any) => b.type === 'text')

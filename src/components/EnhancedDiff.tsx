@@ -9,13 +9,9 @@ import { memo, useMemo } from 'react'
 import { Box, Text, useTheme } from '../ink.js'
 
 type EnhancedDiffProps = {
-  /** Unified diff string to render */
   diff: string
-  /** Optional file name to display as a header */
   fileName?: string
-  /** Maximum number of diff lines to show before truncating */
   maxLines?: number
-  /** Show a compact summary instead of the full diff */
   collapsed?: boolean
 }
 
@@ -25,9 +21,6 @@ type DiffLine = {
   lineNumber: number
 }
 
-/**
- * Parse a unified diff string and return stats about it.
- */
 export function parseDiffStats(diff: string): {
   additions: number
   deletions: number
@@ -44,7 +37,6 @@ export function parseDiffStats(diff: string): {
     } else if (line.startsWith('-') && !line.startsWith('---')) {
       deletions++
     } else if (line.startsWith('+++ ') || line.startsWith('diff --git')) {
-      // Extract file name from +++ b/path or diff --git a/path b/path
       const plusMatch = line.match(/^\+\+\+ [ab]\/(.+)$/)
       const gitMatch = line.match(/^diff --git a\/.+ b\/(.+)$/)
       const name = plusMatch?.[1] ?? gitMatch?.[1]
@@ -80,89 +72,81 @@ function EnhancedDiffImpl({
   maxLines,
   collapsed = false,
 }: EnhancedDiffProps): React.ReactNode {
-  const [_theme] = useTheme()
+  const [theme] = useTheme()
 
   const lines = useMemo(() => parseDiffLines(diff), [diff])
   const stats = useMemo(() => parseDiffStats(diff), [diff])
 
-  // Collapsed mode: show a one-line summary
   if (collapsed) {
     return (
-      <Box>
+      <Box paddingX={1}>
         {fileName && (
           <>
-            <Text bold>{fileName}</Text>
-            <Text dimColor> — </Text>
+            <Text bold color="subtle">{fileName}</Text>
+            <Text dimColor> · </Text>
           </>
         )}
-        <Text color="green">+{stats.additions}</Text>
-        <Text dimColor>/</Text>
-        <Text color="red">-{stats.deletions}</Text>
-        <Text dimColor> lines</Text>
+        <Text color="success">+{stats.additions}</Text>
+        <Text dimColor> / </Text>
+        <Text color="error">-{stats.deletions}</Text>
       </Box>
     )
   }
 
-  // Determine which lines to display
   const truncated = maxLines != null && lines.length > maxLines
   const visibleLines = truncated ? lines.slice(0, maxLines) : lines
   const remainingCount = truncated ? lines.length - maxLines! : 0
 
-  // Width of the line-number gutter
   const gutterWidth = Math.max(
-    String(visibleLines.length > 0 ? visibleLines[visibleLines.length - 1]!.lineNumber : 1)
-      .length,
+    String(visibleLines.length > 0 ? visibleLines[visibleLines.length - 1]!.lineNumber : 1).length,
     3,
   )
 
   return (
-    <Box flexDirection="column">
-      {/* File name header */}
+    <Box flexDirection="column" borderStyle="round" borderColor="promptBorder" paddingX={1}>
       {fileName && (
-        <Box marginBottom={1}>
-          <Text bold>{'─── '}{fileName}{' '}</Text>
-          <Text dimColor>
-            (<Text color="green">+{stats.additions}</Text>
-            {' / '}
-            <Text color="red">-{stats.deletions}</Text>)
-          </Text>
+        <Box marginBottom={1} borderBottom={false} borderStyle="single" borderColor="promptBorder" paddingBottom={0}>
+          <Text bold color="ide">📝 {fileName}</Text>
+          <Text dimColor>  ·  </Text>
+          <Text color="success" bold>+{stats.additions}</Text>
+          <Text dimColor> / </Text>
+          <Text color="error" bold>-{stats.deletions}</Text>
         </Box>
       )}
 
-      {/* Diff lines */}
-      {visibleLines.map((line) => (
-        <Box key={line.lineNumber} flexDirection="row">
-          {/* Gutter: line number */}
-          <Text dimColor>
-            {String(line.lineNumber).padStart(gutterWidth, ' ')}{' │ '}
-          </Text>
+      {visibleLines.map((line) => {
+        let bgColor = undefined
+        let textColor = undefined
 
-          {/* Line content */}
-          {line.type === 'addition' && (
-            <Text color="green">{line.content}</Text>
-          )}
-          {line.type === 'deletion' && (
-            <Text color="red">{line.content}</Text>
-          )}
-          {line.type === 'hunk' && (
-            <Text color="cyan" dimColor>{line.content}</Text>
-          )}
-          {line.type === 'file-header' && (
-            <Text bold>{line.content}</Text>
-          )}
-          {line.type === 'context' && (
-            <Text dimColor>{line.content}</Text>
-          )}
-          {line.type === 'other' && (
-            <Text dimColor>{line.content}</Text>
-          )}
-        </Box>
-      ))}
+        if (line.type === 'addition') {
+          bgColor = 'diffAddedDimmed'
+          textColor = 'success'
+        } else if (line.type === 'deletion') {
+          bgColor = 'diffRemovedDimmed'
+          textColor = 'error'
+        } else if (line.type === 'hunk') {
+          bgColor = 'messageActionsBackground'
+          textColor = 'suggestion'
+        }
 
-      {/* Truncation indicator */}
+        return (
+          <Box key={line.lineNumber} flexDirection="row" backgroundColor={bgColor}>
+            <Box width={gutterWidth + 2} alignItems="flex-end" paddingRight={1}>
+              <Text dimColor color={line.type === 'addition' ? 'success' : line.type === 'deletion' ? 'error' : undefined}>
+                {String(line.lineNumber)}
+              </Text>
+            </Box>
+            
+            <Text dimColor={line.type === 'context' || line.type === 'other'} color={textColor} bold={line.type === 'file-header'}>
+              {line.content}
+            </Text>
+          </Box>
+        )
+      })}
+
       {truncated && (
-        <Box paddingLeft={gutterWidth + 3}>
-          <Text dimColor>{'... '}{remainingCount}{' more lines'}</Text>
+        <Box paddingLeft={gutterWidth + 2} marginTop={1}>
+          <Text dimColor italic>... {remainingCount} more lines</Text>
         </Box>
       )}
     </Box>

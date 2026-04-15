@@ -48,6 +48,7 @@ import { getEffortSuffix } from '../../utils/effort.js';
 import { useMainLoopModel } from '../../hooks/useMainLoopModel.js';
 import { renderModelSetting } from '../../utils/model/model.js';
 const LEFT_PANEL_MAX_WIDTH = 50;
+const MAX_LOGO_BOX_WIDTH = 100;
 export function LogoV2() {
   const $ = _c(94);
   const activities = getRecentActivitySync();
@@ -253,7 +254,7 @@ export function LogoV2() {
   const layoutMode = getLayoutMode(columns);
   const userTheme = resolveThemeSetting(getGlobalConfig().theme);
   const borderTitle = ` ${color("claude", userTheme)("◈ V O I D ◈")} ${color("inactive", userTheme)(`v${version}`)} `;
-  const compactBorderTitle = color("claude", userTheme)(" ◈ V O I D ◈ ");
+  const compactBorderTitle = color("claude", userTheme)(" ✦ V O I D ✦ ");
   if (layoutMode === "compact") {
     let welcomeMessage = formatWelcomeMessage(username);
     if (stringWidth(welcomeMessage) > columns - 4) {
@@ -330,7 +331,7 @@ export function LogoV2() {
       t18 = $[42];
       t19 = $[43];
     }
-    return <><OffscreenFreeze><Box flexDirection="column" borderStyle="double" borderColor="claude" borderText={t11} paddingX={1} paddingY={1} alignItems="center" width={columns}><Text bold={true}>{welcomeMessage}</Text>{t12}{t13}<Text dimColor={true}>{billingType}</Text><Text dimColor={true}>{agentName ? `@${agentName} · ${truncatedCwd}` : truncatedCwd}</Text></Box></OffscreenFreeze>{t14}{t15}{t16}{t17}{t18}{t19}</>;
+    return <><OffscreenFreeze><Box flexDirection="column" borderStyle="single" borderColor="claude" borderText={t11} paddingX={1} paddingY={1} alignItems="center" width={Math.min(columns, MAX_LOGO_BOX_WIDTH)}><Text bold={true}>{welcomeMessage}</Text>{t12}{t13}<Text dimColor={true}>{billingType}</Text><Text dimColor={true}>{agentName ? `@${agentName} · ${truncatedCwd}` : truncatedCwd}</Text></Box></OffscreenFreeze>{t14}{t15}{t16}{t17}{t18}{t19}</>;
   }
   const welcomeMessage_0 = formatWelcomeMessage(username);
   const modelLine = !process.env.IS_DEMO && config.oauthAccount?.organizationName ? `${modelDisplayName} · ${billingType} · ${config.oauthAccount.organizationName}` : `${modelDisplayName} · ${billingType}`;
@@ -345,7 +346,7 @@ export function LogoV2() {
   const T0 = OffscreenFreeze;
   const T1 = Box;
   const t11 = "column";
-  const t12 = "double";
+  const t12 = "single";
   const t13 = "claude";
   let t14;
   if ($[44] !== borderTitle) {
@@ -437,7 +438,7 @@ export function LogoV2() {
   }
   let t27;
   if ($[68] !== T1 || $[69] !== t14 || $[70] !== t26) {
-    t27 = <T1 flexDirection={t11} borderStyle={t12} borderColor={t13} borderText={t14} width={columns} alignItems="center">{t26}</T1>;
+    t27 = <T1 flexDirection={t11} borderStyle={t12} borderColor={t13} borderText={t14} width={Math.min(columns, MAX_LOGO_BOX_WIDTH)} alignItems="center">{t26}</T1>;
     $[68] = T1;
     $[69] = t14;
     $[70] = t26;

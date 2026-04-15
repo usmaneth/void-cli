@@ -2,7 +2,6 @@ import chalk from 'chalk'
 import { marked, type Token, type Tokens } from 'marked'
 import stripAnsi from 'strip-ansi'
 import { color } from '../components/design-system/color.js'
-import { BLOCKQUOTE_BAR } from '../constants/figures.js'
 import { stringWidth } from '../ink/stringWidth.js'
 import { supportsHyperlinks } from '../ink/supports-hyperlinks.js'
 import type { CliHighlight } from './cliHighlight.js'
@@ -59,13 +58,12 @@ export function formatToken(
       const inner = (token.tokens ?? [])
         .map(_ => formatToken(_, theme, 0, null, null, highlight))
         .join('')
-      // Prefix each line with a dim vertical bar. Keep text italic but at
-      // normal brightness — chalk.dim is nearly invisible on dark themes.
-      const bar = chalk.dim(BLOCKQUOTE_BAR)
+      // Prefix each line with a thick vertical bar
+      const bar = color('promptBorder', theme)('▌')
       return inner
         .split(EOL)
         .map(line =>
-          stripAnsi(line).trim() ? `${bar} ${chalk.italic(line)}` : line,
+          stripAnsi(line).trim() ? `${bar} ${color('subtle', theme)(chalk.italic(line))}` : line,
         )
         .join(EOL)
     }
@@ -87,7 +85,8 @@ export function formatToken(
     }
     case 'codespan': {
       // inline code
-      return color('permission', theme)(token.text)
+      const fg = color('ide', theme)(` ${token.text} `)
+      return color('messageActionsBackground', theme, 'background')(fg)
     }
     case 'em':
       return chalk.italic(
@@ -101,41 +100,47 @@ export function formatToken(
           .map(_ => formatToken(_, theme, 0, null, parent, highlight))
           .join(''),
       )
-    case 'heading':
+    case 'heading': {
+      const headingText = (token.tokens ?? [])
+        .map(_ => formatToken(_, theme, 0, null, null, highlight))
+        .join('')
+      const width = stringWidth(stripAnsi(headingText))
+      
       switch (token.depth) {
         case 1: // h1
+          const h1Line = '━'.repeat(Math.max(10, width))
           return (
-            chalk.bold.italic.underline(
-              (token.tokens ?? [])
-                .map(_ => formatToken(_, theme, 0, null, null, highlight))
-                .join(''),
-            ) +
+            color('claude', theme)(chalk.bold(` ${headingText} `)) +
+            EOL +
+            color('promptBorder', theme)(h1Line) +
             EOL +
             EOL
           )
         case 2: // h2
+          const h2Line = '─'.repeat(Math.max(10, width))
           return (
-            chalk.bold(
-              (token.tokens ?? [])
-                .map(_ => formatToken(_, theme, 0, null, null, highlight))
-                .join(''),
-            ) +
+            color('suggestion', theme)(chalk.bold(headingText)) +
+            EOL +
+            color('promptBorder', theme)(h2Line) +
             EOL +
             EOL
           )
-        default: // h3+
+        case 3: // h3
           return (
-            chalk.bold(
-              (token.tokens ?? [])
-                .map(_ => formatToken(_, theme, 0, null, null, highlight))
-                .join(''),
-            ) +
+            color('ide', theme)(chalk.bold(`■ ${headingText}`)) +
+            EOL +
+            EOL
+          )
+        default: // h4+
+          return (
+            color('subtle', theme)(chalk.bold(`• ${headingText}`)) +
             EOL +
             EOL
           )
       }
+    }
     case 'hr':
-      return '---'
+      return color('promptBorder', theme)('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
     case 'image':
       return token.href
     case 'link': {
@@ -154,10 +159,10 @@ export function formatToken(
       // show it as a clickable hyperlink. In terminals that support OSC 8,
       // users see the text and can hover/click to see the URL.
       if (plainLinkText && plainLinkText !== token.href) {
-        return createHyperlink(token.href, linkText)
+        return createHyperlink(token.href, chalk.underline(color('suggestion', theme)(linkText)))
       }
       // When the display text matches the URL (or is empty), just show the URL
-      return createHyperlink(token.href)
+      return createHyperlink(token.href, chalk.underline(color('suggestion', theme)(token.href)))
     }
     case 'list': {
       return token.items
@@ -199,9 +204,12 @@ export function formatToken(
         return token.text
       }
       if (parent?.type === 'list_item') {
-        return `${orderedListNumber === null ? '-' : getListNumber(listDepth, orderedListNumber) + '.'} ${token.tokens ? token.tokens.map(_ => formatToken(_, theme, listDepth, orderedListNumber, token, highlight)).join('') : linkifyIssueReferences(token.text)}${EOL}`
+        const bullet = orderedListNumber === null 
+          ? color('subtle', theme)('•') 
+          : color('subtle', theme)(getListNumber(listDepth, orderedListNumber) + '.')
+        return `${bullet} ${token.tokens ? token.tokens.map(_ => formatToken(_, theme, listDepth, orderedListNumber, token, highlight)).join('') : linkifyIssueReferences(token.text, theme)}${EOL}`
       }
-      return linkifyIssueReferences(token.text)
+      return linkifyIssueReferences(token.text, theme)
     case 'table': {
       const tableToken = token as Tokens.Table
 
@@ -225,7 +233,7 @@ export function formatToken(
       })
 
       // Format header row
-      let tableOutput = '| '
+      let tableOutput = color('promptBorder', theme)('│ ')
       tableToken.header.forEach((header, index) => {
         const content =
           header.tokens
@@ -235,22 +243,33 @@ export function formatToken(
         const width = columnWidths[index]!
         const align = tableToken.align?.[index]
         tableOutput +=
-          padAligned(content, stringWidth(displayText), width, align) + ' | '
+          chalk.bold(padAligned(content, stringWidth(displayText), width, align)) + color('promptBorder', theme)(' │ ')
       })
       tableOutput = tableOutput.trimEnd() + EOL
 
       // Add separator row
-      tableOutput += '|'
+      tableOutput += color('promptBorder', theme)('├')
       columnWidths.forEach(width => {
         // Always use dashes, don't show alignment colons in the output
-        const separator = '-'.repeat(width + 2) // +2 for spaces on each side
-        tableOutput += separator + '|'
+        const separator = '─'.repeat(width + 2) // +2 for spaces on each side
+        tableOutput += color('promptBorder', theme)(separator + '┼')
       })
+      // Replace last ┼ with ┤
+      tableOutput = tableOutput.slice(0, -1) + color('promptBorder', theme)('┤')
       tableOutput += EOL
 
+      // Add top border (which we have to compute like the separator but with ┌ ┬ ┐)
+      let topBorder = color('promptBorder', theme)('┌')
+      columnWidths.forEach(width => {
+        const separator = '─'.repeat(width + 2)
+        topBorder += color('promptBorder', theme)(separator + '┬')
+      })
+      topBorder = topBorder.slice(0, -1) + color('promptBorder', theme)('┐')
+      
       // Format data rows
+      let dataRows = ''
       tableToken.rows.forEach(row => {
-        tableOutput += '| '
+        dataRows += color('promptBorder', theme)('│ ')
         row.forEach((cell, index) => {
           const content =
             cell.tokens
@@ -259,13 +278,21 @@ export function formatToken(
           const displayText = getDisplayText(cell.tokens)
           const width = columnWidths[index]!
           const align = tableToken.align?.[index]
-          tableOutput +=
-            padAligned(content, stringWidth(displayText), width, align) + ' | '
+          dataRows +=
+            padAligned(content, stringWidth(displayText), width, align) + color('promptBorder', theme)(' │ ')
         })
-        tableOutput = tableOutput.trimEnd() + EOL
+        dataRows = dataRows.trimEnd() + EOL
       })
 
-      return tableOutput + EOL
+      // Add bottom border
+      let bottomBorder = color('promptBorder', theme)('└')
+      columnWidths.forEach(width => {
+        const separator = '─'.repeat(width + 2)
+        bottomBorder += color('promptBorder', theme)(separator + '┴')
+      })
+      bottomBorder = bottomBorder.slice(0, -1) + color('promptBorder', theme)('┘')
+
+      return topBorder + EOL + tableOutput + dataRows + bottomBorder + EOL
     }
     case 'escape':
       // Markdown escape: \) → ), \\ → \, etc.
@@ -292,7 +319,7 @@ const ISSUE_REF_PATTERN =
 /**
  * Replaces owner/repo#123 references with clickable hyperlinks to GitHub.
  */
-function linkifyIssueReferences(text: string): string {
+function linkifyIssueReferences(text: string, theme: ThemeName): string {
   if (!supportsHyperlinks()) {
     return text
   }
@@ -302,7 +329,7 @@ function linkifyIssueReferences(text: string): string {
       prefix +
       createHyperlink(
         `https://github.com/${repo}/issues/${num}`,
-        `${repo}#${num}`,
+        chalk.underline(color('suggestion', theme)(`${repo}#${num}`)),
       ),
   )
 }

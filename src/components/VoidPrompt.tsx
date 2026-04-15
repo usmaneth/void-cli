@@ -31,7 +31,7 @@ function getShortModelName(model: string): string {
   return parts[parts.length - 1]?.split('-')[0] ?? 'void'
 }
 
-export function VoidPrompt({ model, mode, symbol = '›', accentColor = '#8B5CF6' }: VoidPromptProps) {
+export function VoidPrompt({ model, mode, symbol = '›', accentColor = '#00E5FF' }: VoidPromptProps) {
   const promptStr = getPromptString(model, mode, symbol)
   const symbolIndex = promptStr.lastIndexOf(symbol)
   const before = promptStr.slice(0, symbolIndex)

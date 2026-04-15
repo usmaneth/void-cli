@@ -1,20 +1,8 @@
-/**
- * ToolCard — bordered card wrapper for tool invocations and results.
- *
- * Renders a box with a colored left border and tool-type header.
- * Each tool type gets a distinct accent color for quick visual scanning.
- *
- * ┌─ Bash ─────────────────────────────┐
- * │ $ npm test                          │
- * │ ...output...                        │
- * │                            ✓ 1.8s   │
- * └────────────────────────────────────┘
- */
 import * as React from 'react'
-import { memo, useState } from 'react'
+import { memo } from 'react'
 import { useTerminalSize } from '../hooks/useTerminalSize.js'
 import { Box, Text, useTheme } from '../ink.js'
-import { getTheme, type ThemeName } from '../utils/theme.js'
+import { type ThemeName } from '../utils/theme.js'
 
 export type ToolCardType =
   | 'bash'
@@ -29,34 +17,31 @@ export type ToolCardType =
   | 'default'
 
 const TOOL_CARD_COLORS: Record<ToolCardType, (theme: ThemeName) => string> = {
-  bash: () => 'rgb(130, 170, 255)', // Blue
-  edit: () => 'rgb(120, 220, 140)', // Vibrant green
-  write: () => 'rgb(100, 210, 130)', // Green
-  read: () => 'rgb(250, 200, 80)', // Golden yellow
-  glob: () => 'rgb(190, 140, 240)', // Purple
-  grep: () => 'rgb(200, 120, 220)', // Magenta-purple
-  agent: () => 'rgb(80, 210, 210)', // Bright cyan
-  web: () => 'rgb(240, 140, 90)', // Warm orange
-  mcp: () => 'rgb(160, 170, 190)', // Steel gray
-  default: () => 'rgb(160, 170, 190)', // Steel gray
+  bash: () => 'rgb(59, 130, 246)', // Blue-500
+  edit: () => 'rgb(16, 185, 129)', // Emerald-500
+  write: () => 'rgb(34, 197, 94)', // Green-500
+  read: () => 'rgb(234, 179, 8)', // Yellow-500
+  glob: () => 'rgb(168, 85, 247)', // Purple-500
+  grep: () => 'rgb(217, 70, 239)', // Fuchsia-500
+  agent: () => 'rgb(6, 182, 212)', // Cyan-500
+  web: () => 'rgb(249, 115, 22)', // Orange-500
+  mcp: () => 'rgb(100, 116, 139)', // Slate-500
+  default: () => 'rgb(100, 116, 139)', // Slate-500
 }
 
 const TOOL_CARD_ICONS: Record<ToolCardType, string> = {
-  bash: '❯',
+  bash: '❯_',
   edit: '✎',
   write: '✚',
   read: '◈',
   glob: '⬡',
-  grep: '⊕',
+  grep: '⌕',
   agent: '◆',
   web: '◉',
   mcp: '▣',
   default: '●',
 }
 
-/**
- * Resolves a tool name from the tool system to a ToolCardType.
- */
 export function resolveToolCardType(toolName: string): ToolCardType {
   const lower = toolName.toLowerCase()
   if (lower.includes('bash') || lower.includes('shell')) return 'bash'
@@ -72,17 +57,11 @@ export function resolveToolCardType(toolName: string): ToolCardType {
 }
 
 type ToolCardProps = {
-  /** The tool type for coloring */
   type: ToolCardType
-  /** Header label (e.g. "Bash", "Edit · src/foo.ts") */
   label: string
-  /** Optional right-aligned status (e.g. "✓ 1.8s", "+2 / -1 lines") */
   status?: string
-  /** The card content (tool output) */
   children: React.ReactNode
-  /** Whether to show collapsed (single line) or expanded */
   collapsed?: boolean
-  /** Max height in lines before truncation (0 = no limit) */
   maxLines?: number
 }
 
@@ -98,19 +77,16 @@ function ToolCardImpl({
   const [theme] = useTheme()
   const accentColor = TOOL_CARD_COLORS[type](theme)
   const icon = TOOL_CARD_ICONS[type]
-  const width = Math.min(columns - 4, 120) // Leave margin
 
   if (collapsed) {
     return (
-      <Box paddingLeft={1}>
-        <Text color={accentColor}>│</Text>
-        <Text> </Text>
+      <Box paddingLeft={1} flexDirection="row" gap={1}>
         <Text color={accentColor} bold>
           {icon} {label}
         </Text>
         {status && (
           <>
-            <Text dimColor> — </Text>
+            <Text dimColor>·</Text>
             <Text dimColor>{status}</Text>
           </>
         )}
@@ -118,38 +94,35 @@ function ToolCardImpl({
     )
   }
 
-  // Build the top border: ╭─ Label ─────────╮ (rounded corners)
-  const headerText = ` ${icon} ${label} `
-  const topBorderLen = Math.max(0, width - headerText.length - 2)
-  const topBorder = `╭─${headerText}${'─'.repeat(topBorderLen)}╮`
-
-  // Bottom border with optional status
-  let bottomBorder: string
-  if (status) {
-    const statusText = ` ${status} `
-    const bottomLeft = Math.max(0, width - statusText.length - 2)
-    bottomBorder = `╰${'─'.repeat(bottomLeft)}${statusText}─╯`
-  } else {
-    bottomBorder = `╰${'─'.repeat(Math.max(0, width))}╯`
-  }
-
   return (
-    <Box flexDirection="column" paddingLeft={1}>
-      <Text color={accentColor}>{topBorder}</Text>
+    <Box flexDirection="column" paddingLeft={1} width="100%">
+      <Box flexDirection="row" backgroundColor="bashMessageBackgroundColor" borderStyle="round" borderColor={accentColor} paddingX={1}>
+        <Box flexGrow={1} flexDirection="row" gap={1}>
+          <Text color={accentColor} bold>{icon}</Text>
+          <Text bold color="inverseText">{label}</Text>
+        </Box>
+        {status && (
+          <Box>
+            <Text dimColor>{status}</Text>
+          </Box>
+        )}
+      </Box>
       <Box
         flexDirection="column"
-        paddingLeft={1}
+        paddingLeft={2}
         paddingRight={1}
+        paddingTop={1}
+        paddingBottom={1}
+        borderStyle="single"
+        borderTop={false}
+        borderRight={false}
+        borderBottom={false}
+        borderColor={accentColor}
+        marginLeft={1}
         {...(maxLines > 0 ? { height: maxLines } : {})}
       >
-        <Box flexDirection="row">
-          <Text color={accentColor}>│ </Text>
-          <Box flexDirection="column" flexGrow={1}>
-            {children}
-          </Box>
-        </Box>
+        {children}
       </Box>
-      <Text color={accentColor}>{bottomBorder}</Text>
     </Box>
   )
 }

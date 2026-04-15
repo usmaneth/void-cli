@@ -28,7 +28,7 @@ import { isInProcessTeammateTask } from '../tasks/InProcessTeammateTask/types.js
 import { isBackgroundTask } from '../tasks/types.js';
 import { getAllInProcessTeammateTasks } from '../tasks/InProcessTeammateTask/InProcessTeammateTask.js';
 import { getEffortSuffix } from '../utils/effort.js';
-import { getMainLoopModel } from '../utils/model/model.js';
+import { getMainLoopModel, renderModelName } from '../utils/model/model.js';
 import { getViewedTeammateTask } from '../state/selectors.js';
 import { TEARDROP_ASTERISK } from '../constants/figures.js';
 import figures from 'figures';
@@ -173,7 +173,11 @@ function SpinnerWithVerbInner({
   // Leader's own verb (always the leader's, regardless of who is foregrounded)
   const leaderVerb = overrideMessage ?? currentTodo?.activeForm ?? currentTodo?.subject ?? randomVerb;
   const effectiveVerb = foregroundedTeammate && !foregroundedTeammate.isIdle ? foregroundedTeammate.spinnerVerb ?? randomVerb : leaderVerb;
-  const message = effectiveVerb + '…';
+  let finalMessage = effectiveVerb;
+  if (mode === 'thinking') {
+    finalMessage = `[${renderModelName(getMainLoopModel())}] ${effectiveVerb}`;
+  }
+  const message = finalMessage + '…';
 
   // Track CLI activity when spinner is active
   useEffect(() => {

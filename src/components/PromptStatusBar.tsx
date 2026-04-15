@@ -77,8 +77,8 @@ function PromptStatusBarImpl({
 
       {gitBranch ? (
         <>
-          <Text dimColor>{' · '}</Text>
-          <Text color="magenta">{'⎇ '}{gitBranch}</Text>
+          <Text dimColor>{'  '}</Text>
+          <Text color="magenta" backgroundColor="bashMessageBackgroundColor" bold> ⎇ {gitBranch} </Text>
         </>
       ) : null}
 
