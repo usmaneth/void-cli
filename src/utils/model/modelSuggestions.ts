@@ -33,7 +33,7 @@ const SUGGESTION_RULES: Array<{
     test: (ctx) =>
       /\.(test|spec)\.[^.]+$/.test(ctx.filePath ?? '') ||
       /\/__tests__\//.test(ctx.filePath ?? ''),
-    modelId: 'thudm/glm-5.1',
+    modelId: 'z-ai/glm-5.1',
     label: 'Recommended for test files',
   },
   {

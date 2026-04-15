@@ -59,6 +59,9 @@ const PRICING: Record<string, { input: number; output: number }> = {
   'meta-llama/llama-4-maverick': { input: 0.5, output: 1.5 },
   'deepseek/deepseek-chat-v3-0324': { input: 0.5, output: 1.5 },
   'qwen/qwen3-235b-a22b': { input: 0.8, output: 2 },
+  'z-ai/glm-5.1': { input: 0.95, output: 3.15 },
+  'z-ai/glm-5': { input: 0.72, output: 2.3 },
+  'z-ai/glm-4.7': { input: 0.39, output: 1.75 },
 }
 
 export function estimateCost(
@@ -90,20 +93,28 @@ async function callModel(
   outputTokens: number
 }> {
   const { getAnthropicClient } = await import('../services/api/client.js')
+  const { isClaudeAISubscriber } = await import('../utils/auth.js')
+  const { OAUTH_BETA_HEADER } = await import('../constants/oauth.js')
   const client = await getAnthropicClient({ maxRetries: 2, model })
 
   let content = ''
   let inputTokens = 0
   let outputTokens = 0
 
-  // Use messages.create with stream:true (not messages.stream) for
-  // compatibility with the OpenAI shim used by OpenRouter/Gemini/OpenAI
-  const response = await client.messages.create({
+  const betas: string[] = []
+  if (isClaudeAISubscriber()) {
+    betas.push(OAUTH_BETA_HEADER)
+  }
+
+  // Use beta.messages.create with stream:true so Claude OAuth subscribers
+  // and shim-backed providers both use the same supported path.
+  const response = await client.beta.messages.create({
     model,
     max_tokens: 4096,
     system: systemPrompt,
     messages: [{ role: 'user', content: userPrompt }],
     stream: true,
+    ...(betas.length > 0 && { betas }),
   })
 
   for await (const event of response) {

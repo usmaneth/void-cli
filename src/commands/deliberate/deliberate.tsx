@@ -316,9 +316,21 @@ function DeliberationRunner({
           `status: ${finalState.status}`
 
         if (allErrors) {
+          const errorDetails: string[] = []
+          for (const round of finalState.rounds) {
+            for (const resp of round.responses) {
+              if (resp.content.startsWith('[Error:')) {
+                const detail = `  ${resp.model}: ${resp.content}`
+                if (!errorDetails.includes(detail)) {
+                  errorDetails.push(detail)
+                }
+              }
+            }
+          }
           summary +=
             `\n\n⚠ All model calls failed. Check your API keys and auth configuration.` +
             `\nFailing models: ${[...errorModels].join(', ')}` +
+            (errorDetails.length > 0 ? `\nErrors:\n${errorDetails.join('\n')}` : '') +
             `\nTip: Set ANTHROPIC_API_KEY for Claude models, or use OpenRouter model names (e.g. anthropic/claude-sonnet-4)`
         } else if (errorModels.size > 0) {
           summary += `\n\n⚠ Some models failed: ${[...errorModels].join(', ')}`

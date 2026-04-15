@@ -8,6 +8,8 @@
  */
 
 import { getAnthropicClient } from 'src/services/api/client.js'
+import { OAUTH_BETA_HEADER } from '../constants/oauth.js'
+import { isClaudeAISubscriber } from '../utils/auth.js'
 import {
   DEFAULT_MODEL_ASSIGNMENTS,
   type Workstream,
@@ -55,11 +57,17 @@ export async function decomposeTask(
     ? `Feature to decompose:\n${description}\n\nCodebase context:\n${codebaseContext}`
     : `Feature to decompose:\n${description}`
 
-  const response = await client.messages.create({
+  const betas: string[] = []
+  if (isClaudeAISubscriber()) {
+    betas.push(OAUTH_BETA_HEADER)
+  }
+
+  const response = await client.beta.messages.create({
     model: coordinatorModel,
     max_tokens: 4096,
     system: COORDINATOR_SYSTEM_PROMPT,
     messages: [{ role: 'user', content: userPrompt }],
+    ...(betas.length > 0 && { betas }),
   })
 
   // Extract text from the response

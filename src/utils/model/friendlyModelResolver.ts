@@ -22,14 +22,14 @@ type ExtractedFriendlyModels = {
 }
 
 const DIRECT_MODEL_ID_PATTERNS = [
-  /\b(?:anthropic|openai|google|thudm|meta-llama|deepseek|qwen|mistralai)\/[a-z0-9._:-]+(?:\[[^\]]+])?\b/i,
+  /\b(?:anthropic|openai|google|thudm|z-ai|meta-llama|deepseek|qwen|mistralai)\/[a-z0-9._:-]+(?:\[[^\]]+])?\b/i,
   /\bclaude-[a-z0-9._:-]+(?:\[[^\]]+])?\b/i,
 ]
 
 const FRIENDLY_MODEL_SPECS: FriendlyModelSpec[] = [
   {
     pattern:
-      /\b(?:anthropic|openai|google|thudm|meta-llama|deepseek|qwen|mistralai)\/[a-z0-9._:-]+(?:\[[^\]]+])?\b/i,
+      /\b(?:anthropic|openai|google|thudm|z-ai|meta-llama|deepseek|qwen|mistralai)\/[a-z0-9._:-]+(?:\[[^\]]+])?\b/i,
     resolve: matchedText => matchedText,
   },
   {
@@ -97,11 +97,19 @@ const FRIENDLY_MODEL_SPECS: FriendlyModelSpec[] = [
   },
   {
     pattern: /\bglm[\s-]*5[\.\s]*1\b/i,
-    resolve: 'thudm/glm-5.1',
+    resolve: 'z-ai/glm-5.1',
+  },
+  {
+    pattern: /\bglm[\s-]*5\b/i,
+    resolve: 'z-ai/glm-5',
+  },
+  {
+    pattern: /\bglm[\s-]*4[\.\s]*7\b/i,
+    resolve: 'z-ai/glm-4.7',
   },
   {
     pattern: /\bglm[\s-]*4\b/i,
-    resolve: 'thudm/glm-4',
+    resolve: 'z-ai/glm-4.7',
   },
   {
     pattern: /\bllama[\s-]*4[\s-]*maverick\b/i,
@@ -213,7 +221,7 @@ const FRIENDLY_MODEL_SPECS: FriendlyModelSpec[] = [
   },
   {
     pattern: /\bglm\b/i,
-    resolve: 'thudm/glm-5.1',
+    resolve: 'z-ai/glm-5.1',
   },
   {
     pattern: /\bgemini\b/i,
