@@ -2,7 +2,7 @@ import { registerBundledSkill } from '../bundledSkills.js'
 
 export function registerDesignSkill(): void {
   registerBundledSkill({
-    name: 'design',
+    name: 'suggest-design',
     description:
       'Gemini-powered frontend design specialist. Creates beautiful, modern, production-grade UI components with exceptional visual quality.',
     aliases: ['designer', 'fronty'],

@@ -2,7 +2,7 @@ import { registerBundledSkill } from '../bundledSkills.js'
 
 export function registerSwarmSkill(): void {
   registerBundledSkill({
-    name: 'swarm',
+    name: 'suggest-swarm',
     description:
       'Multi-model parallel implementation. Different models build different parts of the codebase simultaneously in isolated worktrees.',
     aliases: ['crew', 'team'],

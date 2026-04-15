@@ -2,7 +2,7 @@ import { registerBundledSkill } from '../bundledSkills.js'
 
 export function registerDeliberateSkill(): void {
   registerBundledSkill({
-    name: 'deliberate',
+    name: 'suggest-deliberate',
     description:
       'Multi-model deliberation for hard decisions. 2-3 models debate sequentially, challenging assumptions to converge on the best solution.',
     aliases: ['debate', 'discuss'],
