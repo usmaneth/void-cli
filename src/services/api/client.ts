@@ -346,6 +346,7 @@ export async function getAnthropicClient({
   // the user has a direct API key for the vendor.
 
   // Direct OpenAI routing: openai/* models -> OpenAI API
+  // Strip the "openai/" prefix since OpenAI's API expects bare model names (e.g. "gpt-4o")
   if (model && model.startsWith('openai/')) {
     const openaiKey = process.env.OPENAI_API_KEY || await getKeyFromKeychain('openai')
     if (openaiKey) {
@@ -358,11 +359,13 @@ export async function getAnthropicClient({
           'User-Agent': getUserAgent(),
         },
         timeout: ARGS.timeout,
+        stripModelPrefix: 'openai/',
       }) as unknown as Anthropic
     }
   }
 
   // Direct Gemini routing: google/* models -> Gemini API (OpenAI-compatible endpoint)
+  // Strip the "google/" prefix since Gemini's API expects bare model names (e.g. "gemini-2.5-pro-preview")
   if (model && model.startsWith('google/')) {
     const geminiKey = process.env.GEMINI_API_KEY || await getKeyFromKeychain('gemini')
     if (geminiKey) {
@@ -375,6 +378,7 @@ export async function getAnthropicClient({
           'User-Agent': getUserAgent(),
         },
         timeout: ARGS.timeout,
+        stripModelPrefix: 'google/',
       }) as unknown as Anthropic
     }
   }

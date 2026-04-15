@@ -469,8 +469,10 @@ export function createOpenAIShimClient(config: {
   baseURL: string
   defaultHeaders?: Record<string, string>
   timeout?: number
+  /** Prefix to strip from model names before sending (e.g. "openai/" strips "openai/gpt-4o" → "gpt-4o") */
+  stripModelPrefix?: string
 }): any {
-  const { apiKey, baseURL, defaultHeaders = {}, timeout = 600_000 } = config
+  const { apiKey, baseURL, defaultHeaders = {}, timeout = 600_000, stripModelPrefix } = config
 
   async function createMessageStream(
     params: any,
@@ -481,8 +483,13 @@ export function createOpenAIShimClient(config: {
     const messages = convertAnthropicMessages(params.messages, system)
     const tools = convertTools(params.tools)
 
+    // Strip provider prefix for direct API routing (e.g. "openai/gpt-4o" → "gpt-4o")
+    const resolvedModel = stripModelPrefix && params.model.startsWith(stripModelPrefix)
+      ? params.model.slice(stripModelPrefix.length)
+      : params.model
+
     const body: Record<string, unknown> = {
-      model: params.model,
+      model: resolvedModel,
       messages,
       ...(isStreaming && { stream: true, stream_options: { include_usage: true } }),
     }

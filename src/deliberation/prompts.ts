@@ -137,6 +137,9 @@ const CHALLENGE_MARKERS = [
 /**
  * Simple convergence heuristic: if the last 2 rounds have no challenge
  * markers in any of the responses, consider the deliberation converged.
+ *
+ * Never considers error responses as convergence — if any model failed,
+ * the deliberation has not genuinely converged.
  */
 export function checkConvergence(rounds: Round[]): boolean {
   if (rounds.length < 2) return false
@@ -145,6 +148,10 @@ export function checkConvergence(rounds: Round[]): boolean {
 
   for (const round of lastTwo) {
     for (const response of round.responses) {
+      // Error responses are not convergence — they mean the model failed
+      if (response.content.startsWith('[Error:') || response.tokens.output === 0) {
+        return false
+      }
       const lower = response.content.toLowerCase()
       for (const marker of CHALLENGE_MARKERS) {
         if (lower.includes(marker)) {

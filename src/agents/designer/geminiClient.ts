@@ -23,6 +23,7 @@ export function createGeminiDesignerClient(apiKey: string) {
     baseURL: process.env.GEMINI_BASE_URL ?? GEMINI_BASE_URL,
     defaultHeaders: {},
     timeout: DESIGNER_TIMEOUT_MS,
+    stripModelPrefix: 'google/',
   })
 }
 

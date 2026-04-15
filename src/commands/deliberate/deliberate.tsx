@@ -27,7 +27,7 @@ import { getSettingsForSource } from '../../utils/settings/settings.js'
 // ── Default models for quick presets ────────────────────────────────────────
 
 const DUO_MODELS = [
-  'claude-sonnet-4-20250514',
+  'claude-sonnet-4-6',
   'openai/gpt-4o',
 ]
 
@@ -50,6 +50,105 @@ function formatTokens(n: number): string {
   return String(n)
 }
 
+// ── Model aliases ───────────────────────────────────────────────────────────
+// Maps natural-language model names to their API identifiers.
+// Order matters: longer/more-specific patterns must come first so they match
+// before shorter ones (e.g. "opus 4.6" before "opus").
+
+const MODEL_ALIASES: Array<{ pattern: RegExp; id: string }> = [
+  // Anthropic — Claude
+  { pattern: /\bopus\s*4[\.\s]*6\b/i, id: 'claude-opus-4-6' },
+  { pattern: /\bsonnet\s*4[\.\s]*6\b/i, id: 'claude-sonnet-4-6' },
+  { pattern: /\bhaiku\s*4[\.\s]*5\b/i, id: 'claude-haiku-4-5-20251001' },
+  { pattern: /\bopus\s*4\b/i, id: 'claude-opus-4-20250514' },
+  { pattern: /\bsonnet\s*4\b/i, id: 'claude-sonnet-4-20250514' },
+  { pattern: /\bclaude[\s-]*opus\b/i, id: 'claude-opus-4-6' },
+  { pattern: /\bclaude[\s-]*sonnet\b/i, id: 'claude-sonnet-4-6' },
+  { pattern: /\bclaude[\s-]*haiku\b/i, id: 'claude-haiku-4-5-20251001' },
+  { pattern: /\bopus\b/i, id: 'claude-opus-4-6' },
+  { pattern: /\bsonnet\b/i, id: 'claude-sonnet-4-6' },
+  { pattern: /\bhaiku\b/i, id: 'claude-haiku-4-5-20251001' },
+  // OpenAI
+  { pattern: /\bgpt[\s-]*5[\.\s]*4\b/i, id: 'openai/gpt-5.4' },
+  { pattern: /\bgpt[\s-]*5[\.\s]*3\b/i, id: 'openai/gpt-5.3' },
+  { pattern: /\bgpt[\s-]*5[\.\s]*2\b/i, id: 'openai/gpt-5.2' },
+  { pattern: /\bgpt[\s-]*4[\.\s]*1[\s-]*mini\b/i, id: 'openai/gpt-4.1-mini' },
+  { pattern: /\bgpt[\s-]*4[\.\s]*1\b/i, id: 'openai/gpt-4.1' },
+  { pattern: /\bgpt[\s-]*4[\s-]*o[\s-]*mini\b/i, id: 'openai/gpt-4o-mini' },
+  { pattern: /\bgpt[\s-]*4[\s-]*o\b/i, id: 'openai/gpt-4o' },
+  { pattern: /\bo3[\s-]*mini\b/i, id: 'openai/o3-mini' },
+  { pattern: /\bo3\b/i, id: 'openai/o3' },
+  { pattern: /\bo4[\s-]*mini\b/i, id: 'openai/o4-mini' },
+  // Google
+  { pattern: /\bgemini\s*3[\.\s]*1[\s-]*pro\b/i, id: 'google/gemini-3.1-pro' },
+  { pattern: /\bgemini\s*2[\.\s]*5[\s-]*pro\b/i, id: 'google/gemini-2.5-pro-preview' },
+  { pattern: /\bgemini\s*2[\.\s]*5[\s-]*flash\b/i, id: 'google/gemini-2.5-flash-preview' },
+  { pattern: /\bgemini[\s-]*pro\b/i, id: 'google/gemini-3.1-pro' },
+  { pattern: /\bgemini[\s-]*flash\b/i, id: 'google/gemini-2.5-flash-preview' },
+  { pattern: /\bgemini\b/i, id: 'google/gemini-3.1-pro' },
+  // GLM / Zhipu
+  { pattern: /\bglm[\s-]*5[\.\s]*1\b/i, id: 'thudm/glm-5.1' },
+  { pattern: /\bglm[\s-]*4\b/i, id: 'thudm/glm-4' },
+  { pattern: /\bglm\b/i, id: 'thudm/glm-5.1' },
+  // Meta
+  { pattern: /\bllama[\s-]*4[\s-]*maverick\b/i, id: 'meta-llama/llama-4-maverick' },
+  { pattern: /\bllama[\s-]*4\b/i, id: 'meta-llama/llama-4-maverick' },
+  { pattern: /\bmaverick\b/i, id: 'meta-llama/llama-4-maverick' },
+  // DeepSeek
+  { pattern: /\bdeepseek[\s-]*v3\b/i, id: 'deepseek/deepseek-chat-v3-0324' },
+  { pattern: /\bdeepseek[\s-]*r1\b/i, id: 'deepseek/deepseek-r1' },
+  { pattern: /\bdeepseek\b/i, id: 'deepseek/deepseek-chat-v3-0324' },
+  // Qwen
+  { pattern: /\bqwen[\s-]*3\b/i, id: 'qwen/qwen3-235b-a22b' },
+  { pattern: /\bqwen\b/i, id: 'qwen/qwen3-235b-a22b' },
+  // Mistral
+  { pattern: /\bmistral[\s-]*large\b/i, id: 'mistralai/mistral-large' },
+  { pattern: /\bmistral\b/i, id: 'mistralai/mistral-large' },
+]
+
+/**
+ * Try to extract model names from natural language input.
+ * Looks for patterns like "use opus and glm 5.1 to debate X"
+ * or "have gemini and gpt-4o discuss Y".
+ *
+ * Returns matched models and the remaining text (the topic).
+ */
+function extractModelsFromNaturalLanguage(
+  input: string,
+): { models: string[]; topic: string } | null {
+  // Match "use/have/let/with <models> to/about/debate/discuss/on <topic>"
+  const connectorPattern = /\b(?:use|have|let|with|get|make|between)\b/i
+  const topicSplitter = /\b(?:to\s+(?:debate|discuss|deliberate|argue|talk)|(?:debate|discuss|deliberate|argue)\s+(?:about|on|whether|if)?|(?:about|on|whether|if)\b)/i
+
+  if (!connectorPattern.test(input)) return null
+
+  // Find the topic split point
+  const splitMatch = topicSplitter.exec(input)
+  if (!splitMatch) return null
+
+  const modelSection = input.slice(0, splitMatch.index)
+  const topicSection = input.slice(splitMatch.index + splitMatch[0].length).trim()
+
+  if (!topicSection) return null
+
+  // Extract models from the model section
+  const models: string[] = []
+  let remaining = modelSection
+
+  for (const alias of MODEL_ALIASES) {
+    if (alias.pattern.test(remaining)) {
+      if (!models.includes(alias.id)) {
+        models.push(alias.id)
+        remaining = remaining.replace(alias.pattern, ' ')
+      }
+    }
+  }
+
+  if (models.length === 0) return null
+
+  return { models, topic: topicSection }
+}
+
 // ── Arg parsing ─────────────────────────────────────────────────────────────
 
 interface ParsedArgs {
@@ -70,25 +169,53 @@ function parseArgs(args: string): ParsedArgs {
   const topicParts: string[] = []
   let isDuo = false
 
-  for (let i = 0; i < tokens.length; i++) {
-    const token = tokens[i]!
-    if (token === '--models' && tokens[i + 1]) {
-      models = tokens[i + 1]!.split(',').map((m) => m.trim()).filter(Boolean)
+  // First: check for --flags (they take priority)
+  let hasFlags = false
+  for (const t of tokens) {
+    if (t.startsWith('--')) { hasFlags = true; break }
+  }
+
+  if (hasFlags) {
+    // Flag-based parsing (original behavior)
+    for (let i = 0; i < tokens.length; i++) {
+      const token = tokens[i]!
+      if (token === '--models' && tokens[i + 1]) {
+        models = tokens[i + 1]!.split(',').map((m) => m.trim()).filter(Boolean)
+        hasModelOverride = true
+        i++
+      } else if (token === '--rounds' && tokens[i + 1]) {
+        rounds = Math.max(1, Math.min(20, parseInt(tokens[i + 1]!, 10) || DEFAULT_ROUNDS))
+        hasRoundOverride = true
+        i++
+      } else if (token === '--duo') {
+        isDuo = true
+      } else {
+        topicParts.push(token)
+      }
+    }
+    if (isDuo) {
+      models = DUO_MODELS
+    }
+  } else {
+    // Natural language parsing: try to extract models from conversational input
+    const nlResult = extractModelsFromNaturalLanguage(args.trim())
+    if (nlResult) {
+      models = nlResult.models
       hasModelOverride = true
-      i++
-    } else if (token === '--rounds' && tokens[i + 1]) {
-      rounds = Math.max(1, Math.min(20, parseInt(tokens[i + 1]!, 10) || DEFAULT_ROUNDS))
-      hasRoundOverride = true
-      i++
-    } else if (token === '--duo') {
-      isDuo = true
+      topicParts.push(nlResult.topic)
     } else {
-      topicParts.push(token)
+      // Fallback: no models detected, entire input is the topic
+      topicParts.push(args.trim())
     }
   }
 
-  if (isDuo) {
-    models = DUO_MODELS
+  // Check for round hints in natural language (e.g. "3 rounds", "for 5 rounds")
+  if (!hasRoundOverride) {
+    const roundMatch = args.match(/\b(\d{1,2})\s*rounds?\b/i)
+    if (roundMatch) {
+      rounds = Math.max(1, Math.min(20, parseInt(roundMatch[1]!, 10)))
+      hasRoundOverride = true
+    }
   }
 
   return {
@@ -215,13 +342,35 @@ function DeliberationRunner({
             ),
           0,
         )
-        onDone(
-          `Deliberation complete: ${finalState.rounds.length} round(s), ` +
-            `${formatUSD(finalState.totalCostUSD)} total, ` +
-            `${formatTokens(totalTokens)} tokens, ` +
-            `status: ${finalState.status}`,
-          { display: 'system' },
+        // Detect if models failed and surface actionable errors
+        const errorModels = new Set<string>()
+        for (const r of finalState.rounds) {
+          for (const resp of r.responses) {
+            if (resp.content.startsWith('[Error:')) {
+              errorModels.add(resp.model)
+            }
+          }
+        }
+        const allErrors = finalState.rounds.length > 0 && finalState.rounds.every(r =>
+          r.responses.every(resp => resp.tokens.output === 0 || resp.content.startsWith('[Error:')),
         )
+
+        let summary =
+          `Deliberation complete: ${finalState.rounds.length} round(s), ` +
+          `${formatUSD(finalState.totalCostUSD)} total, ` +
+          `${formatTokens(totalTokens)} tokens, ` +
+          `status: ${finalState.status}`
+
+        if (allErrors) {
+          summary +=
+            `\n\n⚠ All model calls failed. Check your API keys and auth configuration.` +
+            `\nFailing models: ${[...errorModels].join(', ')}` +
+            `\nTip: Set ANTHROPIC_API_KEY for Claude models, or use OpenRouter model names (e.g. anthropic/claude-sonnet-4)`
+        } else if (errorModels.size > 0) {
+          summary += `\n\n⚠ Some models failed: ${[...errorModels].join(', ')}`
+        }
+
+        onDone(summary, { display: 'system' })
       },
     }
 
@@ -305,8 +454,10 @@ export const call: LocalJSXCommandCall = async (onDone, _context, args) => {
         '\n' +
         'Examples:\n' +
         '  /deliberate Should we use microservices or a monolith?\n' +
+        '  /deliberate use opus 4.6 and glm 5.1 to debate whether Rust or Go is better for CLIs\n' +
+        '  /deliberate have gemini and gpt 4o discuss the best approach to error handling\n' +
         '  /deliberate --duo What is the best approach to error handling in Rust?\n' +
-        '  /deliberate --models claude-sonnet-4-20250514,openai/gpt-4o,google/gemini-2.5-pro-preview --rounds 3 Is TDD worth it?',
+        '  /deliberate --models claude-sonnet-4-20250514,openai/gpt-4o --rounds 3 Is TDD worth it?',
       { display: 'system' },
     )
     return null

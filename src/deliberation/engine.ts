@@ -36,7 +36,11 @@ export interface DeliberationCallbacks {
 
 /** Per-million-token pricing for common models. */
 const PRICING: Record<string, { input: number; output: number }> = {
-  // Anthropic (direct)
+  // Anthropic (direct) — 4.6 family
+  'claude-opus-4-6': { input: 15, output: 75 },
+  'claude-sonnet-4-6': { input: 3, output: 15 },
+  'claude-haiku-4-5-20251001': { input: 0.8, output: 4 },
+  // Anthropic (direct) — 4.0 pinned
   'claude-opus-4-20250514': { input: 15, output: 75 },
   'claude-sonnet-4-20250514': { input: 3, output: 15 },
   'claude-haiku-4-20250506': { input: 0.8, output: 4 },
@@ -49,7 +53,9 @@ const PRICING: Record<string, { input: number; output: number }> = {
   'openai/gpt-4.1': { input: 2, output: 8 },
   'openai/gpt-4.1-mini': { input: 0.4, output: 1.6 },
   'google/gemini-2.5-pro-preview': { input: 1.25, output: 10 },
+  'google/gemini-3.1-pro': { input: 1.25, output: 10 },
   'google/gemini-2.5-flash-preview': { input: 0.15, output: 0.6 },
+  'openai/gpt-5.4': { input: 3, output: 12 },
   'meta-llama/llama-4-maverick': { input: 0.5, output: 1.5 },
   'deepseek/deepseek-chat-v3-0324': { input: 0.5, output: 1.5 },
   'qwen/qwen3-235b-a22b': { input: 0.8, output: 2 },
