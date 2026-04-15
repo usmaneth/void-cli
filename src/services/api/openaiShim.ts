@@ -1,10 +1,10 @@
 /**
- * OpenAI-compatible API shim for OpenRouter and similar providers.
+ * OpenAI-compatible API shim for OpenRouter, Gemini, OpenAI, and similar providers.
  *
  * Translates between Anthropic Messages API format (used by the codebase)
- * and OpenAI Chat Completions format (used by OpenRouter for non-Claude models).
+ * and OpenAI Chat Completions format (used by OpenAI-compatible endpoints).
  *
- * This enables using any model on OpenRouter (GPT-4o, GLM-5, Llama, Gemini, etc.)
+ * This enables using any model via OpenAI-compatible APIs (Gemini, GPT-4o, etc.)
  * through the existing Anthropic SDK interface without changing downstream code.
  */
 
@@ -31,6 +31,8 @@ interface OpenAIToolCall {
   type: 'function'
   function: { name: string; arguments: string }
   index?: number
+  /** Gemini thought_signature passthrough — required for thinking models with tool use */
+  extra_content?: { google: { thought_signature: string } }
 }
 
 interface OpenAITool {
@@ -56,6 +58,7 @@ interface OpenAIStreamChunk {
         id?: string
         type?: string
         function?: { name?: string; arguments?: string }
+        extra_content?: { google: { thought_signature: string } }
       }>
     }
     finish_reason: string | null
@@ -165,7 +168,7 @@ function convertAnthropicMessages(
               textParts += `<thinking>${block.thinking}</thinking>\n`
             }
           } else if (block.type === 'tool_use') {
-            toolCalls.push({
+            const toolCall: OpenAIToolCall = {
               id: block.id,
               type: 'function',
               function: {
@@ -175,7 +178,12 @@ function convertAnthropicMessages(
                     ? block.input
                     : JSON.stringify(block.input),
               },
-            })
+            }
+            // Echo Gemini thought_signature for thinking models (required by Gemini 3+)
+            if (block.extra_content) {
+              toolCall.extra_content = block.extra_content
+            }
+            toolCalls.push(toolCall)
           }
         }
 
@@ -343,15 +351,21 @@ async function* openaiStreamToAnthropic(
                 }
                 toolCallState.set(tcIndex, state)
 
+                const contentBlock: any = {
+                  type: 'tool_use',
+                  id: tc.id,
+                  name: tc.function.name,
+                  input: {},
+                }
+                // Preserve Gemini thought_signature for multi-turn function calling
+                if (tc.extra_content) {
+                  contentBlock.extra_content = tc.extra_content
+                }
+
                 yield {
                   type: 'content_block_start',
                   index: currentBlockIndex,
-                  content_block: {
-                    type: 'tool_use',
-                    id: tc.id,
-                    name: tc.function.name,
-                    input: {},
-                  },
+                  content_block: contentBlock,
                 }
                 currentBlockType = 'tool_use'
               } else if (tc.function?.arguments && state) {
@@ -426,12 +440,17 @@ function convertOpenAIResponseToMessage(json: any, model: string): any {
       } catch {
         input = {}
       }
-      content.push({
+      const toolUse: any = {
         type: 'tool_use',
         id: tc.id,
         name: tc.function.name,
         input,
-      })
+      }
+      // Preserve Gemini thought_signature for multi-turn function calling
+      if (tc.extra_content) {
+        toolUse.extra_content = tc.extra_content
+      }
+      content.push(toolUse)
     }
   }
 
@@ -549,7 +568,7 @@ export function createOpenAIShimClient(config: {
     if (!response.ok) {
       const errorBody = await response.text().catch(() => 'unknown error')
       const error = new Error(
-        `OpenRouter API error ${response.status}: ${errorBody}`,
+        `API error ${response.status}: ${errorBody}`,
       )
       ;(error as any).status = response.status
       throw error

@@ -1,27 +1,24 @@
 /**
  * Direct Gemini API client for the Designer Agent.
  *
- * Uses Gemini's OpenAI-compatible endpoint for consistency with the
- * existing OpenAI shim, but wraps it with designer-specific defaults
+ * Uses the native Gemini REST API (generateContent) with first-class
+ * thought_signature support for Gemini 3+ thinking models.
+ * Wraps the native shim with designer-specific defaults
  * (longer timeout for large generations, dedicated auth lookup).
  */
 
-import { createOpenAIShimClient } from '../../services/api/openaiShim.js'
-
-const GEMINI_BASE_URL =
-  'https://generativelanguage.googleapis.com/v1beta/openai'
+import { createGeminiShimClient } from '../../services/api/geminiShim.js'
 
 const DESIGNER_TIMEOUT_MS = 120_000 // 2 min — design generations can be large
 
 /**
  * Create a Gemini client configured for the designer agent.
- * Returns an Anthropic-compatible client via the OpenAI shim.
+ * Returns an Anthropic-compatible client via the native Gemini shim.
  */
 export function createGeminiDesignerClient(apiKey: string) {
-  return createOpenAIShimClient({
+  return createGeminiShimClient({
     apiKey,
-    baseURL: process.env.GEMINI_BASE_URL ?? GEMINI_BASE_URL,
-    defaultHeaders: {},
+    baseURL: process.env.GEMINI_BASE_URL ?? undefined,
     timeout: DESIGNER_TIMEOUT_MS,
     stripModelPrefix: 'google/',
   })

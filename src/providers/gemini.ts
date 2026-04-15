@@ -1,25 +1,22 @@
 /**
  * Google Gemini direct provider — API client, auth, and keychain integration.
  *
- * Uses Gemini's OpenAI-compatible endpoint for consistency with the
- * existing shim layer. Used by the designer agent and swarm workers.
+ * Uses the native Gemini REST API (generateContent) for first-class
+ * thought_signature support. Used by the designer agent and swarm workers.
  */
 
-import { createOpenAIShimClient } from '../services/api/openaiShim.js'
+import { createGeminiShimClient } from '../services/api/geminiShim.js'
 
-const GEMINI_BASE_URL =
-  'https://generativelanguage.googleapis.com/v1beta/openai'
 const DEFAULT_TIMEOUT_MS = 60_000
 
 /**
- * Create a Gemini client via the OpenAI-compatible shim.
+ * Create a Gemini client via the native Gemini shim.
  * Returns an Anthropic-compatible client interface.
  */
 export function createGeminiClient(apiKey: string, options?: { timeout?: number }) {
-  return createOpenAIShimClient({
+  return createGeminiShimClient({
     apiKey,
-    baseURL: process.env.GEMINI_BASE_URL ?? GEMINI_BASE_URL,
-    defaultHeaders: {},
+    baseURL: process.env.GEMINI_BASE_URL ?? undefined,
     timeout: options?.timeout ?? DEFAULT_TIMEOUT_MS,
   })
 }

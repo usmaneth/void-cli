@@ -364,19 +364,15 @@ export async function getAnthropicClient({
     }
   }
 
-  // Direct Gemini routing: google/* models -> Gemini API (OpenAI-compatible endpoint)
-  // Strip the "google/" prefix since Gemini's API expects bare model names (e.g. "gemini-2.5-pro-preview")
+  // Direct Gemini routing: google/* models -> native Gemini API (generateContent)
+  // Uses the native Gemini REST API for first-class thought_signature support
+  // (required by Gemini 3+ thinking models for multi-turn function calling)
   if (model && model.startsWith('google/')) {
     const geminiKey = process.env.GEMINI_API_KEY || await getKeyFromKeychain('gemini')
     if (geminiKey) {
-      const { createOpenAIShimClient } = await import('./openaiShim.js')
-      return createOpenAIShimClient({
+      const { createGeminiShimClient } = await import('./geminiShim.js')
+      return createGeminiShimClient({
         apiKey: geminiKey,
-        baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai',
-        defaultHeaders: {
-          ...defaultHeaders,
-          'User-Agent': getUserAgent(),
-        },
         timeout: ARGS.timeout,
         stripModelPrefix: 'google/',
       }) as unknown as Anthropic

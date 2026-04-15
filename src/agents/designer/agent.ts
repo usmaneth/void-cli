@@ -1,6 +1,6 @@
 /**
  * Gemini Designer Agent — a design-first sub-agent that writes production-ready
- * UI code.  Routed to google/gemini-3.1-pro via OpenRouter.
+ * UI code.  Routed to the native Gemini API via the OpenAI-compatible shim.
  */
 
 import type { BuiltInAgentDefinition } from '../../tools/AgentTool/loadAgentsDir.js'
@@ -96,7 +96,7 @@ export const DESIGNER_AGENT: BuiltInAgentDefinition = {
   baseDir: 'built-in',
   whenToUse:
     'Use for visual improvement requests, UI redesigns, design-first mockups, and when the user asks for beautiful, polished, or modern interfaces. Best suited for tasks where the primary goal is visual quality: styling, component design, layout, animations, dark mode, and responsive design.',
-  model: 'google/gemini-3.1-pro',
+  model: 'google/gemini-3.1-pro-preview',
   tools: ['Read', 'Write', 'Edit', 'Glob', 'Grep', 'Bash'],
   getSystemPrompt: getDesignerSystemPrompt,
 }
