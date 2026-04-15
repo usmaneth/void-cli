@@ -90,27 +90,32 @@ async function callModel(
   let inputTokens = 0
   let outputTokens = 0
 
-  const stream = client.messages.stream({
-    model: model.includes('/') ? model : model,
+  // Use messages.create with stream:true (not messages.stream) for
+  // compatibility with the OpenAI shim used by OpenRouter/Gemini/OpenAI
+  const response = await client.messages.create({
+    model,
     max_tokens: 4096,
     system: systemPrompt,
     messages: [{ role: 'user', content: userPrompt }],
+    stream: true,
   })
 
-  for await (const event of stream) {
+  for await (const event of response) {
     if (
       event.type === 'content_block_delta' &&
-      event.delta.type === 'text_delta'
+      'text' in event.delta
     ) {
-      const text = event.delta.text
+      const text = (event.delta as any).text as string
       content += text
       onChunk?.(text)
     }
+    if (event.type === 'message_start' && (event as any).message?.usage) {
+      inputTokens = (event as any).message.usage.input_tokens ?? 0
+    }
+    if (event.type === 'message_delta' && (event as any).usage) {
+      outputTokens = (event as any).usage.output_tokens ?? 0
+    }
   }
-
-  const finalMessage = await stream.finalMessage()
-  inputTokens = finalMessage.usage?.input_tokens ?? 0
-  outputTokens = finalMessage.usage?.output_tokens ?? 0
 
   return { content, inputTokens, outputTokens }
 }
