@@ -27,6 +27,7 @@ import {
   resolveFriendlyModelInput,
 } from '../../utils/model/friendlyModelResolver.js'
 import { getSettingsForSource } from '../../utils/settings/settings.js'
+import { launchVoidex } from '../../utils/voidexLauncher.js'
 
 // ── Default models for quick presets ────────────────────────────────────────
 
@@ -409,8 +410,35 @@ function DeliberationRunner({
 
 // ── Command entry point ─────────────────────────────────────────────────────
 
+function extractGuiFlag(input: string): { input: string; gui: boolean } {
+  const tokens = (input || '').split(/\s+/)
+  const filtered: string[] = []
+  let gui = false
+  for (const t of tokens) {
+    if (t === '--gui' || t === '-g') gui = true
+    else filtered.push(t)
+  }
+  return { input: filtered.join(' ').trim(), gui }
+}
+
 export const call: LocalJSXCommandCall = async (onDone, _context, args) => {
-  const parsed = parseArgs(args)
+  const stripped = extractGuiFlag(args)
+  if (stripped.gui) {
+    const result = launchVoidex({
+      mode: 'deliberate',
+      prompt: stripped.input,
+      cwd: process.env.VOID_LAUNCH_CWD || process.cwd(),
+    })
+    onDone(
+      result.ok
+        ? `Opened Voidex in deliberate mode${stripped.input ? ' with your topic' : ''}.`
+        : `Failed to open Voidex: ${result.error}`,
+      { display: 'system' },
+    )
+    return null
+  }
+
+  const parsed = parseArgs(stripped.input)
   const settings = getSettingsForSource('userSettings')
   const deliberationSettings = settings?.deliberation
 

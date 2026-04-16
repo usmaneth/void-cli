@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; script-src 'self'; connect-src 'self';"
+    />
+    <title>Voidex</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="theme-dark">
+    <div class="titlebar">
+      <div class="titlebar-drag"></div>
+      <div class="brand">
+        <span class="brand-mark">V</span>
+        <span class="brand-word">Voidex</span>
+        <span class="brand-pill" id="modePill">Chat</span>
+      </div>
+      <div class="titlebar-spacer"></div>
+      <div class="titlebar-actions">
+        <button class="ghost" id="btnSettings" title="Settings">Settings</button>
+      </div>
+    </div>
+
+    <main class="layout">
+      <aside class="sidebar">
+        <div class="sidebar-section">
+          <div class="sidebar-header">
+            <span>Projects</span>
+            <button class="icon-btn" id="btnNewProject" title="New project">+</button>
+          </div>
+          <ul class="project-list" id="projectList">
+            <li class="project-item active">
+              <span class="project-dot"></span>
+              <span class="project-name" id="projectName">void-cli</span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="sidebar-section flex-1">
+          <div class="sidebar-header">
+            <span>Threads</span>
+            <button class="icon-btn" id="btnNewThread" title="New thread">+</button>
+          </div>
+          <ul class="thread-list" id="threadList"></ul>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-header">
+            <span>Skills</span>
+          </div>
+          <ul class="skill-list">
+            <li data-skill="swarm"><span class="skill-dot swarm"></span>Swarm</li>
+            <li data-skill="deliberate"><span class="skill-dot deliberate"></span>Deliberate</li>
+            <li data-skill="review"><span class="skill-dot review"></span>Review</li>
+            <li data-skill="plan"><span class="skill-dot plan"></span>Plan</li>
+          </ul>
+        </div>
+
+        <div class="sidebar-footer">
+          <div class="cwd-line" id="cwdLine">~/</div>
+          <div class="model-line" id="modelLine">sonnet</div>
+        </div>
+      </aside>
+
+      <section class="main">
+        <header class="thread-header">
+          <div class="thread-title" id="threadTitle">New thread</div>
+          <div class="thread-meta">
+            <span class="chip" id="threadModeChip">Chat</span>
+            <span class="chip subtle" id="threadModelChip">sonnet</span>
+          </div>
+        </header>
+
+        <div class="messages" id="messages">
+          <div class="empty-state" id="emptyState">
+            <div class="empty-brand">
+              <span class="brand-mark big">V</span>
+            </div>
+            <h1>Voidex</h1>
+            <p>Ask a question, start a swarm, or open a deliberation.</p>
+            <div class="quick-actions">
+              <button class="quick" data-quick="ask">Ask about this repo</button>
+              <button class="quick" data-quick="swarm">Start a /swarm</button>
+              <button class="quick" data-quick="deliberate">Open a /deliberate</button>
+              <button class="quick" data-quick="review">Review current diff</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="composer">
+          <div class="composer-inner">
+            <textarea
+              id="composer"
+              placeholder="Message Voidex…  (Shift+Enter for newline)"
+              rows="1"
+            ></textarea>
+            <div class="composer-bar">
+              <div class="composer-left">
+                <button class="pill-btn" id="btnMode">
+                  <span id="btnModeLabel">Chat</span>
+                  <span class="caret">▾</span>
+                </button>
+                <div class="popover" id="modePopover" hidden>
+                  <button data-mode="chat">
+                    <span class="mode-dot chat"></span>Chat
+                    <span class="mode-hint">single model answer</span>
+                  </button>
+                  <button data-mode="swarm">
+                    <span class="mode-dot swarm"></span>Swarm
+                    <span class="mode-hint">parallel workstreams</span>
+                  </button>
+                  <button data-mode="deliberate">
+                    <span class="mode-dot deliberate"></span>Deliberate
+                    <span class="mode-hint">multi-model debate</span>
+                  </button>
+                  <button data-mode="plan">
+                    <span class="mode-dot plan"></span>Plan
+                    <span class="mode-hint">architect first</span>
+                  </button>
+                </div>
+                <button class="pill-btn" id="btnModel">
+                  <span id="btnModelLabel">sonnet</span>
+                  <span class="caret">▾</span>
+                </button>
+              </div>
+              <div class="composer-right">
+                <button class="primary-split" id="btnAsk" title="Answer without editing">
+                  <span>Ask</span>
+                </button>
+                <button class="primary" id="btnCode" title="Let Voidex write code">
+                  <span>Code</span>
+                  <kbd>⌘↵</kbd>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <aside class="review-drawer" id="reviewDrawer" data-open="false">
+        <header class="review-header">
+          <span>Diff review</span>
+          <button class="icon-btn" id="btnCloseReview" title="Close">×</button>
+        </header>
+        <div class="review-empty">No changes to review yet.</div>
+      </aside>
+    </main>
+
+    <div class="statusbar">
+      <span id="statusText">Ready</span>
+      <span class="statusbar-right">
+        <span id="statusTokens">0 tok</span>
+        <span class="dot">•</span>
+        <span id="statusCost">$0.00</span>
+      </span>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,10 @@
+{
+  "name": "voidex",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Voidex — Void's desktop coding agent. A Codex-style chat app powered by the Void orchestrator.",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  }
+}

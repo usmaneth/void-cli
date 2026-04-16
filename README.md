@@ -367,6 +367,28 @@ Create `.voidhints` files at any directory level to guide the AI:
 
 Hints are hierarchical — a `.voidhints` in `src/api/` inherits from the root `.voidhints`.
 
+### Voidex — the desktop chat app
+
+Voidex is Void's answer to the Codex app. A native-feeling Electron window with a dark Codex-style layout: **Projects → Threads → Skills** sidebar on the left, a chat thread with **Ask / Code** dual submit buttons in the middle, and a diff-review drawer on the right.
+
+```bash
+/voidex                                         # open a fresh Chat thread
+/voidex "explain the repomap service"           # prefill the composer
+/voidex --mode swarm "add a settings screen"    # open directly in Swarm
+/voidex --mode deliberate --rounds 3 "monorepo vs polyrepo"
+
+# Or from your shell
+voidex --mode swarm "rewrite auth to passkeys"
+
+# /swarm and /deliberate accept --gui to hand off to Voidex
+/swarm --gui "add dark mode"
+/deliberate --gui --rounds 3 "REST vs tRPC"
+```
+
+Threads persist under `~/.void/voidex/threads/`. The composer's mode pill switches between **Chat**, **Swarm**, **Deliberate**, and **Plan** — each stages the equivalent CLI call and the Skills sidebar opens the Diff review drawer.
+
+Install: `bun install` (or `npm install`) in the repo root pulls Electron in as a dev dependency. The launcher at `bin/voidex` forwards arguments as env vars (`VOIDEX_MODE`, `VOIDEX_PROMPT`, `VOIDEX_MODEL`, `VOIDEX_MODELS`, `VOIDEX_ROUNDS`, `VOIDEX_CWD`, `VOIDEX_SESSION_ID`, `VOIDEX_HANDOFF`).
+
 ### Agent Council
 
 Run multiple models in parallel and compare their responses:
