@@ -10,6 +10,8 @@ import { createServer, type IncomingMessage, type ServerResponse } from 'node:ht
 import type { Server } from 'node:http'
 import { URL } from 'node:url'
 import { hostname } from 'node:os'
+import { type ChatAdapter, echoChatAdapter } from './chatAdapter.js'
+import { MOBILE_CLIENT_HTML } from './mobileClient.js'
 
 // ---------------------------------------------------------------------------
 // Config
@@ -26,6 +28,15 @@ export interface ServerConfig {
   maxConcurrent: number
   /** Per-request timeout in milliseconds. @default 300_000 (5 min) */
   timeout: number
+  /**
+   * When true, serves the mobile web client at `/m` and enables the
+   * streaming `/chat/stream` endpoint. The caller is expected to also set
+   * `apiKey` (pairing token) and bind to `0.0.0.0` so phones on the LAN
+   * can reach it.
+   */
+  mobile?: boolean
+  /** Chat pipeline adapter. Defaults to {@link echoChatAdapter}. */
+  chatAdapter?: ChatAdapter
 }
 
 const DEFAULT_CONFIG: ServerConfig = {
@@ -34,6 +45,7 @@ const DEFAULT_CONFIG: ServerConfig = {
   apiKey: undefined,
   maxConcurrent: 3,
   timeout: 300_000,
+  mobile: false,
 }
 
 // ---------------------------------------------------------------------------
@@ -188,8 +200,18 @@ class Semaphore {
 // CORS helpers
 // ---------------------------------------------------------------------------
 
-function setCorsHeaders(res: ServerResponse): void {
-  res.setHeader('Access-Control-Allow-Origin', 'http://localhost')
+function setCorsHeaders(res: ServerResponse, req: IncomingMessage, mobile: boolean): void {
+  // When the mobile client is served from this same origin the browser
+  // doesn't need a permissive CORS policy, but echoing the request origin
+  // lets users open the client URL from their phone's home screen (PWA)
+  // without breaking auth headers.
+  const origin = req.headers.origin
+  if (mobile && typeof origin === 'string') {
+    res.setHeader('Access-Control-Allow-Origin', origin)
+    res.setHeader('Vary', 'Origin')
+  } else {
+    res.setHeader('Access-Control-Allow-Origin', 'http://localhost')
+  }
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS')
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
   res.setHeader('Access-Control-Max-Age', '86400')
@@ -271,7 +293,7 @@ export class VoidServer {
   // -----------------------------------------------------------------------
 
   private async handleRequest(req: IncomingMessage, res: ServerResponse): Promise<void> {
-    setCorsHeaders(res)
+    setCorsHeaders(res, req, !!this.config.mobile)
 
     // Handle CORS preflight
     if (req.method === 'OPTIONS') {
@@ -280,18 +302,17 @@ export class VoidServer {
       return
     }
 
-    // Auth check
-    if (!authMiddleware(req, this.config)) {
+    // The mobile HTML shell itself is public — the embedded script is what
+    // authenticates with the pairing token in the URL fragment. Every other
+    // route goes through the auth middleware.
+    const pathname = new URL(req.url ?? '/', `http://${this.config.host}:${this.config.port}`).pathname
+    const isMobileShell = this.config.mobile && req.method === 'GET' && pathname === '/m'
+    if (!isMobileShell && !authMiddleware(req, this.config)) {
       sendJson(res, 401, { error: 'Unauthorized', message: 'Invalid or missing API key' })
       return
     }
 
     this.totalRequests++
-
-    // Parse URL
-    const baseUrl = `http://${this.config.host}:${this.config.port}`
-    const url = new URL(req.url ?? '/', baseUrl)
-    const pathname = url.pathname
 
     // Concurrency gate — acquire before handling, release after
     const acquired = await Promise.race([
@@ -362,9 +383,30 @@ export class VoidServer {
       return
     }
 
+    // GET /m — mobile web client (only when mobile mode is enabled)
+    if (this.config.mobile && method === 'GET' && pathname === '/m') {
+      res.writeHead(200, {
+        'Content-Type': 'text/html; charset=utf-8',
+        'Cache-Control': 'no-store',
+        // Lock the client down: it only talks to its own origin and the
+        // inline script it was served with.
+        'Content-Security-Policy':
+          "default-src 'self'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'self'",
+        'X-Content-Type-Options': 'nosniff',
+      })
+      res.end(MOBILE_CLIENT_HTML)
+      return
+    }
+
     // POST /chat
     if (method === 'POST' && pathname === '/chat') {
       await this.handleChat(req, res)
+      return
+    }
+
+    // POST /chat/stream — Server-Sent Events streaming chat
+    if (method === 'POST' && pathname === '/chat/stream') {
+      await this.handleChatStream(req, res)
       return
     }
 
@@ -433,6 +475,70 @@ export class VoidServer {
     }
 
     sendJson(res, 200, response)
+  }
+
+  /**
+   * POST /chat/stream — Server-Sent Events streaming chat.
+   *
+   * Pushes incremental events (text chunks, tool calls, usage) from the
+   * configured {@link ChatAdapter} to the client as they arrive. The
+   * connection stays open until the adapter yields a `done` or `error`
+   * event, or the client disconnects.
+   */
+  private async handleChatStream(req: IncomingMessage, res: ServerResponse): Promise<void> {
+    const body = await parseJsonBody<ChatRequest>(req)
+    if (!body.message || typeof body.message !== 'string') {
+      throw new HttpError(400, 'Missing required field: message')
+    }
+
+    const sessionId = body.sessionId ?? generateSessionId()
+    this.sessions.set(sessionId, {
+      createdAt: this.sessions.get(sessionId)?.createdAt ?? Date.now(),
+      lastActiveAt: Date.now(),
+    })
+
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream; charset=utf-8',
+      'Cache-Control': 'no-cache, no-transform',
+      // Disables proxy buffering (nginx, Cloudflare) so chunks flush promptly.
+      'X-Accel-Buffering': 'no',
+      Connection: 'keep-alive',
+    })
+
+    const write = (payload: unknown): void => {
+      if (res.writableEnded) return
+      res.write(`data: ${JSON.stringify(payload)}\n\n`)
+    }
+
+    write({ type: 'session', sessionId })
+
+    // Emit a heartbeat every 15s so mobile browsers on flaky networks
+    // don't silently drop the connection.
+    const heartbeat = setInterval(() => {
+      if (!res.writableEnded) res.write(': ping\n\n')
+    }, 15_000)
+
+    let clientGone = false
+    req.on('close', () => { clientGone = true })
+
+    const adapter = this.config.chatAdapter ?? echoChatAdapter
+    try {
+      for await (const event of adapter({
+        message: body.message,
+        sessionId,
+        model: body.model,
+        cwd: body.cwd,
+      })) {
+        if (clientGone) break
+        write(event)
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error'
+      write({ type: 'error', message })
+    } finally {
+      clearInterval(heartbeat)
+      if (!res.writableEnded) res.end()
+    }
   }
 
   /**

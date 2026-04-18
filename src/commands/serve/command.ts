@@ -1,5 +1,11 @@
 import type { LocalCommandCall } from '../../types/command.js'
 import { VoidServer } from '../../server/index.js'
+import {
+  buildPairingUrl,
+  generatePairingToken,
+  getLanAddress,
+} from '../../server/pairing.js'
+import { toString as qrToString } from 'qrcode'
 
 /**
  * Singleton server instance shared across /serve invocations within the
@@ -79,6 +85,79 @@ const call: LocalCommandCall = async (args) => {
       }
     }
 
+    case 'mobile': {
+      if (serverInstance?.isRunning) {
+        return {
+          type: 'text',
+          value: [
+            'A server is already running. Stop it first with /serve stop,',
+            'then run /serve mobile to restart in mobile mode.',
+          ].join('\n'),
+        }
+      }
+
+      const port = parts[1] ? parseInt(parts[1], 10) : 3456
+      if (isNaN(port) || port < 1 || port > 65535) {
+        return {
+          type: 'text',
+          value: `Invalid port: ${parts[1]}. Must be a number between 1 and 65535.`,
+        }
+      }
+
+      const token = generatePairingToken()
+      // Bind to all interfaces so phones on the same LAN can reach us.
+      // The pairing token gates every request, so this is safe provided
+      // the user keeps the token private.
+      serverInstance = new VoidServer({
+        port,
+        host: '0.0.0.0',
+        apiKey: token,
+        mobile: true,
+      })
+
+      try {
+        await serverInstance.start()
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err)
+        serverInstance = null
+        return {
+          type: 'text',
+          value: `Failed to start server: ${message}`,
+        }
+      }
+
+      const lan = getLanAddress()
+      const url = buildPairingUrl(lan, port, token)
+
+      let qr = ''
+      try {
+        qr = await qrToString(url, { type: 'utf8', errorCorrectionLevel: 'L' })
+      } catch {
+        qr = '(QR rendering failed — use the URL below)'
+      }
+
+      return {
+        type: 'text',
+        value: [
+          'Void mobile server is running.',
+          '',
+          qr.trimEnd(),
+          '',
+          `Scan the QR code above with your phone, or open:`,
+          `  ${url}`,
+          '',
+          `LAN address:  http://${lan}:${port}`,
+          `Pairing token (keep this secret):`,
+          `  ${token}`,
+          '',
+          'Tips:',
+          '  • Phone and computer must be on the same network.',
+          '  • The token lives in the URL fragment, so it never hits server logs.',
+          '  • Use /serve stop to shut down and invalidate the token.',
+        ].join('\n'),
+      }
+    }
+
     case 'status': {
       if (!serverInstance?.isRunning) {
         return {
@@ -112,6 +191,7 @@ const call: LocalCommandCall = async (args) => {
           '',
           'Usage:',
           '  /serve start [port]  - Start the HTTP server (default port 3456)',
+          '  /serve mobile [port] - Start in mobile mode (LAN-bound, QR pairing)',
           '  /serve stop          - Stop the server',
           '  /serve status        - Show server status',
         ].join('\n'),
