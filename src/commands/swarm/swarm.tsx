@@ -34,6 +34,11 @@ import {
   extractFriendlyModelsFromText,
   resolveFriendlyModelInput,
 } from '../../utils/model/friendlyModelResolver.js'
+import {
+  getDefaultSonnetModel,
+  parseUserSpecifiedModel,
+  renderModelName,
+} from '../../utils/model/model.js'
 import { getSettingsForSource } from '../../utils/settings/settings.js'
 
 // ---------------------------------------------------------------------------
@@ -67,6 +72,11 @@ const SWARM_DOMAINS: WorkstreamDomain[] = [
 ]
 
 const COORDINATOR_MODEL_FALLBACK = 'claude-opus-4-6'
+const COORDINATOR_RATE_LIMIT_FALLBACKS = [
+  getDefaultSonnetModel(),
+  'claude-sonnet-4-6',
+  'claude-haiku-4-5-20251001',
+] as const
 
 const SWARM_PROMPT_FOR_MODELS_PATTERN =
   /\b(?:ask me|prompt me|let me choose|choose(?: the)? models?|pick(?: the)? models?|which model|what model|configure models?)\b/i
@@ -105,6 +115,46 @@ const SWARM_INLINE_COORDINATOR_TO_MODEL_PATTERN = new RegExp(
 
 function normalizeModelOverride(model: string): string {
   return resolveFriendlyModelInput(model.trim()) ?? model.trim()
+}
+
+/**
+ * Returns true if the model ID can be used directly with the Anthropic API.
+ * The coordinator calls getAnthropicClient, so it must use a native
+ * Anthropic model ID — not an OpenRouter / third-party prefixed one.
+ */
+function isAnthropicNativeModel(model: string): boolean {
+  const lower = model.toLowerCase()
+  // Native IDs: claude-opus-4-6, claude-sonnet-4-6, claude-haiku-4-5, etc.
+  if (/^claude-/.test(lower)) return true
+  // Prefixed with anthropic/ (e.g. anthropic/claude-sonnet-4)
+  if (lower.startsWith('anthropic/')) return true
+  return false
+}
+
+function resolveCoordinatorSetting(model: string | null | undefined): string | null {
+  if (!model) return null
+  const resolved = parseUserSpecifiedModel(model)
+  if (!resolved) return null
+  // Only allow Anthropic-native models for the coordinator
+  return isAnthropicNativeModel(resolved) ? resolved : null
+}
+
+function isRateLimitError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error)
+  return /\b429\b/.test(message) || /rate[_ -]?limit/i.test(message)
+}
+
+function buildCoordinatorRetryList(primaryModel: string): string[] {
+  const seen = new Set<string>()
+  const deduped: string[] = []
+
+  for (const candidate of [primaryModel, ...COORDINATOR_RATE_LIMIT_FALLBACKS]) {
+    if (!candidate || seen.has(candidate)) continue
+    seen.add(candidate)
+    deduped.push(candidate)
+  }
+
+  return deduped
 }
 
 function resolveInlineAssignedModel(model: string): string | null {
@@ -442,9 +492,7 @@ function SwarmRunner({
     () => new Map(),
   )
   const [awaitingApproval, setAwaitingApproval] = useState(false)
-  const [configuringModels, setConfiguringModels] = useState(
-    parsed.promptForModels,
-  )
+  const [configuringModels, setConfiguringModels] = useState(true)
   const [modelConfigInput, setModelConfigInput] = useState('')
   const [modelConfigCursorOffset, setModelConfigCursorOffset] = useState(0)
   const [modelConfigMessage, setModelConfigMessage] = useState<string | null>(
@@ -568,8 +616,49 @@ function SwarmRunner({
       setInitialState()
 
       let workstreams: Workstream[]
+      let resolvedCoordinatorModel = coordinatorModel
       try {
-        workstreams = await decomposeTask(parsed.description, '', coordinatorModel)
+        let lastError: unknown
+        workstreams = []
+
+        for (const [index, attemptModel] of buildCoordinatorRetryList(
+          coordinatorModel,
+        ).entries()) {
+          resolvedCoordinatorModel = attemptModel
+
+          setState(prev =>
+            prev
+              ? {
+                  ...prev,
+                  config: { ...prev.config, coordinator: attemptModel },
+                }
+              : prev,
+          )
+
+          try {
+            workstreams = await decomposeTask(
+              parsed.description,
+              '',
+              attemptModel,
+            )
+
+            if (index > 0) {
+              setModelConfigMessage(
+                `Coordinator retried on ${renderModelName(attemptModel)} after ${renderModelName(coordinatorModel)} hit a rate limit`,
+              )
+            }
+            break
+          } catch (err) {
+            lastError = err
+            if (!isRateLimitError(err)) {
+              throw err
+            }
+          }
+        }
+
+        if (workstreams.length === 0 && lastError) {
+          throw lastError
+        }
       } catch (err) {
         if (!cancelled) {
           const message = err instanceof Error ? err.message : String(err)
@@ -593,7 +682,11 @@ function SwarmRunner({
           if (!prev) return prev
           return {
             ...prev,
-            config: { ...prev.config, workstreams: cloned },
+            config: {
+              ...prev.config,
+              coordinator: resolvedCoordinatorModel,
+              workstreams: cloned,
+            },
             phase: 'awaiting_approval',
             workstreams: cloned,
           }
@@ -687,16 +780,19 @@ function SwarmRunner({
           batch.map(workstream => runWorker(workstream, repoRoot, callbacks)),
         )
         if (cancelled) return
-        for (const result of results) {
+        for (const [i, result] of results.entries()) {
           if (result.status === 'rejected') {
-            setState(prev =>
-              prev
-                ? {
-                    ...prev,
-                    totalCostUSD: prev.totalCostUSD,
-                  }
-                : prev,
-            )
+            const ws = batch[i]
+            const reason = result.reason instanceof Error
+              ? result.reason.message
+              : String(result.reason)
+            if (ws) {
+              setWorkerMessages(prev => {
+                const next = new Map(prev)
+                next.set(ws.id, `Failed: ${reason}`)
+                return next
+              })
+            }
           }
         }
       }
@@ -817,17 +913,23 @@ function SwarmRunner({
           paddingX={1}
         >
           <Text bold color="yellow">
-            Configure worker models before launch
+            Configure worker models
           </Text>
+          {state?.workstreams && state.workstreams.length > 0 ? (
+            <Box flexDirection="column" marginY={1}>
+              {state.workstreams.map(workstream => (
+                <Text key={workstream.id}>
+                  <Text color="cyan">{workstream.domain.padEnd(10)}</Text>
+                  <Text dimColor>{' -> '}</Text>
+                  <Text>{workstream.model}</Text>
+                </Text>
+              ))}
+            </Box>
+          ) : (
+            <Text dimColor>{'Waiting for decomposition\u2026'}</Text>
+          )}
           <Text dimColor>
-            Current assignments:{' '}
-            {state?.workstreams
-              .map(workstream => `${workstream.domain}=${workstream.model}`)
-              .join(' · ') || 'waiting for decomposition'}
-          </Text>
-          <Text dimColor>
-            Enter overrides like frontend=gemini,wiring=opus or “use gpt 5.4
-            for backend”.
+            Override: frontend=gemini, wiring=opus, or "use gpt 5.4 for backend"
           </Text>
           <TextInput
             value={modelConfigInput}
@@ -846,7 +948,7 @@ function SwarmRunner({
             cursorOffset={modelConfigCursorOffset}
             onChangeCursorOffset={setModelConfigCursorOffset}
           />
-          <Text dimColor>enter save overrides · esc keep current assignments</Text>
+          <Text dimColor>enter save · esc keep defaults</Text>
         </Box>
       ) : null}
       {awaitingApproval && modelConfigMessage ? (
@@ -858,10 +960,11 @@ function SwarmRunner({
   )
 }
 
-export const call: LocalJSXCommandCall = async (onDone, _context, args) => {
+export const call: LocalJSXCommandCall = async (onDone, context, args) => {
   const parsed = parseSwarmArgs(args)
   const settings = getSettingsForSource('userSettings')
   const swarmSettings = settings?.swarm
+  const appState = context.getAppState()
 
   if (!parsed.description) {
     onDone(createUsageMessage(), { display: 'system' })
@@ -884,9 +987,21 @@ export const call: LocalJSXCommandCall = async (onDone, _context, args) => {
     }
   }
 
+  const sessionCoordinatorModel =
+    resolveCoordinatorSetting(appState.mainLoopModelForSession) ??
+    resolveCoordinatorSetting(appState.mainLoopModel)
+
+  const configuredCoordinatorModel = resolveCoordinatorSetting(
+    (swarmSettings as { coordinatorModel?: string } | undefined)
+      ?.coordinatorModel,
+  )
+
   const resolvedSettings: ResolvedSwarmSettings = {
     autoMerge: parsed.noMerge ? false : (swarmSettings?.autoMerge ?? true),
-    coordinatorModel: COORDINATOR_MODEL_FALLBACK,
+    coordinatorModel:
+      configuredCoordinatorModel ??
+      sessionCoordinatorModel ??
+      COORDINATOR_MODEL_FALLBACK,
     reviewAfterMerge: parsed.noReview
       ? false
       : (swarmSettings?.reviewAfterMerge ?? true),

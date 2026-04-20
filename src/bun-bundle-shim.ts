@@ -35,6 +35,7 @@ const DISABLED_FEATURES = new Set<string>([
   'TORCH',                  // torch command not in repo
   'ULTRAPLAN',              // ultraplan prompt.txt not in repo
   'NATIVE_CLIENT_ATTESTATION', // Requires Bun native HTTP stack to rewrite cch= placeholder
+  'KAIROS_BRIEF',           // BriefTool not in repo — require() crashes Node ESM builds
   'KAIROS_DREAM',           // dream skill not in repo
   'REVIEW_ARTIFACT',        // hunter skill not in repo
   'RUN_SKILL_GENERATOR',    // runSkillGenerator not in repo

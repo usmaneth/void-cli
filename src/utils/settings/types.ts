@@ -1109,6 +1109,12 @@ export const SettingsSchema = lazySchema(() =>
         ),
       swarm: z
         .object({
+          coordinatorModel: z
+            .string()
+            .optional()
+            .describe(
+              'Default model for swarm decomposition and review passes.',
+            ),
           defaultAssignments: z
             .record(z.string(), z.string())
             .optional()

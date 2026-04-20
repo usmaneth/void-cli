@@ -7,9 +7,32 @@
  * 4. Reports progress via callbacks
  */
 
-import { resolve } from 'node:path'
-import { execa } from 'execa'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { execa, execaSync } from 'execa'
 import type { SwarmCallbacks, Workstream } from './types.js'
+
+// Void CLI project root (two levels up from src/swarm/)
+const __dirname = dirname(fileURLToPath(import.meta.url))
+const VOID_ROOT = resolve(__dirname, '..', '..')
+
+// ---------------------------------------------------------------------------
+// Runtime detection — match bin/void launcher logic
+// ---------------------------------------------------------------------------
+
+let _useBun: boolean | undefined
+
+function useBun(): boolean {
+  if (_useBun === undefined) {
+    try {
+      execaSync('bun', ['--version'])
+      _useBun = true
+    } catch {
+      _useBun = false
+    }
+  }
+  return _useBun
+}
 
 // ---------------------------------------------------------------------------
 // Public API
@@ -43,29 +66,39 @@ export async function runWorker(
     // Build the worker prompt
     const prompt = buildWorkerPrompt(workstream)
 
-    // Find the CLI entrypoint
-    const cliPath = resolve(repoRoot, 'dist', 'entrypoints', 'cli.js')
-
     callbacks.onWorkerProgress?.(workstream, `Starting worker model: ${workstream.model}`)
 
+    // Launch Void CLI matching bin/void logic: prefer bun on TS source, fall back to node on compiled dist
+    const command = useBun() ? 'bun' : 'node'
+    const cliArgs = useBun()
+      ? [
+          resolve(VOID_ROOT, 'src', 'entrypoints', 'cli.tsx'),
+          '--print',
+          '--model',
+          workstream.model,
+          '--dangerously-skip-permissions',
+          '-p',
+          prompt,
+        ]
+      : [
+          '--import',
+          resolve(VOID_ROOT, 'scripts', 'register-loader.js'),
+          resolve(VOID_ROOT, 'dist', 'entrypoints', 'cli.js'),
+          '--print',
+          '--model',
+          workstream.model,
+          '--dangerously-skip-permissions',
+          '-p',
+          prompt,
+        ]
+
     // Run Void CLI as a subprocess in the worktree
-    const result = await execa(
-      'node',
-      [
-        cliPath,
-        '--print',
-        '--model',
-        workstream.model,
-        '--dangerously-skip-permissions',
-        '-p',
-        prompt,
-      ],
-      {
-        cwd: worktreePath,
-        timeout: 600_000, // 10 minutes max per worker
-        reject: false,
-      },
-    )
+    const result = await execa(command, cliArgs, {
+      cwd: worktreePath,
+      timeout: 600_000, // 10 minutes max per worker
+      reject: false,
+      env: { ...process.env, VOID_LAUNCH_CWD: worktreePath },
+    })
 
     if (result.exitCode !== 0) {
       const errorMsg = result.stderr || result.stdout || `Exit code ${result.exitCode}`
