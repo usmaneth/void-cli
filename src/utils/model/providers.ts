@@ -1,22 +1,35 @@
 import type { AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS } from '../../services/analytics/index.js'
 import { isEnvTruthy } from '../envUtils.js'
 
-export type APIProvider = 'firstParty' | 'bedrock' | 'vertex' | 'foundry' | 'openai' | 'gemini' | 'openrouter'
+export type APIProvider =
+  | 'firstParty'
+  | 'bedrock'
+  | 'vertex'
+  | 'foundry'
+  | 'openai'
+  | 'gemini'
+  | 'openrouter'
+  | 'vercelGateway'
+  | 'gitlab'
 
+/**
+ * Resolve the active API provider based on `VOID_USE_*` env flags. The order
+ * below is the authoritative precedence — flags earlier in the chain win.
+ *
+ * We keep the original `isEnvTruthy` chain (rather than switching to a lookup
+ * table) so call sites that expected `firstParty` to be the default continue
+ * to work when *no* flag is set.
+ */
 export function getAPIProvider(): APIProvider {
-  return isEnvTruthy(process.env.VOID_USE_BEDROCK)
-    ? 'bedrock'
-    : isEnvTruthy(process.env.VOID_USE_VERTEX)
-      ? 'vertex'
-      : isEnvTruthy(process.env.VOID_USE_FOUNDRY)
-        ? 'foundry'
-        : isEnvTruthy(process.env.VOID_USE_OPENAI)
-          ? 'openai'
-          : isEnvTruthy(process.env.VOID_USE_GEMINI)
-            ? 'gemini'
-            : isEnvTruthy(process.env.VOID_USE_OPENROUTER)
-              ? 'openrouter'
-              : 'firstParty'
+  if (isEnvTruthy(process.env.VOID_USE_BEDROCK)) return 'bedrock'
+  if (isEnvTruthy(process.env.VOID_USE_VERTEX)) return 'vertex'
+  if (isEnvTruthy(process.env.VOID_USE_FOUNDRY)) return 'foundry'
+  if (isEnvTruthy(process.env.VOID_USE_OPENAI)) return 'openai'
+  if (isEnvTruthy(process.env.VOID_USE_GEMINI)) return 'gemini'
+  if (isEnvTruthy(process.env.VOID_USE_OPENROUTER)) return 'openrouter'
+  if (isEnvTruthy(process.env.VOID_USE_VERCEL_GATEWAY)) return 'vercelGateway'
+  if (isEnvTruthy(process.env.VOID_USE_GITLAB)) return 'gitlab'
+  return 'firstParty'
 }
 
 export function getAPIProviderForStatsig(): AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS {

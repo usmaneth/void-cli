@@ -384,7 +384,10 @@ export const SettingsSchema = lazySchema(() =>
           'Allowlist of models that users can select. ' +
             'Accepts family aliases ("opus" allows any opus version), ' +
             'version prefixes ("opus-4-5" allows only that version), ' +
-            'and full model IDs. ' +
+            'and full model IDs. Fully-qualified provider-prefixed IDs ' +
+            '(e.g. "openrouter/anthropic/claude-opus-4.7", "vercel/openai/gpt-5.4", ' +
+            '"gitlab/duo-workflow-claude") are also accepted when discovered via ' +
+            '`void models list`. ' +
             'If undefined, all models are available. If empty array, only the default model is available. ' +
             'Typically set in managed settings by enterprise administrators.',
         ),

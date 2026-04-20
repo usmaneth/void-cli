@@ -4298,6 +4298,20 @@ async function run(): Promise<CommanderCommand> {
     await agentsHandler();
     process.exit(0);
   });
+
+  // Models command - discover models from configured providers
+  const modelsCmd = program.command('models').description('Inspect the configured AI model catalog').configureHelp(createSortedHelpConfig());
+  modelsCmd.command('list').description('List available models across every configured provider (cached 24h at ~/.void/model-catalog.json)').option('--provider <provider>', 'Only list models for a specific provider (anthropic, openai, openrouter, vercel, gitlab, gemini)').option('--refresh', 'Bypass the cache and refetch live model lists').option('--json', 'Output the raw catalog as JSON').action(async (opts: {
+    provider?: string;
+    refresh?: boolean;
+    json?: boolean;
+  }) => {
+    const {
+      modelsListHandler
+    } = await import('./cli/handlers/models.js');
+    await modelsListHandler(opts);
+    process.exit(0);
+  });
   if (feature('TRANSCRIPT_CLASSIFIER')) {
     // Skip when tengu_auto_mode_config.enabled === 'disabled' (circuit breaker).
     // Reads from disk cache — GrowthBook isn't initialized at registration time.

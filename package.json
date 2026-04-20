@@ -9,7 +9,8 @@
     "build": "tsc && node scripts/postbuild.js",
     "postinstall": "node scripts/postbuild.js 2>/dev/null || true",
     "check": "tsc --noEmit",
-    "start": "node dist/entrypoints/cli.js"
+    "start": "node dist/entrypoints/cli.js",
+    "test": "node --test --import ./scripts/register-loader.js dist/services/modelDiscovery/__tests__/ dist/services/providers/__tests__/ dist/utils/model/__tests__/"
   },
   "dependencies": {
     "@alcalzone/ansi-tokenize": "^0.3.0",
