@@ -1,0 +1,19 @@
+Voidex
+Copyright (c) 2026 void-cli contributors
+
+This product is a fork of opencode's desktop-electron package.
+
+    opencode
+    Copyright (c) 2025 opencode
+    Licensed under the MIT License
+    https://opencode.ai
+
+Opencode's Electron shell, electron-builder configuration, electron-vite setup,
+window/menu/updater/IPC layer have been adapted and rebranded. All original
+copyright notices from opencode-electron remain preserved in the source
+headers of files that are direct adaptations.
+
+Opencode's workspace packages `@opencode-ai/app` (Solid.js frontend) and
+`@opencode-ai/ui` (component kit) are NOT included in Voidex. The Voidex
+renderer is written in vanilla TypeScript + CSS, pending a future migration
+to void-cli's own React + Ink code-share.
