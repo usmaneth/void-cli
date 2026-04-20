@@ -3,6 +3,8 @@ import { memo } from 'react'
 import { useTerminalSize } from '../hooks/useTerminalSize.js'
 import { Box, Text, useTheme } from '../ink.js'
 import { type ThemeName } from '../utils/theme.js'
+import { StreamingToolBody } from './streaming/StreamingToolBody.js'
+import { isStreamingEnabled } from './streaming/toolParts.js'
 
 export type ToolCardType =
   | 'bash'
@@ -63,6 +65,10 @@ type ToolCardProps = {
   children: React.ReactNode
   collapsed?: boolean
   maxLines?: number
+  /** When provided and VOID_STREAMING_PARTS=1, the body subscribes to
+   *  the PartStream for this id and renders parts as they arrive. The
+   *  `children` node serves as the fallback for the final state. */
+  toolUseID?: string
 }
 
 function ToolCardImpl({
@@ -72,6 +78,7 @@ function ToolCardImpl({
   children,
   collapsed = false,
   maxLines = 0,
+  toolUseID,
 }: ToolCardProps): React.ReactNode {
   const { columns } = useTerminalSize()
   const [theme] = useTheme()
@@ -121,7 +128,15 @@ function ToolCardImpl({
         marginLeft={1}
         {...(maxLines > 0 ? { height: maxLines } : {})}
       >
-        {children}
+        {toolUseID && isStreamingEnabled() ? (
+          <StreamingToolBody
+            type={type}
+            toolUseID={toolUseID}
+            fallback={children}
+          />
+        ) : (
+          children
+        )}
       </Box>
     </Box>
   )
