@@ -8,10 +8,20 @@
   "scripts": {
     "build": "tsc && node scripts/postbuild.js",
     "postinstall": "node scripts/postbuild.js 2>/dev/null || true",
+<<<<<<< HEAD
     "check": "tsc --noEmit",
     "start": "node dist/entrypoints/cli.js",
     "test": "vitest run",
     "test:council": "vitest run src/council"
+=======
+    "check": "tsc --noEmit && oxlint && vitest run",
+    "typecheck": "tsc --noEmit",
+    "lint": "oxlint",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
+    "start": "node dist/entrypoints/cli.js"
+>>>>>>> 4952ed4 (chore: add vitest + initial test suite)
   },
   "dependencies": {
     "@alcalzone/ansi-tokenize": "^0.3.0",
@@ -103,7 +113,12 @@
     "@types/signal-exit": "^3.0.4",
     "@types/stack-utils": "^2.0.3",
     "@types/ws": "^8.18.1",
+    "@vitest/ui": "^4.1.4",
     "commander": "^14.0.3",
+<<<<<<< HEAD
+=======
+    "oxlint": "^1.60.0",
+>>>>>>> 4952ed4 (chore: add vitest + initial test suite)
     "typescript": "^6.0.2",
     "vitest": "^4.1.4"
   }
