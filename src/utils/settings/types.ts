@@ -80,6 +80,57 @@ export const PermissionsSchema = lazySchema(() =>
         .array(z.string())
         .optional()
         .describe('Additional directories to include in the permission scope'),
+      // Smart bash permission scopes (feature-flagged behind VOID_SMART_PERMISSIONS=1).
+      // Classifies bash commands by inferred semantic scope (read-only, write-file,
+      // network, exec, danger, …) and auto-allows / auto-denies on match.
+      // See src/services/permission/arity.ts.
+      bash: z
+        .object({
+          allowScopes: z
+            .array(
+              z.enum([
+                'read-only',
+                'write-file',
+                'delete-file',
+                'exec',
+                'network',
+                'shell-redirect',
+                'pipe',
+                'background',
+                'danger',
+              ]),
+            )
+            .optional()
+            .describe(
+              'Auto-allow bash commands whose ALL inferred scopes are in this list. ' +
+                "The 'danger' scope is never auto-allowed even if listed. " +
+                'Requires env VOID_SMART_PERMISSIONS=1 to take effect.',
+            ),
+          denyScopes: z
+            .array(
+              z.enum([
+                'read-only',
+                'write-file',
+                'delete-file',
+                'exec',
+                'network',
+                'shell-redirect',
+                'pipe',
+                'background',
+                'danger',
+              ]),
+            )
+            .optional()
+            .describe(
+              'Auto-deny bash commands whose ANY inferred scope is in this list. ' +
+                'Always applied, even without VOID_SMART_PERMISSIONS=1.',
+            ),
+        })
+        .optional()
+        .describe(
+          'Smart bash permission scope configuration. ' +
+            'Scopes are inferred from the parsed bash AST (tree-sitter).',
+        ),
     })
     .passthrough(),
 )
@@ -384,7 +435,10 @@ export const SettingsSchema = lazySchema(() =>
           'Allowlist of models that users can select. ' +
             'Accepts family aliases ("opus" allows any opus version), ' +
             'version prefixes ("opus-4-5" allows only that version), ' +
-            'and full model IDs. ' +
+            'and full model IDs. Fully-qualified provider-prefixed IDs ' +
+            '(e.g. "openrouter/anthropic/claude-opus-4.7", "vercel/openai/gpt-5.4", ' +
+            '"gitlab/duo-workflow-claude") are also accepted when discovered via ' +
+            '`void models list`. ' +
             'If undefined, all models are available. If empty array, only the default model is available. ' +
             'Typically set in managed settings by enterprise administrators.',
         ),
@@ -564,6 +618,19 @@ export const SettingsSchema = lazySchema(() =>
         .optional()
         .describe(
           'Enabled plugins using plugin-id@marketplace-id format. Example: { "formatter@anthropic-tools": true }. Also supports extended format with version constraints.',
+        ),
+      // @void-cli/plugin SDK plugin list — npm package names or local paths
+      // resolved by the SDK loader (src/services/plugins/loader.ts). Separate
+      // from enabledPlugins above (which is the marketplace flow).
+      plugins: z
+        .array(z.string())
+        .optional()
+        .describe(
+          'SDK plugins authored against @void-cli/plugin. Entries may be ' +
+            'npm package names (typically void-plugin-* or @scope/void-plugin-*) ' +
+            'or absolute/relative paths to a plugin entry file. Plugins from ' +
+            '~/.void/plugins/ and ./.void/plugins/ are discovered automatically ' +
+            'and do not need to be listed here.',
         ),
       // Extra marketplaces for this repository (usually for project settings)
       extraKnownMarketplaces: z

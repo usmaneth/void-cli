@@ -23,6 +23,8 @@ import issue from './commands/issue/index.js'
 import feedback from './commands/feedback/index.js'
 import clear from './commands/clear/index.js'
 import color from './commands/color/index.js'
+import forkSessionCmd from './commands/fork/index.js'
+import revertSessionCmd from './commands/revert/index.js'
 import commit from './commands/commit.js'
 import copy from './commands/copy/index.js'
 import desktop from './commands/desktop/index.js'
@@ -128,11 +130,11 @@ const peersCmd = feature('UDS_INBOX')
       require('./commands/peers/index.js') as typeof import('./commands/peers/index.js')
     ).default
   : null
-const forkCmd = feature('FORK_SUBAGENT')
-  ? (
-      require('./commands/fork/index.js') as typeof import('./commands/fork/index.js')
-    ).default
-  : null
+// The legacy FORK_SUBAGENT command lived at src/commands/fork/ as a stub.
+// It's been replaced by the session-backed /fork command imported as
+// `forkSessionCmd` above; keep the identifier null so the spread below
+// remains a no-op without touching the array literal.
+const forkCmd = null
 const buddy = feature('BUDDY')
   ? (
       require('./commands/buddy/index.js') as typeof import('./commands/buddy/index.js')
@@ -344,6 +346,8 @@ const COMMANDS = memoize((): Command[] => [
   fast,
   files,
   forkCommand,
+  forkSessionCmd,
+  revertSessionCmd,
   guardrails,
   heapDump,
   healthCmd,

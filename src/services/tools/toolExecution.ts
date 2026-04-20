@@ -129,6 +129,13 @@ import {
   runPostToolUseHooks,
   runPreToolUseHooks,
 } from './toolHooks.js'
+import {
+  cancelStream,
+  disposePartStream,
+  finalizeStream,
+  isStreamingEnabled,
+} from '../../components/streaming/toolParts.js'
+import { wrapProgressCallback } from '../../components/streaming/progressBridge.js'
 
 /** Minimum total hook duration (ms) to show inline timing summary */
 export const HOOK_TIMING_DISPLAY_THRESHOLD_MS = 500
@@ -1203,7 +1210,31 @@ async function checkPermissionsAndCallTool(
   } else if (processedInput !== backfilledClone) {
     callInput = processedInput
   }
+  // Wire streaming parts: wrap the progress callback so any onProgress
+  // tick also feeds the ToolPart stream for this toolUseID. And listen
+  // on the abort signal so Ctrl+C transitions streaming parts to
+  // state='error' with error='interrupted' (matching opencode's cancel
+  // behavior — partial content is kept, renderer stops).
+  const streamingOn = isStreamingEnabled()
+  let abortListener: (() => void) | null = null
+  if (streamingOn) {
+    abortListener = () => cancelStream(toolUseID)
+    toolUseContext.abortController.signal.addEventListener(
+      'abort',
+      abortListener,
+      { once: true },
+    )
+  }
   try {
+    const baseProgress = (progress: { toolUseID: string; data: unknown }) => {
+      onToolProgress({
+        toolUseID: progress.toolUseID,
+        data: progress.data,
+      })
+    }
+    const wrappedProgress = streamingOn
+      ? wrapProgressCallback(toolUseID, baseProgress)
+      : baseProgress
     const result = await tool.call(
       callInput,
       {
@@ -1213,12 +1244,7 @@ async function checkPermissionsAndCallTool(
       },
       canUseTool,
       assistantMessage,
-      progress => {
-        onToolProgress({
-          toolUseID: progress.toolUseID,
-          data: progress.data,
-        })
-      },
+      wrappedProgress,
     )
     const durationMs = Date.now() - startTime
     addToToolDuration(durationMs)
@@ -1740,6 +1766,22 @@ async function checkPermissionsAndCallTool(
     // Clean up decision info after logging
     if (decisionInfo) {
       toolUseContext.toolDecisions?.delete(toolUseID)
+    }
+    // Close the streaming PartStream. If the tool was cancelled mid-flight
+    // the cancel() already fired via the abort listener, which flipped any
+    // in-flight parts to state='error'. Finalize is a no-op in that case.
+    if (streamingOn) {
+      if (abortListener) {
+        toolUseContext.abortController.signal.removeEventListener(
+          'abort',
+          abortListener,
+        )
+      }
+      finalizeStream(toolUseID)
+      // Defer dispose so subscribers get a chance to render the final
+      // snapshot before the registry entry is collected. setImmediate
+      // puts us after the current tick's flush.
+      setImmediate(() => disposePartStream(toolUseID))
     }
   }
 }

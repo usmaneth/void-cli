@@ -10,9 +10,34 @@ import {
   AuthenticationError,
 } from '@anthropic-ai/sdk'
 import { getModelStrings } from './modelStrings.js'
+import { flattenCatalog, isFresh, readCatalog } from '../../services/modelDiscovery/catalog.js'
 
 // Cache valid models to avoid repeated API calls
 const validModelCache = new Map<string, boolean>()
+
+/**
+ * Check if a model id is listed in a non-expired discovered catalog. When the
+ * model is present, the live API call in `validateModel` is skipped.
+ */
+export function isModelInDiscoveredCatalog(model: string): boolean {
+  try {
+    const catalog = readCatalog()
+    const normalized = model.trim().toLowerCase()
+    for (const entry of Object.values(catalog.providers)) {
+      if (!entry || !isFresh(entry)) continue
+      for (const m of entry.models) {
+        if (m.id.toLowerCase() === normalized) return true
+      }
+    }
+    // Also check fallback entries — we trust them, just not with priority.
+    for (const m of flattenCatalog(catalog)) {
+      if (m.id.toLowerCase() === normalized) return true
+    }
+  } catch {
+    // Non-fatal — fall through to live validation.
+  }
+  return false
+}
 
 /**
  * Validates a model by attempting an actual API call.
@@ -51,6 +76,12 @@ export async function validateModel(
     return { valid: true }
   }
 
+  // Short-circuit when the model is already in the local discovery catalog —
+  // this lets `void models list` seed validation without extra API calls.
+  if (isModelInDiscoveredCatalog(normalizedModel)) {
+    validModelCache.set(normalizedModel, true)
+    return { valid: true }
+  }
 
   // Try to make an actual API call with minimal parameters
   try {
