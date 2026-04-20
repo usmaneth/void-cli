@@ -29,6 +29,14 @@ const SUPPORTS_TERMINAL_VT_MODE =
 // - Other platforms: shift+tab
 const MODE_CYCLE_KEY = SUPPORTS_TERMINAL_VT_MODE ? 'shift+tab' : 'meta+m'
 
+// SQLite session backend toggle (PR #58). Read at module-evaluation time
+// so the default keybinding block is pure — tests can mutate the env var
+// and re-import to flip the bindings on.
+function isSqliteSessionsFlagEnabled(): boolean {
+  const v = process.env.VOID_USE_SQLITE_SESSIONS
+  return v === '1' || v === 'true' || v === 'yes'
+}
+
 export const DEFAULT_BINDINGS: KeybindingBlock[] = [
   {
     context: 'Global',
@@ -47,6 +55,17 @@ export const DEFAULT_BINDINGS: KeybindingBlock[] = [
         : {}),
       'ctrl+shift+o': 'app:toggleTeammatePreview',
       'ctrl+r': 'history:search',
+      // Session fork/revert (SQLite sessions — PR #58). Feature-flagged so
+      // the legacy JSON backend isn't surprised by bindings that have no
+      // backing command. Ctrl+Shift+F intentionally shadows the quick
+      // global-search shortcut when sqlite sessions are on; users who want
+      // both can rebind one of them in ~/.void/keybindings.json.
+      ...(isSqliteSessionsFlagEnabled()
+        ? {
+            'ctrl+shift+f': 'session:fork' as const,
+            'ctrl+shift+r': 'session:revert' as const,
+          }
+        : {}),
       // File navigation. cmd+ bindings only fire on kitty-protocol terminals;
       // ctrl+shift is the portable fallback.
       ...(feature('QUICK_SEARCH')
