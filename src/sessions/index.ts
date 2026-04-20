@@ -18,6 +18,7 @@ import { join } from 'path'
 export interface SessionMetadata {
   id: string // UUID
   title: string // auto-generated or user-provided
+  titleUserSet?: boolean // true if user explicitly set the title
   createdAt: number // timestamp
   updatedAt: number // timestamp
   messageCount: number
@@ -25,6 +26,16 @@ export interface SessionMetadata {
   cwd: string // working directory
   branch?: string // git branch
   tags: string[]
+  /**
+   * Auto-generated conversation summary (PR #58 column).
+   * Populated by auto-compaction. First line doubles as the default title
+   * when the user hasn't set one explicitly.
+   */
+  summary?: string
+  /** Count of messages summarised into `summary` at last re-summarise. */
+  summarizedMessageCount?: number
+  /** ISO/epoch timestamp of the most recent auto-compaction. */
+  compactedAt?: number
 }
 
 export interface SessionMessage {
@@ -33,6 +44,8 @@ export interface SessionMessage {
   timestamp: number
   tokenUsage?: { input: number; output: number }
   toolCalls?: Array<{ name: string; result: string }>
+  /** Marker set on a synthetic system message produced by auto-compaction. */
+  compactedAt?: number
 }
 
 // ---------------------------------------------------------------------------
@@ -66,6 +79,48 @@ export class SessionStore {
 
   private messagesPath(sessionId: string): string {
     return join(this.sessionDir(sessionId), 'messages.jsonl')
+  }
+
+  /** Path to a stashed pre-compaction copy of messages (supports /uncompact). */
+  private stashPath(sessionId: string): string {
+    return join(this.sessionDir(sessionId), 'messages.pre-compact.jsonl')
+  }
+
+  /** Persist the current messages as a pre-compaction stash for rollback. */
+  stashMessages(sessionId: string, messages: SessionMessage[]): void {
+    const dir = this.sessionDir(sessionId)
+    mkdirSync(dir, { recursive: true })
+    const jsonl = messages.map(m => JSON.stringify(m)).join('\n')
+    writeFileSync(this.stashPath(sessionId), jsonl ? jsonl + '\n' : '')
+  }
+
+  /** Return the stashed messages if any, or null. */
+  loadStash(sessionId: string): SessionMessage[] | null {
+    const path = this.stashPath(sessionId)
+    if (!existsSync(path)) return null
+    const raw = readFileSync(path, 'utf-8').trim()
+    if (raw.length === 0) return []
+    const out: SessionMessage[] = []
+    for (const line of raw.split('\n')) {
+      if (line.trim().length > 0) out.push(JSON.parse(line))
+    }
+    return out
+  }
+
+  /** Remove the pre-compaction stash. */
+  clearStash(sessionId: string): void {
+    const path = this.stashPath(sessionId)
+    if (existsSync(path)) {
+      rmSync(path, { force: true })
+    }
+  }
+
+  /** Overwrite the entire messages.jsonl — used by compaction and uncompaction. */
+  rewriteMessages(sessionId: string, messages: SessionMessage[]): void {
+    const dir = this.sessionDir(sessionId)
+    mkdirSync(dir, { recursive: true })
+    const jsonl = messages.map(m => JSON.stringify(m)).join('\n')
+    writeFileSync(this.messagesPath(sessionId), jsonl ? jsonl + '\n' : '')
   }
 
   // ---- public API --------------------------------------------------------
@@ -119,6 +174,14 @@ export class SessionStore {
       if (!existsSync(metaFile)) continue
       try {
         const meta: SessionMetadata = JSON.parse(readFileSync(metaFile, 'utf-8'))
+        // If the user hasn't set a title and a summary exists, the list view
+        // should surface the summary's first line rather than stale heuristic.
+        if (!meta.titleUserSet && meta.summary) {
+          const firstLine = meta.summary.split('\n')[0]?.trim()
+          if (firstLine && firstLine.length > 0) {
+            meta.title = firstLine.slice(0, 80)
+          }
+        }
         sessions.push(meta)
       } catch {
         // skip corrupted metadata files
@@ -158,6 +221,7 @@ export class SessionStore {
     }
     const meta: SessionMetadata = JSON.parse(readFileSync(metaFile, 'utf-8'))
     meta.title = title
+    meta.titleUserSet = true
     meta.updatedAt = Date.now()
     writeFileSync(metaFile, JSON.stringify(meta, null, 2))
     return true
@@ -382,5 +446,101 @@ export class SessionManager {
   /** Get current in-memory messages for the active session. */
   getMessages(): SessionMessage[] {
     return [...this.messages]
+  }
+
+  /** Replace the in-memory messages (used by auto-compaction). */
+  setMessages(messages: SessionMessage[]): void {
+    this.messages = [...messages]
+    if (this.currentSession) {
+      this.currentSession.messageCount = this.messages.length
+      this.currentSession.updatedAt = Date.now()
+    }
+  }
+
+  /**
+   * Apply an auto-compaction result to the active session.
+   *
+   * Stashes the pre-compaction messages (for /uncompact rollback),
+   * persists the `summary` on metadata, and rewrites messages.jsonl as
+   * `[synthetic summary] + preservedRecent`.
+   *
+   * Returns the new metadata snapshot.
+   */
+  applyCompaction(params: {
+    summary: string
+    preservedRecent: SessionMessage[]
+    summarizedMessageCount: number
+  }): SessionMetadata | null {
+    if (!this.currentSession) return null
+    const sessionId = this.currentSession.id
+
+    // 1. Stash original messages (for rollback).
+    this.store.stashMessages(sessionId, this.messages)
+
+    // 2. Build the synthetic summary system message.
+    const compactedAt = Date.now()
+    const syntheticSummary: SessionMessage = {
+      role: 'system',
+      content: params.summary,
+      timestamp: compactedAt,
+      compactedAt,
+    }
+
+    // 3. Replace in-memory messages.
+    const newMessages: SessionMessage[] = [syntheticSummary, ...params.preservedRecent]
+    this.messages = newMessages
+
+    // 4. Update metadata.
+    this.currentSession.summary = params.summary
+    this.currentSession.summarizedMessageCount = params.summarizedMessageCount
+    this.currentSession.compactedAt = compactedAt
+    this.currentSession.messageCount = newMessages.length
+    this.currentSession.updatedAt = compactedAt
+
+    // If the user never set a title, promote the summary's first line.
+    if (!this.currentSession.titleUserSet) {
+      const firstLine = params.summary.split('\n')[0]?.trim()
+      if (firstLine) {
+        this.currentSession.title = firstLine.slice(0, 80)
+      }
+    }
+
+    // 5. Persist: rewrite messages.jsonl + metadata.
+    this.store.rewriteMessages(sessionId, newMessages)
+    this.store.saveMetadata(this.currentSession)
+
+    return this.currentSession
+  }
+
+  /**
+   * Roll back the most recent compaction. Restores messages from the stash
+   * and clears `summary` / `compactedAt` on metadata. Returns true on success.
+   */
+  uncompact(): boolean {
+    if (!this.currentSession) return false
+    const sessionId = this.currentSession.id
+    const stashed = this.store.loadStash(sessionId)
+    if (!stashed) return false
+
+    this.messages = stashed
+    this.currentSession.messageCount = stashed.length
+    this.currentSession.compactedAt = undefined
+    this.currentSession.summary = undefined
+    this.currentSession.summarizedMessageCount = undefined
+    this.currentSession.updatedAt = Date.now()
+
+    this.store.rewriteMessages(sessionId, stashed)
+    this.store.saveMetadata(this.currentSession)
+    this.store.clearStash(sessionId)
+    return true
+  }
+
+  /** Explicitly set the title (marks titleUserSet so auto-compaction won't override). */
+  setTitle(title: string): void {
+    if (!this.currentSession) return
+    this.currentSession.title = title
+    this.currentSession.titleUserSet = true
+    this.currentSession.updatedAt = Date.now()
+    this.store.saveMetadata(this.currentSession)
   }
 }

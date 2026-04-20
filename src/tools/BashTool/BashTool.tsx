@@ -30,6 +30,7 @@ import type { PermissionResult } from '../../utils/permissions/PermissionResult.
 import { maybeRecordPluginHint } from '../../utils/plugins/hintRecommendation.js';
 import { exec } from '../../utils/Shell.js';
 import type { ExecResult } from '../../utils/ShellCommand.js';
+import { resolvePassthroughConfig, shouldEngagePassthrough, shouldUsePassthroughForCommand, suspendInk } from '../../services/passthrough/writer.js';
 import { SandboxManager } from '../../utils/sandbox/sandbox-adapter.js';
 import { semanticBoolean } from '../../utils/semanticBoolean.js';
 import { semanticNumber } from '../../utils/semanticNumber.js';
@@ -878,6 +879,75 @@ async function* runShellCommand({
   // Only enable for commands that are allowed to be auto-backgrounded
   // and when background tasks are not disabled
   const shouldAutoBackground = !isBackgroundTasksDisabled && isAutobackgroundingAllowed(command);
+
+  // Passthrough path: strictly additive — non-passthrough code below is
+  // unchanged. Routes stdout directly to the host terminal while capturing
+  // a copy in memory for the tool result. See services/passthrough/writer.ts.
+  const passthroughEnabled =
+    isMainThread === true &&
+    run_in_background !== true &&
+    !!process.stdout?.isTTY &&
+    shouldUsePassthroughForCommand(command);
+
+  if (passthroughEnabled) {
+    const ptCfg = resolvePassthroughConfig();
+    const suspension = suspendInk();
+    const captureChunks: string[] = [];
+    let capturedBytes = 0;
+    let truncated = false;
+    let totalLines = 0;
+    let totalBytes = 0;
+    const startedAt = Date.now();
+    try {
+      const shellCommand = await exec(command, abortController.signal, 'bash', {
+        timeout: timeoutMs,
+        preventCwdChanges,
+        shouldUseSandbox: shouldUseSandbox(input),
+        shouldAutoBackground: false,
+        onStdout: (chunk: string) => {
+          try {
+            process.stdout.write(chunk);
+          } catch {
+            // EPIPE / closed TTY — keep capturing regardless.
+          }
+          totalBytes += Buffer.byteLength(chunk, 'utf8');
+          for (let i = 0; i < chunk.length; i++) {
+            if (chunk.charCodeAt(i) === 0x0a) totalLines++;
+          }
+          if (!truncated) {
+            const remaining = ptCfg.captureCapBytes - capturedBytes;
+            if (remaining <= 0) {
+              truncated = true;
+            } else {
+              const bytes = Buffer.byteLength(chunk, 'utf8');
+              if (bytes <= remaining) {
+                captureChunks.push(chunk);
+                capturedBytes += bytes;
+              } else {
+                const buf = Buffer.from(chunk, 'utf8').subarray(0, remaining);
+                captureChunks.push(buf.toString('utf8'));
+                capturedBytes += buf.length;
+                truncated = true;
+              }
+            }
+          }
+          // Observability: expose threshold state to consumers that want
+          // to log when auto-engagement would have triggered.
+          void shouldEngagePassthrough(totalLines, Date.now() - startedAt, ptCfg);
+        }
+      });
+      const ptResult = await shellCommand.result;
+      shellCommand.cleanup();
+      const mergedStdout = captureChunks.join('') + (truncated ? '\n[output truncated]\n' : '');
+      return {
+        ...ptResult,
+        stdout: ptResult.stdout || mergedStdout
+      };
+    } finally {
+      suspension.restore();
+    }
+  }
+
   const shellCommand = await exec(command, abortController.signal, 'bash', {
     timeout: timeoutMs,
     onProgress(lastLines, allLines, totalLines, totalBytes, isIncomplete) {

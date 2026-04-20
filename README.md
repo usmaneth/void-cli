@@ -523,8 +523,13 @@ void-cli/
 ## Development
 
 ```bash
-# Type check
+# Full check (typecheck + lint + tests)
 bun run check
+
+# Individual steps
+bun run typecheck   # tsc --noEmit
+bun run lint        # oxlint
+bun run test        # vitest run
 
 # Build (TypeScript compilation)
 bun run build
@@ -535,6 +540,48 @@ bun run src/entrypoints/cli.tsx
 # Run with debug logging
 void --debug
 ```
+
+---
+
+## Testing
+
+Void uses [vitest](https://vitest.dev) for its unit test suite and
+[oxlint](https://oxc.rs) for linting. Tests and lint are wired into
+CI — every push and pull request runs against Ubuntu and macOS.
+
+```bash
+# Run the full suite once
+bun run test
+
+# Watch mode while iterating
+bun run test:watch
+
+# Open the vitest UI in a browser
+bun run test:ui
+
+# Lint the TypeScript sources
+bun run lint
+```
+
+Test files live alongside the code they cover, either as colocated
+`*.test.ts` files or under a `__tests__/` directory. Current coverage
+targets regression-critical behaviour rather than raw line coverage:
+
+- `src/utils/model/__tests__/providers.test.ts` — env-var-driven API
+  provider routing (Bedrock → Vertex → Foundry → OpenRouter → Anthropic).
+- `src/council/__tests__/config.test.ts` — council preset shape
+  (`duo`, `trinity`, `full`, `open-source`) and member weighting.
+- `src/services/mcp/__tests__/config.test.ts` — MCP dedup by signature,
+  CCR proxy URL unwrapping.
+- `src/utils/settings/__tests__/validation.test.ts` — settings
+  permission-rule validation and filtering.
+- `src/entrypoints/__tests__/smoke.test.ts` — `bin/void --help`
+  exits 0.
+
+Tests run with `VOID_FEATURE_FLAGS=none` to skip feature-gated
+`require()` branches that only resolve under Bun's build-time DCE.
+Individual tests can opt back in by setting `process.env.VOID_FEATURE_FLAGS`
+before importing the module under test.
 
 ---
 
