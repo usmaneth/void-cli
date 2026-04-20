@@ -1,0 +1,75 @@
+#!/usr/bin/env bash
+# Voidex launcher — opens the Void desktop app.
+#
+# Forwards any arguments as env-var context (same flags as /voidex):
+#   voidex                                 # open a fresh Chat thread
+#   voidex --mode swarm "add dark mode"    # prefill a Swarm prompt
+#   voidex --mode deliberate --rounds 3 "monorepo vs polyrepo"
+#
+# If VOIDEX_BIN is set and points to an existing executable (typically an
+# installed Voidex.app), that is exec'd directly. Otherwise we fall back to
+# the dev Electron harness in apps/voidex.
+
+set -e
+
+# Resolve the repo root even when invoked via a symlink (npm/bun global bin).
+if command -v python3 >/dev/null 2>&1; then
+  SCRIPT_PATH="$(python3 -c 'import os,sys; print(os.path.realpath(sys.argv[1]))' "$0")"
+else
+  SCRIPT_PATH="$0"
+fi
+SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"
+ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+APP_DIR="$ROOT_DIR/apps/voidex"
+
+# Parse a subset of CLI flags into env vars understood by apps/voidex.
+VOIDEX_MODE="${VOIDEX_MODE:-chat}"
+VOIDEX_CWD="${VOIDEX_CWD:-$PWD}"
+prompt_parts=()
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --mode) VOIDEX_MODE="$2"; shift 2;;
+    --model) VOIDEX_MODEL="$2"; shift 2;;
+    --models) VOIDEX_MODELS="$2"; shift 2;;
+    --rounds) VOIDEX_ROUNDS="$2"; shift 2;;
+    --) shift; prompt_parts+=("$@"); break;;
+    *) prompt_parts+=("$1"); shift;;
+  esac
+done
+if [ ${#prompt_parts[@]} -gt 0 ]; then
+  VOIDEX_PROMPT="${prompt_parts[*]}"
+fi
+
+# Default the SQLite session backend on for Voidex.
+export VOID_USE_SQLITE_SESSIONS="${VOID_USE_SQLITE_SESSIONS:-1}"
+export VOIDEX_MODE VOIDEX_CWD VOIDEX_MODEL VOIDEX_MODELS VOIDEX_ROUNDS VOIDEX_PROMPT
+
+# Packaged install path takes precedence.
+if [ -n "$VOIDEX_BIN" ] && [ -x "$VOIDEX_BIN" ]; then
+  exec "$VOIDEX_BIN" "$@"
+fi
+
+# Dev path — require electron from node_modules/.bin.
+ELECTRON_BIN=""
+for candidate in \
+  "$ROOT_DIR/node_modules/.bin/electron" \
+  "$APP_DIR/node_modules/.bin/electron"; do
+  if [ -x "$candidate" ]; then ELECTRON_BIN="$candidate"; break; fi
+done
+
+if [ ! -d "$APP_DIR" ]; then
+  echo "Error: Voidex app not found at $APP_DIR" >&2
+  exit 1
+fi
+
+if [ -z "$ELECTRON_BIN" ]; then
+  echo "Error: electron is not installed." >&2
+  echo "Run '(cd \"$ROOT_DIR\" && bun install)' first, or set VOIDEX_BIN to an installed Voidex." >&2
+  exit 1
+fi
+
+# Prefer built bundle; fall back to running the app dir (electron reads its package.json).
+if [ -f "$APP_DIR/out/main/index.js" ]; then
+  exec "$ELECTRON_BIN" "$APP_DIR/out/main/index.js"
+fi
+exec "$ELECTRON_BIN" "$APP_DIR"
