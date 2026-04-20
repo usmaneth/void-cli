@@ -45,6 +45,16 @@ export {
 
 export type { MigrateOpts, MigrateResult } from './migrator.js'
 
+export {
+  backfillFromJsonl,
+  backfillWithSpinner,
+  getDefaultProjectsDir,
+  isBackfillComplete,
+  mapRowToMessage,
+} from './jsonlBackfill.js'
+
+export type { BackfillOpts, BackfillResult } from './jsonlBackfill.js'
+
 /** Feature-flag check used by adapters to route to SQLite or JSON. */
 export function isSqliteSessionsEnabled(): boolean {
   const v = process.env.VOID_USE_SQLITE_SESSIONS

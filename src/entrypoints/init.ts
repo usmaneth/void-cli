@@ -208,6 +208,14 @@ export const init = memoize(async (): Promise<void> => {
       })
     }
 
+    // SQLite session store bootstrap — only when `VOID_USE_SQLITE_SESSIONS`
+    // is set. Runs the PID registry import first (no-op if already done),
+    // then backfills JSONL transcripts into the messages/parts tables.
+    // Both steps are idempotent + wrapped to never crash the CLI.
+    if (process.env.VOID_USE_SQLITE_SESSIONS === '1' || process.env.VOID_USE_SQLITE_SESSIONS === 'true') {
+      await runSqliteSessionsBootstrap()
+    }
+
     logForDiagnosticsNoPII('info', 'init_completed', {
       duration_ms: Date.now() - initStartTime,
     })
@@ -236,6 +244,72 @@ export const init = memoize(async (): Promise<void> => {
     }
   }
 })
+
+/**
+ * Run PID-registry + JSONL transcript migrations for the SQLite session
+ * store. Called from init() when the `VOID_USE_SQLITE_SESSIONS` flag is on.
+ *
+ * Both migrators are idempotent: the PID registry import exits with
+ * `db-not-empty` once sessions are populated, and the JSONL backfill
+ * tracks each processed file by sha256 in the `_migrations` table.
+ *
+ * Logs "Imported X sessions / Y messages" once per successful backfill.
+ * Never throws — session storage must not block CLI startup.
+ */
+async function runSqliteSessionsBootstrap(): Promise<void> {
+  try {
+    const [{ migrateJsonToSqlite }, { backfillFromJsonl, isBackfillComplete }] =
+      await Promise.all([
+        import('../services/session/migrator.js'),
+        import('../services/session/jsonlBackfill.js'),
+      ])
+
+    // PID registry first (no-op once DB is populated).
+    try {
+      const pidResult = await migrateJsonToSqlite()
+      if (pidResult.ran && pidResult.imported > 0) {
+        logForDiagnosticsNoPII('info', 'sqlite_sessions_pid_migrated', {
+          imported: pidResult.imported,
+          skipped: pidResult.skipped,
+        })
+      }
+    } catch (err) {
+      logForDebugging(
+        `[sqlite-sessions] PID registry migrator failed: ${errorMessage(err)}`,
+        { level: 'error' },
+      )
+    }
+
+    // Skip the scan entirely if every transcript is already recorded.
+    try {
+      if (await isBackfillComplete()) return
+      const res = await backfillFromJsonl()
+      if (res.ran && (res.messagesImported > 0 || res.sessionsCreated > 0)) {
+        // biome-ignore lint/suspicious/noConsole:: one-shot user-visible boot log
+        console.log(
+          `[void] Imported ${res.sessionsCreated} sessions / ${res.messagesImported} messages from ~/.claude/projects/`,
+        )
+        logForDiagnosticsNoPII('info', 'sqlite_sessions_jsonl_backfilled', {
+          files_imported: res.filesImported,
+          files_skipped: res.filesSkipped,
+          messages_imported: res.messagesImported,
+          sessions_created: res.sessionsCreated,
+          error_count: res.errors.length,
+        })
+      }
+    } catch (err) {
+      logForDebugging(
+        `[sqlite-sessions] JSONL backfill failed: ${errorMessage(err)}`,
+        { level: 'error' },
+      )
+    }
+  } catch (err) {
+    logForDebugging(
+      `[sqlite-sessions] bootstrap aborted: ${errorMessage(err)}`,
+      { level: 'error' },
+    )
+  }
+}
 
 /**
  * Initialize telemetry after trust has been granted.

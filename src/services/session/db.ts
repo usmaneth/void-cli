@@ -130,6 +130,20 @@ const DDL = [
      created_at INTEGER NOT NULL
    )`,
   `CREATE INDEX IF NOT EXISTS parts_message_idx ON parts(message_id)`,
+
+  // Tracks JSONL transcript files already backfilled so re-runs are no-ops.
+  // Keyed by file path + sha256 so rotated/renamed files re-import correctly.
+  `CREATE TABLE IF NOT EXISTS _migrations (
+     id TEXT PRIMARY KEY,
+     kind TEXT NOT NULL,
+     file_path TEXT NOT NULL,
+     sha256 TEXT NOT NULL,
+     session_id TEXT,
+     messages_imported INTEGER NOT NULL DEFAULT 0,
+     ran_at INTEGER NOT NULL
+   )`,
+  `CREATE INDEX IF NOT EXISTS _migrations_kind_path_idx ON _migrations(kind, file_path)`,
+  `CREATE INDEX IF NOT EXISTS _migrations_sha_idx ON _migrations(sha256)`,
 ]
 
 // FTS5 virtual table + triggers. Kept separate because FTS5 is optional;

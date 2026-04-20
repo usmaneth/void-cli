@@ -9,11 +9,14 @@
  * shim as individual JSON code paths are retired.
  */
 import {
+  countSessions,
   createSession,
   isSqliteSessionsEnabled,
   listSessions,
   loadSession,
+  resumeSession,
   searchSessions,
+  type Message,
   type Session,
 } from './index.js'
 
@@ -91,4 +94,47 @@ export async function createSessionCompat(params: {
     summary: params.summary,
   })
   return sessionToLegacyInfo(s)
+}
+
+/**
+ * resumeSessionCompat — mirrors `resumeSession` from the API but returns
+ * legacy shapes. Returns null when the flag is off so the caller falls
+ * through to the JSON path; returns { found: false } when the id isn't
+ * in SQLite (caller can then try legacy as a fallback).
+ */
+export type ResumeCompatResult = {
+  info: LegacySessionInfo
+  messages: Message[]
+}
+
+export async function resumeSessionCompat(
+  id: string,
+): Promise<ResumeCompatResult | null> {
+  if (!isSqliteSessionsEnabled()) return null
+  const r = await resumeSession(id)
+  if (!r) return null
+  return { info: sessionToLegacyInfo(r.session), messages: r.messages }
+}
+
+/**
+ * Guard used by the read-flip: "should we use SQLite right now?" SQLite is
+ * only trusted once it has at least one session — callers fall back to
+ * legacy JSON otherwise so pre-backfill users keep seeing their history.
+ */
+let _nonEmptyCache: boolean | null = null
+export function resetAdapterCacheForTesting(): void {
+  _nonEmptyCache = null
+}
+
+export async function shouldReadFromSqlite(): Promise<boolean> {
+  if (!isSqliteSessionsEnabled()) return false
+  if (_nonEmptyCache === true) return true
+  try {
+    const n = await countSessions()
+    _nonEmptyCache = n > 0
+    return _nonEmptyCache
+  } catch {
+    // DB access failed — never block the legacy path.
+    return false
+  }
 }

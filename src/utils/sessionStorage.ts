@@ -2557,12 +2557,60 @@ async function trackSessionBranchingAnalytics(
 }
 
 export async function fetchLogs(limit?: number): Promise<LogOption[]> {
+  // VOID_USE_SQLITE_SESSIONS=1: prefer the SQLite-sourced list when the DB
+  // has at least one session. When empty (e.g. pre-backfill users) we fall
+  // through to the legacy JSONL scan so history stays visible.
+  const sqliteLogs = await tryFetchLogsFromSqlite(limit)
+  if (sqliteLogs) {
+    await trackSessionBranchingAnalytics(sqliteLogs)
+    return sqliteLogs
+  }
+
   const projectDir = getProjectDir(getOriginalCwd())
   const logs = await getSessionFilesLite(projectDir, limit, getOriginalCwd())
 
   await trackSessionBranchingAnalytics(logs)
 
   return logs
+}
+
+/**
+ * Internal — attempt to produce `LogOption[]` from the SQLite session store.
+ * Returns null to signal "fall through to the JSON path":
+ *   - feature flag is off
+ *   - SQLite has zero sessions (pre-backfill / pre-migration)
+ *   - DB access throws
+ * The returned LogOption shape is minimal-but-sufficient for the read
+ * surfaces that Ink components rely on (sessionId, modified, firstPrompt,
+ * messageCount, customTitle, summary, isLite=true).
+ */
+async function tryFetchLogsFromSqlite(
+  limit?: number,
+): Promise<LogOption[] | null> {
+  try {
+    const { shouldReadFromSqlite } = await import(
+      '../services/session/adapter.js'
+    )
+    if (!(await shouldReadFromSqlite())) return null
+    const { listSessions } = await import('../services/session/index.js')
+    const rows = await listSessions({ limit: limit ?? 50 })
+    return rows.map((s, i) => ({
+      date: new Date(s.updatedAt).toISOString(),
+      messages: [],
+      value: i,
+      created: new Date(s.createdAt),
+      modified: new Date(s.updatedAt),
+      firstPrompt: s.summary || s.title || '',
+      messageCount: 0,
+      isSidechain: false,
+      isLite: true,
+      sessionId: s.id,
+      summary: s.summary || undefined,
+      customTitle: s.title || undefined,
+    }))
+  } catch {
+    return null
+  }
 }
 
 /**
