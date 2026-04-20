@@ -2,14 +2,21 @@
   "name": "void-cli",
   "version": "0.1.0",
   "type": "module",
+  "workspaces": [
+    "apps/*"
+  ],
   "bin": {
-    "void": "./bin/void"
+    "void": "./bin/void",
+    "voidex": "./bin/voidex"
   },
   "scripts": {
     "build": "tsc && node scripts/postbuild.js",
     "postinstall": "node scripts/postbuild.js 2>/dev/null || true",
     "check": "tsc --noEmit",
-    "start": "node dist/entrypoints/cli.js"
+    "start": "node dist/entrypoints/cli.js",
+    "voidex": "bun run --cwd apps/voidex dev",
+    "voidex:build": "bun run --cwd apps/voidex build",
+    "voidex:package:mac": "bun run --cwd apps/voidex package:mac"
   },
   "dependencies": {
     "@alcalzone/ansi-tokenize": "^0.3.0",

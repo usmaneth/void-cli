@@ -13,6 +13,7 @@ import repomapCommand from './repomap/command.js'
 import deliberate from './commands/deliberate/index.js'
 import designCmd from './commands/design/design.js'
 import swarmCmd from './commands/swarm/index.js'
+import voidexCmd from './commands/voidex/index.js'
 import addDir from './commands/add-dir/index.js'
 import autofixPr from './commands/autofix-pr/index.js'
 import backfillSessions from './commands/backfill-sessions/index.js'
@@ -399,6 +400,7 @@ const COMMANDS = memoize((): Command[] => [
   watchCmd,
   workstream,
   swarmCmd,
+  voidexCmd,
   ...(webCmd ? [webCmd] : []),
   ...(forkCmd ? [forkCmd] : []),
   ...(buddy ? [buddy] : []),
