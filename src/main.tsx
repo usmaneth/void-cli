@@ -4373,6 +4373,23 @@ async function run(): Promise<CommanderCommand> {
   }
 
   // Doctor command - check installation health
+  // claude serve — run the Void HTTP/WebSocket server (used by Voidex + API clients)
+  program
+    .command('serve')
+    .description('Start the Void HTTP + WebSocket server (used by Voidex and API clients)')
+    .option('--port <n>', 'TCP port to listen on', '4096')
+    .option('--host <h>', 'Bind address (default 127.0.0.1, 0.0.0.0 if --public)')
+    .option('--public', 'Bind 0.0.0.0 and require $VOID_SERVE_TOKEN bearer auth')
+    .option('--ws', 'Enable the /ws WebSocket endpoint')
+    .option('--cors <origins>', 'Comma-separated additional CORS origins (file:// always on)')
+    .option('--share-ttl <ms>', 'Default TTL (ms) for share records')
+    .action(async (opts: { port?: string; host?: string; public?: boolean; ws?: boolean; cors?: string; shareTtl?: string; }) => {
+      const { serveCommand } = await import('./commands/serve/serve.js');
+      await serveCommand(opts);
+      // serveCommand keeps process alive until SIGINT/SIGTERM.
+      await new Promise(() => {});
+    });
+
   program.command('doctor').description('Check the health of your Void auto-updater. Note: The workspace trust dialog is skipped and stdio servers from .mcp.json are spawned for health checks. Only use this command in directories you trust.').action(async () => {
     const [{
       doctorHandler
