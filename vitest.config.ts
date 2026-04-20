@@ -1,34 +1,39 @@
-import * as path from 'path'
-import { fileURLToPath } from 'url'
 import { defineConfig } from 'vitest/config'
 
-const here = path.dirname(fileURLToPath(import.meta.url))
-
 /**
- * Vitest configuration for void-cli tests.
+ * Vitest configuration for void-cli.
  *
- * The repo's main build uses tsc directly (no bundler). Tests run in native
- * Node via vitest's `esbuild` transform. Two noteworthy bits:
+ * Void is a Bun-first project; these tests run under vitest for compatibility
+ * with standard CI tooling and to avoid regressions on Node.js as well.
  *
- *   - tsconfig.json maps `src/*` → `./*` with baseUrl=./src, which tsc
- *     understands but vite does not. We mirror that here as an alias so test
- *     imports resolve the same way they do at typecheck time.
+ * Test glob covers colocated `*.test.ts` and any `__tests__` directories.
  *
- *   - Tests are colocated under __tests__ directories. Only LSP tests are
- *     collected today (feature-branch scope); widen the include glob when
- *     more subsystems adopt vitest.
+ * VOID_FEATURE_FLAGS=none is set globally for tests: several modules use
+ * top-level `require()` that would blow up under Node because it tries to
+ * resolve `.js` paths that only exist as `.ts` sources. Disabling feature
+ * flags skips those branches — individual tests can opt back in if needed.
  */
+process.env.VOID_FEATURE_FLAGS ??= 'none'
+
 export default defineConfig({
-  resolve: {
-    alias: {
-      'src/': path.resolve(here, 'src') + '/',
+  test: {
+    include: ['src/**/*.test.ts', 'src/**/__tests__/**/*.test.ts'],
+    exclude: ['node_modules', 'dist'],
+    environment: 'node',
+    testTimeout: 15_000,
+    // Isolation matters here: several tests mutate `process.env` and
+    // the module-level `currentConfig` in src/council/config.ts.
+    isolate: true,
+    pool: 'forks',
+    reporters: ['default'],
+    env: {
+      VOID_FEATURE_FLAGS: 'none',
     },
   },
-  test: {
-    include: ['src/**/__tests__/**/*.test.ts'],
-    environment: 'node',
-    typecheck: { enabled: false },
-    reporters: ['default'],
-    testTimeout: 10_000,
+  resolve: {
+    alias: {
+      // Mirror the tsconfig `baseUrl: ./src` + `paths: { "src/*": "./*" }` pair.
+      src: new URL('./src', import.meta.url).pathname,
+    },
   },
 })
