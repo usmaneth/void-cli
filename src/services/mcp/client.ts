@@ -1997,6 +1997,36 @@ export const fetchToolsForClient = memoizeWithLRU(
   MCP_FETCH_CACHE_SIZE,
 )
 
+/**
+ * Extract resourceAllowlist from a scoped MCP server config. Not all server
+ * config types support the field (e.g. sse-ide, ws-ide, sdk, claudeai-proxy),
+ * so we defensively read it via property access without constraining the type.
+ */
+export function getResourceAllowlist(
+  config: ScopedMcpServerConfig,
+): string[] | undefined {
+  const val = (config as { resourceAllowlist?: unknown }).resourceAllowlist
+  if (!Array.isArray(val)) return undefined
+  // Filter out non-strings so a misconfigured settings.json can't crash the client.
+  return val.filter((entry): entry is string => typeof entry === 'string')
+}
+
+/**
+ * Apply a per-server resourceAllowlist filter. When the allowlist is absent,
+ * all resources pass. An empty allowlist is meaningful: it disables every
+ * resource from that server (equivalent to opting out). A non-empty allowlist
+ * is an exact-match URI filter.
+ */
+export function filterResourcesByAllowlist(
+  resources: ServerResource[],
+  allowlist: string[] | undefined,
+): ServerResource[] {
+  if (allowlist === undefined) return resources
+  if (allowlist.length === 0) return []
+  const allowed = new Set(allowlist)
+  return resources.filter(r => allowed.has(r.uri))
+}
+
 export const fetchResourcesForClient = memoizeWithLRU(
   async (client: MCPServerConnection): Promise<ServerResource[]> => {
     if (client.type !== 'connected') return []
@@ -2014,10 +2044,19 @@ export const fetchResourcesForClient = memoizeWithLRU(
       if (!result.resources) return []
 
       // Add server name to each resource
-      return result.resources.map(resource => ({
+      const resources: ServerResource[] = result.resources.map(resource => ({
         ...resource,
         server: client.name,
       }))
+
+      // Per-server allowlist filter. Applied after the network call so the
+      // memo cache holds only what the agent actually sees; changing the
+      // setting doesn't require a full reconnect — clearServerCache() on
+      // settings reload already invalidates this LRU entry.
+      return filterResourcesByAllowlist(
+        resources,
+        getResourceAllowlist(client.config),
+      )
     } catch (error) {
       logMCPError(
         client.name,

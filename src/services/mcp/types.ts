@@ -25,12 +25,19 @@ export const TransportSchema = lazySchema(() =>
 )
 export type Transport = z.infer<ReturnType<typeof TransportSchema>>
 
+// Shared filter: restrict which MCP resource URIs are surfaced to the agent
+// context and returned by resources/list. Exact-match against `resource.uri`.
+// When present and non-empty, only listed URIs pass through. An empty array
+// disables all resources from that server.
+const ResourceAllowlistSchema = lazySchema(() => z.array(z.string()))
+
 export const McpStdioServerConfigSchema = lazySchema(() =>
   z.object({
     type: z.literal('stdio').optional(), // Optional for backwards compatibility
     command: z.string().min(1, 'Command cannot be empty'),
     args: z.array(z.string()).default([]),
     env: z.record(z.string(), z.string()).optional(),
+    resourceAllowlist: ResourceAllowlistSchema().optional(),
   }),
 )
 
@@ -62,6 +69,7 @@ export const McpSSEServerConfigSchema = lazySchema(() =>
     headers: z.record(z.string(), z.string()).optional(),
     headersHelper: z.string().optional(),
     oauth: McpOAuthConfigSchema().optional(),
+    resourceAllowlist: ResourceAllowlistSchema().optional(),
   }),
 )
 
@@ -93,6 +101,7 @@ export const McpHTTPServerConfigSchema = lazySchema(() =>
     headers: z.record(z.string(), z.string()).optional(),
     headersHelper: z.string().optional(),
     oauth: McpOAuthConfigSchema().optional(),
+    resourceAllowlist: ResourceAllowlistSchema().optional(),
   }),
 )
 
@@ -102,6 +111,7 @@ export const McpWebSocketServerConfigSchema = lazySchema(() =>
     url: z.string(),
     headers: z.record(z.string(), z.string()).optional(),
     headersHelper: z.string().optional(),
+    resourceAllowlist: ResourceAllowlistSchema().optional(),
   }),
 )
 

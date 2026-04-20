@@ -30,6 +30,7 @@ import { getOutputStyleConfig } from './outputStyles.js'
 import type {
   MCPServerConnection,
   ConnectedMCPServer,
+  ServerResource,
 } from '../services/mcp/types.js'
 import { GLOB_TOOL_NAME } from 'src/tools/GlobTool/prompt.js'
 import { GREP_TOOL_NAME } from 'src/tools/GrepTool/prompt.js'
@@ -61,6 +62,7 @@ import { logForDebugging } from '../utils/debug.js'
 import { loadMemoryPrompt } from '../memdir/memdir.js'
 import { isUndercover } from '../utils/undercover.js'
 import { isMcpInstructionsDeltaEnabled } from '../utils/mcpInstructionsDelta.js'
+import { getMergedInstructionsPrompt } from '../services/instructions/inject.js'
 
 // Dead code elimination: conditional imports for feature-gated modules
 /* eslint-disable @typescript-eslint/no-require-imports */
@@ -163,6 +165,73 @@ function getMcpInstructionsSection(
 ): string | null {
   if (!mcpClients || mcpClients.length === 0) return null
   return getMcpInstructions(mcpClients)
+}
+
+/**
+ * Hard cap on how many MCP resource URIs we surface in the system prompt.
+ * Empirically, above ~50 entries the block starts to crowd out task-specific
+ * context. Anything over the cap is truncated with a pointer to
+ * `ListMcpResourcesTool` so the agent can still enumerate on demand.
+ */
+export const MCP_RESOURCES_PROMPT_CAP = 50
+
+/** Truncate a resource description for the prompt; keep it to one short line. */
+function truncateResourceDescription(
+  description: string | undefined,
+): string | undefined {
+  if (!description) return undefined
+  const cleaned = description.replace(/\s+/g, ' ').trim()
+  if (cleaned.length === 0) return undefined
+  const max = 160
+  return cleaned.length > max ? `${cleaned.slice(0, max - 1)}…` : cleaned
+}
+
+/**
+ * Produce a system-prompt section listing the MCP resources available across
+ * connected servers. Bounded at `cap` entries (default 50) to prevent runaway
+ * context bloat when a server exposes thousands of resources. Returns null
+ * when no resources are surfaced.
+ *
+ * The flat Record<server, ServerResource[]> shape matches AppState.mcp.resources.
+ */
+export function getMcpResourcesSection(
+  resources: Record<string, ServerResource[]> | undefined,
+  cap: number = MCP_RESOURCES_PROMPT_CAP,
+): string | null {
+  if (!resources) return null
+
+  // Flatten and stable-sort by server then URI so the same resource set
+  // produces the same prompt bytes turn over turn (important for caching).
+  const flat: ServerResource[] = []
+  for (const serverName of Object.keys(resources).sort()) {
+    const list = resources[serverName] ?? []
+    for (const r of list) flat.push(r)
+  }
+  if (flat.length === 0) return null
+
+  const effectiveCap = Math.max(0, Math.floor(cap))
+  if (effectiveCap === 0) return null
+
+  const surfaced = flat.slice(0, effectiveCap)
+  const omitted = flat.length - surfaced.length
+
+  const lines = surfaced.map(r => {
+    const name = r.name && r.name.trim().length > 0 ? r.name : r.uri
+    const description = truncateResourceDescription(r.description)
+    const descriptionPart = description ? ` — ${description}` : ''
+    return `- [${r.server}] ${r.uri} (${name})${descriptionPart}`
+  })
+
+  const trailer =
+    omitted > 0
+      ? `\n\n${omitted} additional resource${omitted === 1 ? '' : 's'} omitted. Call ListMcpResourcesTool to enumerate all, and ReadMcpResourceTool to read a specific resource by URI.`
+      : `\n\nUse ReadMcpResourceTool with a server name and URI to read any of the above. Use ListMcpResourcesTool to re-enumerate at any time.`
+
+  return `# MCP Resources
+
+The following resources are exposed by connected MCP servers. Each entry is \`[server] uri (name) — description\`:
+
+${lines.join('\n')}${trailer}`
 }
 
 export function prependBullets(items: Array<string | string[]>): string[] {
@@ -447,6 +516,7 @@ export async function getSystemPrompt(
   model: string,
   additionalWorkingDirectories?: string[],
   mcpClients?: MCPServerConnection[],
+  mcpResources?: Record<string, ServerResource[]>,
 ): Promise<string[]> {
   if (isEnvTruthy(process.env.VOID_SIMPLE)) {
     return [
@@ -475,6 +545,7 @@ export async function getSystemPrompt(
 ${CYBER_RISK_INSTRUCTION}`,
       getSystemRemindersSection(),
       await loadMemoryPrompt(),
+      getMergedInstructionsPrompt(),
       envInfo,
       getLanguageSection(settings.language),
       // When delta enabled, instructions are announced via persisted
@@ -482,6 +553,7 @@ ${CYBER_RISK_INSTRUCTION}`,
       isMcpInstructionsDeltaEnabled()
         ? null
         : getMcpInstructionsSection(mcpClients),
+      getMcpResourcesSection(mcpResources),
       getScratchpadInstructions(),
       getFunctionResultClearingSection(model),
       SUMMARIZE_TOOL_RESULTS_SECTION,
@@ -494,6 +566,15 @@ ${CYBER_RISK_INSTRUCTION}`,
       getSessionSpecificGuidanceSection(enabledTools, skillToolCommands),
     ),
     systemPromptSection('memory', () => loadMemoryPrompt()),
+    // Layered user/workspace/local instructions (from settings:
+    // `instructions`, `instructionFiles`, plus auto-discovered CLAUDE.md /
+    // AGENTS.md). Read per turn — file cache is mtime-keyed, so unchanged
+    // files don't bust the prompt cache; edits correctly invalidate.
+    DANGEROUS_uncachedSystemPromptSection(
+      'layered_instructions',
+      () => getMergedInstructionsPrompt(),
+      'layered instruction files may be edited between turns',
+    ),
     systemPromptSection('ant_model_override', () =>
       getAntModelOverrideSection(),
     ),
@@ -518,6 +599,16 @@ ${CYBER_RISK_INSTRUCTION}`,
           ? null
           : getMcpInstructionsSection(mcpClients),
       'MCP servers connect/disconnect between turns',
+    ),
+    // Resources lifecycle mirrors instructions: a server can publish
+    // resources/list_changed at any time (emitMcpResourcesChanged), and the
+    // allowlist can flip between turns. Use the DANGEROUS_uncached channel
+    // so each turn resolves against a fresh snapshot of AppState.mcp.resources
+    // rather than a cached empty block from the first render.
+    DANGEROUS_uncachedSystemPromptSection(
+      'mcp_resources',
+      () => getMcpResourcesSection(mcpResources),
+      'MCP resources can change between turns',
     ),
     systemPromptSection('scratchpad', () => getScratchpadInstructions()),
     systemPromptSection('frc', () => getFunctionResultClearingSection(model)),

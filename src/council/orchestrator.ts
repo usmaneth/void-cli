@@ -226,12 +226,33 @@ function determineConsensus(
  * Run the council — query all members in parallel and determine consensus.
  *
  * Yields CouncilEvent objects for real-time UI updates.
+ *
+ * When `VOID_EFFECT_COUNCIL=1` is set, delegates to the Effect-backed
+ * orchestrator. On any failure during Effect setup, falls back to the legacy
+ * path with a console.warn.
  */
 export async function* runCouncil(
   prompt: string,
   systemPrompt?: string,
   configOverride?: Partial<CouncilConfig>,
 ): AsyncGenerator<CouncilEvent> {
+  if (process.env.VOID_EFFECT_COUNCIL === '1') {
+    try {
+      const { runCouncilEffect } = await import('./orchestrator-effect.js')
+      for await (const event of runCouncilEffect(prompt, systemPrompt, configOverride)) {
+        yield event
+      }
+      return
+    } catch (err) {
+      console.warn(
+        `[council] Effect orchestrator failed, falling back to legacy: ${
+          err instanceof Error ? err.message : String(err)
+        }`,
+      )
+      // fall through to legacy path
+    }
+  }
+
   const config = { ...getCouncilConfig(), ...configOverride }
   const { members, consensusMethod, memberTimeoutMs } = config
 
