@@ -11,6 +11,7 @@
 
 import type { CouncilConfig, CouncilEvent, CouncilMember, CouncilResponse, ConsensusResult, ConsensusMethod } from './types.js'
 import { getCouncilConfig } from './config.js'
+import { runConsensus, DEFAULT_TIEBREAKER, DEFAULT_UNANIMOUS_MAX_RETRIES } from './consensus/index.js'
 
 /**
  * Query a single council member with the given prompt.
@@ -301,7 +302,38 @@ export async function* runCouncil(
 
   // Determine consensus
   yield { type: 'consensus_start', method: consensusMethod }
-  const consensusResult = determineConsensus(responses, members, consensusMethod)
+  let consensusResult: ConsensusResult
+  if (
+    consensusMethod === 'leader-picks' ||
+    consensusMethod === 'majority' ||
+    consensusMethod === 'weighted-majority' ||
+    consensusMethod === 'unanimous' ||
+    consensusMethod === 'borda-count'
+  ) {
+    const lifecycle: Array<
+      | { type: 'retry'; attempt: number; reason: string }
+      | { type: 'no_consensus'; method: ConsensusMethod; reason: string }
+    > = []
+    consensusResult = await runConsensus({
+      method: consensusMethod,
+      responses,
+      members,
+      tiebreaker: config.tiebreaker ?? DEFAULT_TIEBREAKER,
+      unanimousMaxRetries: config.unanimousMaxRetries ?? DEFAULT_UNANIMOUS_MAX_RETRIES,
+      emit: (ev) => {
+        lifecycle.push(ev)
+      },
+    })
+    for (const ev of lifecycle) {
+      if (ev.type === 'retry') {
+        yield { type: 'consensus_retry', attempt: ev.attempt, reason: ev.reason }
+      } else {
+        yield { type: 'consensus_no_consensus', method: ev.method, reason: ev.reason }
+      }
+    }
+  } else {
+    consensusResult = determineConsensus(responses, members, consensusMethod)
+  }
   yield { type: 'consensus_complete', result: consensusResult }
   yield { type: 'council_complete', result: consensusResult }
 }
