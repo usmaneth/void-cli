@@ -9,7 +9,8 @@
     "build": "tsc && node scripts/postbuild.js",
     "postinstall": "node scripts/postbuild.js 2>/dev/null || true",
     "check": "tsc --noEmit",
-    "start": "node dist/entrypoints/cli.js"
+    "start": "node dist/entrypoints/cli.js",
+    "test:arity": "node --experimental-transform-types --import ./scripts/register-ts-resolver.mjs --test test/services/permission/arity.test.mts"
   },
   "dependencies": {
     "@alcalzone/ansi-tokenize": "^0.3.0",
