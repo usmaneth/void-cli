@@ -455,6 +455,19 @@ function BashPermissionRequestInner({
         </> : <>
           <Box flexDirection="column">
             <PermissionRuleExplanation permissionResult={toolUseConfirm.permissionResult} toolType="command" />
+            {toolUseConfirm.permissionResult.behavior === 'ask'
+              && 'inferredScopes' in toolUseConfirm.permissionResult
+              && Array.isArray(toolUseConfirm.permissionResult.inferredScopes)
+              && toolUseConfirm.permissionResult.inferredScopes.length > 0 && (
+                <Box marginBottom={1}>
+                  <Text dimColor>
+                    This command will:{' '}
+                  </Text>
+                  <Text color="warning">
+                    {toolUseConfirm.permissionResult.inferredScopes.join(', ')}
+                  </Text>
+                </Box>
+              )}
             {destructiveWarning_0 && <Box marginBottom={1}>
                 <Text color="warning" dimColor={feature('BASH_CLASSIFIER') ? toolUseConfirm.classifierAutoApproved : false}>
                   {destructiveWarning_0}

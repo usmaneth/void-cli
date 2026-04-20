@@ -87,7 +87,7 @@ export function UserToolSuccessMessage({
   const toolLabel = tool.userFacingName(lookups.toolUseByToolUseID.get(toolUseID)?.input as any) || tool.name;
   return <Box flexDirection="column">
       <Box flexDirection="column" width={rendersAsAssistantText ? undefined : width}>
-        {rendersAsAssistantText ? renderedMessage : <ToolCard type={toolCardType} label={toolLabel} collapsed={style === 'condensed'}>{renderedMessage}</ToolCard>}
+        {rendersAsAssistantText ? renderedMessage : <ToolCard type={toolCardType} label={toolLabel} collapsed={style === 'condensed'} toolUseID={toolUseID}>{renderedMessage}</ToolCard>}
         {feature('BASH_CLASSIFIER') ? classifierRule && <MessageResponse height={1}>
                 <Text dimColor>
                   <Text color="success">{figures.tick}</Text>

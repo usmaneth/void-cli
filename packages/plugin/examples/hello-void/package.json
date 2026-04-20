@@ -1,0 +1,12 @@
+{
+  "name": "void-plugin-hello-void",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Example Void CLI plugin — demonstrates a tool, skill, and keybind.",
+  "type": "module",
+  "main": "./index.ts",
+  "peerDependencies": {
+    "@void-cli/plugin": "*",
+    "zod": ">=3.22 <5"
+  }
+}
