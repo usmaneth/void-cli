@@ -65,67 +65,72 @@ function parseArgs(input: string): VoidexArgs {
   return out
 }
 
-interface Props {
-  call: LocalJSXCommandCall
+type Phase = 'launching' | 'ready' | 'error'
+
+function VoidexLauncher({
+  args,
+  onDone,
+}: {
+  args: VoidexArgs
   onDone: LocalJSXCommandOnDone
-}
-
-const VoidexComponent: React.FC<Props> = ({ call, onDone }) => {
-  const input = typeof call.args === 'string' ? call.args : ''
-  const args = parseArgs(input)
-
-  const [status, setStatus] = useState<
-    | { phase: 'launching' }
-    | { phase: 'launched'; pid?: number; appPath: string }
-    | { phase: 'error'; error: string }
-  >({ phase: 'launching' })
+}) {
+  const [phase, setPhase] = useState<Phase>('launching')
+  const [detail, setDetail] = useState<string>('')
 
   useEffect(() => {
-    const options: VoidexLaunchOptions = {
+    const opts: VoidexLaunchOptions = {
       mode: args.mode,
       prompt: args.prompt || undefined,
       model: args.model,
       models: args.models,
       rounds: args.rounds,
-      cwd: process.cwd(),
+      cwd: process.env.VOID_LAUNCH_CWD || process.cwd(),
     }
-    const result = launchVoidex(options)
-    if (result.ok) {
-      setStatus({ phase: 'launched', pid: result.pid, appPath: result.appPath })
-    } else {
-      setStatus({ phase: 'error', error: result.error || 'unknown error' })
+    const result = launchVoidex(opts)
+    if (!result.ok) {
+      setDetail(result.error || 'Failed to launch Voidex.')
+      setPhase('error')
+      setTimeout(
+        () =>
+          onDone(result.error || 'Failed to launch Voidex.', {
+            display: 'system',
+          }),
+        400,
+      )
+      return
     }
-    const t = setTimeout(
-      () => onDone(result.ok ? 'Voidex launched.' : `Voidex launch failed: ${result.error}`),
-      600,
+    setDetail(`pid ${result.pid} — ${result.appPath}`)
+    setPhase('ready')
+    setTimeout(
+      () => onDone(`Opened Voidex (${args.mode}).`, { display: 'system' }),
+      400,
     )
-    return () => clearTimeout(t)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  if (status.phase === 'launching') {
+  if (phase === 'error') {
     return (
-      <Box>
-        <Text dimColor>Opening Voidex ({args.mode})…</Text>
+      <Box flexDirection="column" paddingX={2}>
+        <Text color="red">Voidex failed to launch</Text>
+        <Text dimColor>{detail}</Text>
       </Box>
     )
   }
-  if (status.phase === 'error') {
-    return (
-      <Box flexDirection="column">
-        <Text color="red">Voidex failed to launch: {status.error}</Text>
-      </Box>
-    )
-  }
+
   return (
-    <Box flexDirection="column">
-      <Text>
-        Voidex launched (mode=<Text bold>{args.mode}</Text>
-        {status.pid ? `, pid=${status.pid}` : ''}).
+    <Box flexDirection="column" paddingX={2}>
+      <Text>Opening Voidex…</Text>
+      <Text dimColor>
+        mode: {args.mode}
+        {args.model ? ` · model: ${args.model}` : ''}
+        {args.models?.length ? ` · models: ${args.models.join(', ')}` : ''}
       </Text>
-      <Text dimColor>app: {status.appPath}</Text>
+      {detail ? <Text dimColor>{detail}</Text> : null}
     </Box>
   )
 }
 
-export default VoidexComponent
+export const call: LocalJSXCommandCall = async (onDone, _context, rawArgs) => {
+  const args = parseArgs(rawArgs || '')
+  return <VoidexLauncher args={args} onDone={onDone} />
+}
