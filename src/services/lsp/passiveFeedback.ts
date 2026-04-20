@@ -5,6 +5,11 @@ import { toError } from '../../utils/errors.js'
 import { logError } from '../../utils/log.js'
 import { jsonStringify } from '../../utils/slowOperations.js'
 import type { DiagnosticFile } from '../diagnosticTracking.js'
+import {
+  isLspServerEnabled,
+  upsertDiagnostics,
+  type LspDiagnostic,
+} from './diagnostics.js'
 import { registerPendingLSPDiagnostic } from './LSPDiagnosticRegistry.js'
 import type { LSPServerManager } from './LSPServerManager.js'
 
@@ -203,6 +208,33 @@ export function registerLSPNotificationHandlers(
                 `Skipping empty diagnostics from ${serverName} for ${diagnosticParams.uri}`,
               )
               return
+            }
+
+            // Also update the live aggregator cache so UI (SessionHUD status
+            // indicator) and tool-result diagnostic injection see the latest
+            // state without waiting for attachment delivery. Gated behind the
+            // VOID_LSP_SERVER feature flag for initial rollout; the existing
+            // attachment pipeline below remains the authoritative path.
+            if (isLspServerEnabled()) {
+              try {
+                const firstFileForCache = diagnosticFiles[0]
+                if (firstFileForCache) {
+                  const normalized: LspDiagnostic[] =
+                    firstFileForCache.diagnostics.map(d => ({
+                      message: d.message,
+                      severity: d.severity,
+                      range: d.range,
+                      source: d.source,
+                      code: d.code,
+                    }))
+                  upsertDiagnostics(firstFileForCache.uri, normalized)
+                }
+              } catch (cacheErr) {
+                const cErr = toError(cacheErr)
+                logForDebugging(
+                  `LSP aggregator cache update failed for ${serverName}: ${cErr.message}`,
+                )
+              }
             }
 
             // Register diagnostics for async delivery via attachment system
