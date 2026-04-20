@@ -229,3 +229,148 @@ npm run test:council
 - **ToolLayer** — council members that can execute tools (only Claude today).
 - **BudgetLayer** — per-round cost cap enforced at dispatch, not post-hoc.
 - **CacheLayer** — de-dupe identical prompts across council rounds.
+
+---
+
+## Consensus voting modes
+
+The council ships five first-class consensus modes, all routed through the
+`ConsensusLayer` service and the dispatcher at `src/council/consensus/index.ts`.
+Legacy modes (`voting`, `longest`, `first`) still work but stay inline in the
+orchestrator — they're not on the Effect-TS path.
+
+| mode | when to use | needs 2nd pass? | deterministic? |
+| --- | --- | --- | --- |
+| `leader-picks` | trust the primary model; low cost | no | yes |
+| `majority` | odd-numbered panel; answers often cluster | no | yes¹ |
+| `weighted-majority` | heterogeneous models with trust scores | no | yes¹ |
+| `unanimous` | safety-critical; willing to pay retry cost | yes (retry) | yes¹ |
+| `borda-count` | ranked preference; members assess each other | yes (rank) | depends on ranker |
+
+¹ Deterministic for the `naive` similarity strategy with stable inputs.
+Non-determinism only enters via `tiebreaker: 'random'` or an LLM-backed
+`bordaRank` / `rerun` callback.
+
+### Mode semantics
+
+**`leader-picks`** — the first member in the configured order wins. If the
+leader errored out, falls through to the first response that made it back.
+No voting log, `outcome` is always `'decided'`.
+
+**`majority`** — each response is bucketed into a similarity cluster (see
+*Similarity* below). Each member votes for its own cluster. The largest
+cluster wins; its leader-most response is the winner. Cross-cluster ties
+hand off to the configured tiebreaker. Emits `no_consensus` when
+`tiebreaker='retry'` can't resolve.
+
+**`weighted-majority`** — same cluster logic, but each vote multiplies by
+`member.weight`. Negative weights are rejected (throws). All-zero weights
+degrade to unweighted (flagged in `tiebreaker.reason`).
+
+**`unanimous`** — requires a single cluster covering every member that
+responded (missing / errored members don't block). If split, calls the
+optional `rerun(convergePrompt, attempt)` hook up to
+`unanimousMaxRetries` (default **2**). Each retry emits a `retry`
+lifecycle event. When retries exhaust, returns the largest cluster's
+tiebreaker-resolved winner with `outcome: 'no-consensus'`.
+
+**`borda-count`** — each member ranks every other response. Borda score
+for `N` candidates: rank 1 = `N-1` points, rank 2 = `N-2`, …, rank N = 0.
+Totals sum across voters; highest total wins; ties use the tiebreaker.
+If a `bordaRank(voter, candidates) => string[]` hook is supplied it's
+called (one extra LLM round-trip per voter); otherwise falls back to
+a similarity-to-own-answer heuristic.
+
+### Similarity strategies
+
+`src/council/consensus/similarity.ts` pluggable scoring:
+
+- `naive` (default): lowercase + strip punctuation + Jaccard overlap. Fast,
+  no network. Known limits: misses paraphrases, threshold (0.85) is a
+  heuristic.
+- `embedding` (opt-in via `VOID_COUNCIL_EMBEDDINGS=1`): cosine similarity of
+  vectors from a caller-supplied `embed(text) => Promise<number[] | null>`.
+  When `embed` returns `null` or throws, falls back to naive. No provider
+  is wired yet — consumers supply their own embedder.
+
+```ts
+// Force embedding + custom threshold
+await runConsensus({
+  method: 'majority',
+  responses,
+  members,
+  similarity: {
+    strategy: 'embedding',
+    embed: async (t) => await myEmbedder(t),
+    threshold: 0.92,
+  },
+})
+```
+
+### Tiebreakers
+
+All voting modes accept `tiebreaker: 'leader' | 'random' | 'retry'`:
+
+- `leader` (default) — earliest tied member in configured order wins.
+- `random` — uniform pick among the tied set. Useful for sticky-session
+  avoidance when the leader is overrepresented.
+- `retry` — caller (orchestrator) should re-run. `resolveTie` still returns
+  a non-null winner (leader fallback) but flags `retryRequested=true`.
+  The orchestrator surfaces this as `consensus_no_consensus` event and
+  marks `result.outcome='no-consensus'`.
+
+### Adding the ConsensusLayer to a runtime
+
+```ts
+import { Layer, ManagedRuntime } from 'effect'
+import {
+  ConfigLayer, AuthLayer, ProviderLayer,
+  PermissionLayer, ConsensusLayer,
+} from 'src/council/layers/index.js'
+
+const rt = ManagedRuntime.make(
+  Layer.mergeAll(
+    ConfigLayer.mockLayer(myCfg),
+    ProviderLayer.mockLayer(myResponseMap),
+    PermissionLayer.defaultLayer,
+    ConsensusLayer.defaultLayer, // or ConsensusLayer.mockLayer(fn)
+  ).pipe(Layer.provide(AuthLayer.mockLayer({ openrouter: 'k' })))
+)
+```
+
+`ConsensusLayer.mockLayer(runner)` replaces the real `runConsensus` with a
+caller-supplied factory — useful for verifying orchestrator plumbing
+without running real clustering.
+
+### Config surface
+
+`CouncilConfig` gained two optional fields:
+
+```ts
+type CouncilConfig = {
+  // …existing fields
+  tiebreaker?: 'leader' | 'random' | 'retry'   // default 'leader'
+  unanimousMaxRetries?: number                  // default 2
+}
+```
+
+`consensusMethod` now accepts the five new values alongside the three
+legacy ones.
+
+### CouncilEvent additions
+
+```ts
+| { type: 'consensus_retry'; attempt: number; reason: string }
+| { type: 'consensus_no_consensus'; method: ConsensusMethod; reason: string }
+```
+
+The renderer already paints these — the consensus summary shows a yellow
+`NO CONSENSUS` header, the tiebreaker kind + reason, the retry count, and
+a vote breakdown sorted by weight.
+
+### Test coverage
+
+`src/council/__tests__/consensus.test.ts` — 39 specs across similarity,
+tiebreaker, and each mode (see the commit message for the per-mode count).
+Run with `npm run test:council`.
+

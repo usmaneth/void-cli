@@ -23,8 +23,14 @@ import {
   Config as ConfigService,
   Provider as ProviderService,
   Permission as PermissionService,
+  Consensus as ConsensusService,
   CouncilLayer as DefaultCouncilLayer,
 } from './layers/index.js'
+import {
+  DEFAULT_TIEBREAKER,
+  DEFAULT_UNANIMOUS_MAX_RETRIES,
+} from './consensus/index.js'
+import type { ConsensusLifecycleEvent } from './consensus/types.js'
 
 /**
  * Same rough per-million-token pricing used by the legacy orchestrator.
@@ -214,9 +220,18 @@ function orchestrateEffect(
       { concurrency: 'unbounded' },
     )
 
-    return { members, outcomes, consensusMethod }
+    return { members, outcomes, consensusMethod, config }
   })
 }
+
+/** Methods handled by the ConsensusLayer (vs. legacy inline modes). */
+const NEW_CONSENSUS_METHODS: ReadonlySet<ConsensusMethod> = new Set([
+  'leader-picks',
+  'majority',
+  'weighted-majority',
+  'unanimous',
+  'borda-count',
+] as ConsensusMethod[])
 
 /**
  * Build a ManagedRuntime for the council. Consumers can pass a custom layer
@@ -224,7 +239,7 @@ function orchestrateEffect(
  */
 export function makeCouncilRuntime(
   layer: Layer.Layer<
-    ConfigService | ProviderService | PermissionService,
+    ConfigService | ProviderService | PermissionService | ConsensusService,
     never,
     never
   > = DefaultCouncilLayer as any,
@@ -258,9 +273,10 @@ export async function* runCouncilEffect(
     for (const m of config.members)
       yield { type: 'member_start', memberId: m.id }
 
-    const { members, outcomes, consensusMethod } = await rt.runPromise(
-      orchestrateEffect(prompt, systemPrompt, configOverride),
-    )
+    const { members, outcomes, consensusMethod, config: mergedConfig } =
+      await rt.runPromise(
+        orchestrateEffect(prompt, systemPrompt, configOverride),
+      )
 
     const responses: CouncilResponse[] = []
     for (const o of outcomes) {
@@ -276,7 +292,48 @@ export async function* runCouncilEffect(
       throw new Error('All council members failed to respond')
 
     yield { type: 'consensus_start', method: consensusMethod }
-    const result = determineConsensus(responses, members, consensusMethod)
+
+    let result: ConsensusResult
+    if (NEW_CONSENSUS_METHODS.has(consensusMethod)) {
+      // Buffer lifecycle events so we can yield them between `consensus_start`
+      // and `consensus_complete`. (We can't yield from inside an Effect without
+      // a Queue — the buffer keeps the flow simple and ordered.)
+      const lifecycle: ConsensusLifecycleEvent[] = []
+      result = await rt.runPromise(
+        Effect.gen(function* () {
+          const consensus = yield* ConsensusService
+          return yield* consensus.run({
+            method: consensusMethod,
+            responses,
+            members,
+            tiebreaker: mergedConfig.tiebreaker ?? DEFAULT_TIEBREAKER,
+            unanimousMaxRetries:
+              mergedConfig.unanimousMaxRetries ?? DEFAULT_UNANIMOUS_MAX_RETRIES,
+            emit: (ev) => {
+              lifecycle.push(ev)
+            },
+          })
+        }),
+      )
+      for (const ev of lifecycle) {
+        if (ev.type === 'retry') {
+          yield {
+            type: 'consensus_retry',
+            attempt: ev.attempt,
+            reason: ev.reason,
+          }
+        } else if (ev.type === 'no_consensus') {
+          yield {
+            type: 'consensus_no_consensus',
+            method: ev.method,
+            reason: ev.reason,
+          }
+        }
+      }
+    } else {
+      result = determineConsensus(responses, members, consensusMethod)
+    }
+
     yield { type: 'consensus_complete', result }
     yield { type: 'council_complete', result }
   } finally {

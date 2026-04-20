@@ -156,6 +156,8 @@ const DEFAULT_CONFIG: CouncilConfig = {
   memberTimeoutMs: 60_000,
   showAllResponses: true,
   leaderPicks: true,
+  tiebreaker: 'leader',
+  unanimousMaxRetries: 2,
 }
 
 let currentConfig: CouncilConfig = { ...DEFAULT_CONFIG }

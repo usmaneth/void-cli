@@ -18,12 +18,20 @@ import * as ConfigLayer from './ConfigLayer.js'
 import * as AuthLayer from './AuthLayer.js'
 import * as ProviderLayer from './ProviderLayer.js'
 import * as PermissionLayer from './PermissionLayer.js'
+import * as ConsensusLayer from './ConsensusLayer.js'
 
-export { ConfigLayer, AuthLayer, ProviderLayer, PermissionLayer }
+export {
+  ConfigLayer,
+  AuthLayer,
+  ProviderLayer,
+  PermissionLayer,
+  ConsensusLayer,
+}
 export { Config } from './ConfigLayer.js'
 export { Auth } from './AuthLayer.js'
 export { Provider } from './ProviderLayer.js'
 export { Permission } from './PermissionLayer.js'
+export { Consensus } from './ConsensusLayer.js'
 export type {
   ProviderExecuteInput,
   ProviderExecuteOutput,
@@ -41,4 +49,5 @@ export const CouncilLayer = Layer.mergeAll(
   ConfigLayer.defaultLayer,
   PermissionLayer.defaultLayer,
   ProviderLayer.defaultLayer,
+  ConsensusLayer.defaultLayer,
 ).pipe(Layer.provide(AuthLayer.defaultLayer))
