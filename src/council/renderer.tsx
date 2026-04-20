@@ -214,16 +214,37 @@ function ConsensusSummaryImpl({
   const width = Math.min(columns - 4, 100)
   const divider = '─'.repeat(width)
 
+  const noConsensus = result.outcome === 'no-consensus'
+  const headerLabel = noConsensus ? '⚠ NO CONSENSUS' : '✓ CONSENSUS'
+  const headerColor = noConsensus ? 'yellow' : 'green'
+
+  // Group votes by target for a tidy breakdown, only when votes exist.
+  const voteBreakdown = new Map<string, { weight: number; count: number }>()
+  for (const v of result.votes ?? []) {
+    const prev = voteBreakdown.get(v.targetId) ?? { weight: 0, count: 0 }
+    voteBreakdown.set(v.targetId, {
+      weight: prev.weight + v.weight,
+      count: prev.count + 1,
+    })
+  }
+  const sortedVotes = [...voteBreakdown.entries()].sort(
+    (a, b) => b[1].weight - a[1].weight,
+  )
+
   return (
     <Box flexDirection="column" paddingX={1}>
       <Text dimColor>{divider}</Text>
       <Box>
-        <Text bold color="green">
-          {'✓ CONSENSUS'}
+        <Text bold color={headerColor}>
+          {headerLabel}
         </Text>
         <Text dimColor>
-          {' · method: '}
+          {' · mode: '}
+        </Text>
+        <Text bold color="cyan">
           {result.method}
+        </Text>
+        <Text dimColor>
           {' · '}
           {result.responses.length} responses
           {' · '}
@@ -233,14 +254,78 @@ function ConsensusSummaryImpl({
         </Text>
       </Box>
 
+      {/* Winner */}
+      <Box marginLeft={2}>
+        <Text bold color={noConsensus ? 'yellow' : 'green'}>
+          {noConsensus ? '⚠ ' : '★ '}
+          {'winner: '}
+          {result.winner.memberName}
+        </Text>
+        <Text dimColor>
+          {' ('}
+          {result.winner.memberId}
+          {')'}
+        </Text>
+      </Box>
+
+      {/* Tiebreaker / retries / outcome reason */}
+      {result.tiebreaker && (
+        <Box marginLeft={2}>
+          <Text color="yellow">
+            {'tiebreaker: '}
+            {result.tiebreaker.kind}
+          </Text>
+          <Text dimColor>
+            {' · '}
+            {result.tiebreaker.reason}
+          </Text>
+        </Box>
+      )}
+      {typeof result.retries === 'number' && result.retries > 0 && (
+        <Box marginLeft={2}>
+          <Text color="yellow">
+            {'retries: '}
+            {result.retries}
+          </Text>
+        </Box>
+      )}
+
+      {/* Vote breakdown */}
+      {sortedVotes.length > 0 && (
+        <Box flexDirection="column" marginLeft={2}>
+          <Text dimColor>votes:</Text>
+          {sortedVotes.map(([targetId, { weight, count }], i) => (
+            <Box key={targetId} marginLeft={2}>
+              <Text
+                color={i === 0 && !noConsensus ? 'green' : undefined}
+                bold={i === 0 && !noConsensus}
+              >
+                {i === 0 && !noConsensus ? '★' : ' '} {targetId}
+              </Text>
+              <Text dimColor>
+                {' · weight: '}
+                {weight.toFixed(2)}
+                {' · '}
+                {count} vote{count === 1 ? '' : 's'}
+              </Text>
+            </Box>
+          ))}
+        </Box>
+      )}
+
       {/* Scores */}
       <Box flexDirection="column" marginLeft={2}>
+        <Text dimColor>scores:</Text>
         {result.scores
+          .slice()
           .sort((a, b) => b.score - a.score)
           .map((score, i) => (
-            <Box key={score.memberId}>
-              <Text color={i === 0 ? 'green' : undefined} bold={i === 0}>
-                {i === 0 ? '★' : ' '} {score.memberId}
+            <Box key={score.memberId} marginLeft={2}>
+              <Text
+                color={i === 0 && !noConsensus ? 'green' : undefined}
+                bold={i === 0 && !noConsensus}
+              >
+                {i === 0 && !noConsensus ? '★' : ' '} {score.memberId}
               </Text>
               <Text dimColor>
                 {' · score: '}
