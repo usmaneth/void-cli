@@ -1115,6 +1115,32 @@ export const SettingsSchema = lazySchema(() =>
         .describe(
           'Configuration for multi-model deliberation mode.',
         ),
+      instructions: z
+        .union([z.string(), z.array(z.string())])
+        .optional()
+        .describe(
+          'Inline custom instruction text injected into the base system prompt. ' +
+            'Accepts a single string or array of strings. Layers across global, ' +
+            'workspace, and local settings are concatenated (never overridden).',
+        ),
+      instructionFiles: z
+        .array(z.string())
+        .optional()
+        .describe(
+          'List of .md files whose contents are appended to the system prompt. ' +
+            'Relative paths are resolved against the directory of the settings ' +
+            'file that declares them (global: ~/.void/, workspace: project root, ' +
+            'local: project root). Files are cached and invalidated on mtime change. ' +
+            'Layers concatenate across global → workspace → local.',
+        ),
+      autoDiscoverInstructionFiles: z
+        .boolean()
+        .optional()
+        .describe(
+          'When true (default), CLAUDE.md and AGENTS.md in the workspace root ' +
+            'are auto-discovered and appended as workspace-layer instructions. ' +
+            'Set to false to opt out.',
+        ),
       swarm: z
         .object({
           coordinatorModel: z
