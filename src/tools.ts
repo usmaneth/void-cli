@@ -95,6 +95,10 @@ const VerifyPlanExecutionTool =
     : null
 /* eslint-enable custom-rules/no-process-env-top-level, @typescript-eslint/no-require-imports */
 import { SYNTHETIC_OUTPUT_TOOL_NAME } from './tools/SyntheticOutputTool/SyntheticOutputTool.js'
+// Plugin-contributed tools from the @void-cli/plugin SDK adapter. Always
+// imported — the getter returns an empty list when VOID_PLUGINS is off or no
+// plugins are attached, so the cost is a single empty-array read on startup.
+import { getPluginTools } from './services/plugins/pluginAdapter.js'
 export {
   ALL_AGENT_DISALLOWED_TOOLS,
   CUSTOM_AGENT_DISALLOWED_TOOLS,
@@ -247,6 +251,9 @@ export function getAllBaseTools(): Tools {
     // Include ToolSearchTool when tool search might be enabled (optimistic check)
     // The actual decision to defer tools happens at request time in claude.ts
     ...(isToolSearchEnabledOptimistic() ? [ToolSearchTool] : []),
+    // Plugin-contributed tools. Cached inside the adapter so hot-path callers
+    // don't pay re-translation cost. Empty when VOID_PLUGINS is unset.
+    ...getPluginTools(),
   ]
 }
 
