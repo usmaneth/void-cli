@@ -1,0 +1,137 @@
+<h2>Design Section 3: Deliberation Room</h2>
+<p class="subtitle">2-3 models in a live back-and-forth debate, building on each other's ideas</p>
+
+<div class="section">
+  <h3>How It Works</h3>
+  <div class="mockup">
+    <div class="mockup-header">void › /deliberate "Design the caching layer for our API"</div>
+    <div class="mockup-body" style="font-family: monospace; font-size: 12px; line-height: 1.7; color: #e2e8f0; background: #0d1117; padding: 16px; border-radius: 8px;">
+      <div style="color: #7c3aed; font-weight: bold;">╔══ Deliberation Room ══════════════════════════════════╗</div>
+      <div style="color: #64748b;">  Topic: Design the caching layer for our API</div>
+      <div style="color: #64748b;">  Models: Opus 4.6 · GLM 5.1 · Gemini 3.1 Pro</div>
+      <div style="color: #64748b;">  Round 2 of 5</div>
+      <div style="color: #64748b;">  ─────────────────────────────────────────────────────</div>
+      <div>&nbsp;</div>
+      <div style="color: #a78bfa; font-weight: bold;">  ┌ Opus 4.6 <span style="color: #64748b; font-weight: normal;">Round 1</span></div>
+      <div style="color: #e2e8f0;">  │ I'd start with a two-tier approach: an in-memory LRU</div>
+      <div style="color: #e2e8f0;">  │ cache (Node process-local) backed by Redis for cross-</div>
+      <div style="color: #e2e8f0;">  │ instance consistency. TTLs set per-route based on data</div>
+      <div style="color: #e2e8f0;">  │ volatility. Cache invalidation via pub/sub on writes...</div>
+      <div style="color: #e2e8f0;">  └</div>
+      <div>&nbsp;</div>
+      <div style="color: #22c55e; font-weight: bold;">  ┌ GLM 5.1 <span style="color: #64748b; font-weight: normal;">Round 1 · responding to Opus</span></div>
+      <div style="color: #e2e8f0;">  │ The two-tier approach is solid, but the pub/sub</div>
+      <div style="color: #e2e8f0;">  │ invalidation has a race condition window. Consider</div>
+      <div style="color: #e2e8f0;">  │ versioned cache keys instead — append a monotonic</div>
+      <div style="color: #e2e8f0;">  │ counter to each key so stale reads are impossible...</div>
+      <div style="color: #e2e8f0;">  └</div>
+      <div>&nbsp;</div>
+      <div style="color: #38bdf8; font-weight: bold;">  ┌ Gemini 3.1 Pro <span style="color: #64748b; font-weight: normal;">Round 1 · responding to both</span></div>
+      <div style="color: #e2e8f0;">  │ Both good points. But before optimizing the cache</div>
+      <div style="color: #e2e8f0;">  │ layer, have you profiled which endpoints actually</div>
+      <div style="color: #e2e8f0;">  │ need caching? I'd add observability first — track hit</div>
+      <div style="color: #e2e8f0;">  │ rates, p99 latencies — then cache selectively...</div>
+      <div style="color: #e2e8f0;">  └</div>
+      <div>&nbsp;</div>
+      <div style="color: #a78bfa; font-weight: bold;">  ┌ Opus 4.6 <span style="color: #64748b; font-weight: normal;">Round 2 · incorporating feedback</span></div>
+      <div style="color: #e2e8f0;">  │ Good challenges. Revised approach: versioned keys</div>
+      <div style="color: #e2e8f0;">  │ (GLM's point) + observability-first rollout (Gemini's</div>
+      <div style="color: #e2e8f0;">  │ point). Ship with metrics, cache the top 5 hottest...</div>
+      <div style="color: #e2e8f0;">  │ <span style="color: #a78bfa;">▌</span></div>
+      <div style="color: #e2e8f0;">  └</div>
+      <div>&nbsp;</div>
+      <div style="color: #7c3aed; font-weight: bold;">╚══════════════════════════════════════════════════════╝</div>
+      <div style="color: #64748b; margin-top: 8px;">  ctrl+c stop early · ctrl+s save transcript · enter inject your own thoughts</div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Invocation</h3>
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+    <div class="mockup">
+      <div class="mockup-header">Slash Command</div>
+      <div class="mockup-body" style="font-size: 13px;">
+        <p><code>/deliberate "topic"</code> — starts a deliberation with your configured default panel</p>
+        <p><code>/deliberate --models opus,glm-5.1 "topic"</code> — pick specific models</p>
+        <p><code>/deliberate --rounds 3 "topic"</code> — set max rounds (default: 5)</p>
+        <p><code>/deliberate --duo "topic"</code> — quick 2-model mode with Opus + your secondary</p>
+      </div>
+    </div>
+    <div class="mockup">
+      <div class="mockup-header">Mid-conversation</div>
+      <div class="mockup-body" style="font-size: 13px;">
+        <p>You can also start a deliberation mid-flow:</p>
+        <p><em>"Hey, I'm stuck on how to structure this auth middleware. Can you deliberate on it with GLM?"</em></p>
+        <p>Void detects the intent and launches a deliberation with current conversation context passed to both models.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Architecture</h3>
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+    <div class="mockup">
+      <div class="mockup-header">Deliberation Engine</div>
+      <div class="mockup-body" style="font-size: 13px;">
+        <p><strong>Round-based conversation:</strong></p>
+        <ol>
+          <li>All models receive the topic + codebase context</li>
+          <li>Model A responds first (randomly selected or highest-tier)</li>
+          <li>Model B receives A's response, responds with agreement/challenge/build</li>
+          <li>Model C (if trio) receives both, synthesizes + adds</li>
+          <li>Model A gets all feedback, revises — this is one "round"</li>
+          <li>Repeat for N rounds or until convergence</li>
+        </ol>
+        <p><strong>Convergence detection:</strong> If all models agree on the approach for 2 consecutive rounds, auto-stop early.</p>
+        <p><strong>Human injection:</strong> Press Enter at any point to inject your own thoughts into the next round. The models treat your input as the highest-priority signal.</p>
+      </div>
+    </div>
+    <div class="mockup">
+      <div class="mockup-header">Files</div>
+      <div class="mockup-body" style="font-size: 13px;">
+        <p><code>src/deliberation/types.ts</code> <span style="color: #22c55e;">(new)</span><br>→ DeliberationConfig, Round, ModelResponse types</p>
+        <p><code>src/deliberation/engine.ts</code> <span style="color: #22c55e;">(new)</span><br>→ Core deliberation loop, round management, convergence</p>
+        <p><code>src/deliberation/renderer.ts</code> <span style="color: #22c55e;">(new)</span><br>→ Ink component for the deliberation room UI</p>
+        <p><code>src/deliberation/prompts.ts</code> <span style="color: #22c55e;">(new)</span><br>→ System prompts that encourage real debate (not sycophancy)</p>
+        <p><code>src/commands/deliberate/</code> <span style="color: #22c55e;">(new)</span><br>→ /deliberate slash command</p>
+        <p><code>src/utils/settings/types.ts</code><br>→ Add deliberation defaults to settings</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Key Design Decision: Anti-Sycophancy Prompting</h3>
+  <p>The system prompt for each model in the deliberation explicitly instructs them to <strong>challenge, not agree</strong>. Each model is told:</p>
+  <div class="mockup">
+    <div class="mockup-body" style="font-family: monospace; font-size: 12px; color: #94a3b8;">
+      You are in a deliberation with other AI models. Your job is to make the<br>
+      final answer BETTER, not to be polite. Specifically:<br>
+      - If you see a flaw, call it out directly<br>
+      - If you have a better approach, present it with evidence<br>
+      - If you agree, say WHY and ADD something new — don't just echo<br>
+      - If the previous model's revision addressed your concern, acknowledge<br>
+      &nbsp;&nbsp;it and move on to the next weakness<br>
+      - Converge when the solution is genuinely strong, not to end the debate
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Settings</h3>
+  <div class="mockup">
+    <div class="mockup-header">~/.void/settings.json</div>
+    <div class="mockup-body" style="font-family: monospace; font-size: 12px; line-height: 1.8;">
+      <div>{</div>
+      <div>&nbsp;&nbsp;<span style="color: #a78bfa;">"deliberation"</span>: {</div>
+      <div>&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #a78bfa;">"defaultModels"</span>: [<span style="color: #22c55e;">"opus"</span>, <span style="color: #22c55e;">"thudm/glm-5.1"</span>],</div>
+      <div>&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #a78bfa;">"maxRounds"</span>: <span style="color: #fbbf24;">5</span>,</div>
+      <div>&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #a78bfa;">"autoStop"</span>: <span style="color: #38bdf8;">true</span>,</div>
+      <div>&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #a78bfa;">"showTokenUsage"</span>: <span style="color: #38bdf8;">true</span></div>
+      <div>&nbsp;&nbsp;}</div>
+      <div>}</div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,63 @@
+<h2>Final UI: /deliberate — Deliberation Room</h2>
+<p class="subtitle">Exactly as rendered by the Ink DeliberationRenderer component</p>
+
+<div style="background: #0d1117; border-radius: 12px; padding: 0; font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', monospace; font-size: 13px; line-height: 1.7; color: #e2e8f0; overflow: hidden;">
+  <div style="border: 2px solid #7c3aed; border-radius: 8px; padding: 12px 16px;">
+    <!-- Title bar -->
+    <div style="display: flex; justify-content: space-between;">
+      <span style="color: #7c3aed; font-weight: bold; font-size: 14px; letter-spacing: 2px;">◈ D E L I B E R A T I O N   R O O M</span>
+      <span style="color: #fbbf24; font-weight: bold;">DEBATING</span>
+    </div>
+    <div style="color: #64748b;">Topic: Redis vs Postgres for session caching</div>
+    <div style="color: #64748b;">Models: <span style="color: #a78bfa;">●</span> opus · <span style="color: #22c55e;">●</span> glm-5.1 · <span style="color: #38bdf8;">◉</span> gemini-3.1-pro</div>
+
+    <!-- Round progress -->
+    <div style="margin-top: 4px;">
+      <span style="color: #64748b;">Round </span>
+      <span style="color: #7c3aed;">████████████████</span><span style="color: #374151;">░░░░░░░░░░░░░░░░░░░░░░░░</span>
+      <span style="font-weight: bold;"> 2/5</span>
+    </div>
+
+    <div style="color: #374151; margin: 8px 0;">────────────────────────────────────────────────────────────────────────────</div>
+
+    <!-- Round 1 header -->
+    <div style="font-weight: bold; color: #94a3b8;">Round 1</div>
+
+    <!-- Opus response -->
+    <div style="margin-top: 6px;">
+      <div style="color: #a78bfa;">&nbsp;&nbsp;┌ <strong style="color: #a78bfa;">Opus 4.6</strong> <span style="color: #64748b;">Round 1 · initial position</span></div>
+      <div style="color: #a78bfa;">&nbsp;&nbsp;│ <span style="color: #64748b;">1.2s · 850↑ 420↓ · $0.037</span></div>
+      <div style="color: #a78bfa;">&nbsp;&nbsp;│ <span style="color: #e2e8f0;">I'd start with Redis for session caching. It's purpose-built for</span></div>
+      <div style="color: #a78bfa;">&nbsp;&nbsp;│ <span style="color: #e2e8f0;">key-value access patterns with sub-ms latency. The TTL support</span></div>
+      <div style="color: #a78bfa;">&nbsp;&nbsp;│ <span style="color: #e2e8f0;">maps directly to session expiry. Pub/sub for invalidation across</span></div>
+      <div style="color: #a78bfa;">&nbsp;&nbsp;│ <span style="color: #e2e8f0;">instances. The operational overhead is minimal with managed Redis.</span></div>
+      <div style="color: #a78bfa;">&nbsp;&nbsp;└</div>
+    </div>
+
+    <!-- GLM response -->
+    <div style="margin-top: 6px;">
+      <div style="color: #22c55e;">&nbsp;&nbsp;┌ <strong style="color: #22c55e;">GLM 5.1</strong> <span style="color: #64748b;">Round 1 · responding to Opus 4.6</span></div>
+      <div style="color: #22c55e;">&nbsp;&nbsp;│ <span style="color: #64748b;">0.9s · 1.2k↑ 380↓ · $0.012</span></div>
+      <div style="color: #22c55e;">&nbsp;&nbsp;│ <span style="color: #e2e8f0;">Redis is fast but adds operational complexity. Have you considered</span></div>
+      <div style="color: #22c55e;">&nbsp;&nbsp;│ <span style="color: #e2e8f0;">Postgres with UNLOGGED tables? Same sub-ms reads for session data,</span></div>
+      <div style="color: #22c55e;">&nbsp;&nbsp;│ <span style="color: #e2e8f0;">zero additional infrastructure, and you keep ACID guarantees. The</span></div>
+      <div style="color: #22c55e;">&nbsp;&nbsp;│ <span style="color: #e2e8f0;">pub/sub point is valid but pg_notify covers most invalidation needs.</span></div>
+      <div style="color: #22c55e;">&nbsp;&nbsp;└</div>
+    </div>
+
+    <!-- Gemini streaming -->
+    <div style="margin-top: 6px;">
+      <div style="color: #38bdf8;">&nbsp;&nbsp;┌ <strong style="color: #38bdf8;">Gemini 3.1 Pro</strong> <span style="color: #fbbf24; font-weight: bold;">STREAMING</span></div>
+      <div style="color: #38bdf8;">&nbsp;&nbsp;│ <span style="color: #e2e8f0;">Both valid points. But before choosing the store, profile your</span></div>
+      <div style="color: #38bdf8;">&nbsp;&nbsp;│ <span style="color: #e2e8f0;">actual session access patterns. If sessions are read-heavy with</span></div>
+      <div style="color: #38bdf8;">&nbsp;&nbsp;│ <span style="color: #e2e8f0;">rare writes, both work. If you need atomic read-modify-write,</span></div>
+      <div style="color: #38bdf8;">&nbsp;&nbsp;│ <span style="color: #fbbf24;">▌</span></div>
+      <div style="color: #38bdf8;">&nbsp;&nbsp;└</div>
+    </div>
+
+    <div style="color: #374151; margin: 8px 0;">────────────────────────────────────────────────────────────────────────────</div>
+
+    <div style="color: #64748b;">3 models · total cost $0.049</div>
+    <div style="color: #64748b;">ctrl+c stop · ctrl+s save transcript · enter inject thoughts</div>
+  </div>
+</div>

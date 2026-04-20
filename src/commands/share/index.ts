@@ -88,7 +88,7 @@ const share = {
   argumentHint: '',
   supportsNonInteractive: true,
   isEnabled: () => true,
-  load: () => ({ call }),
+  load: async () => ({ call }),
 } satisfies Command
 
 export default share

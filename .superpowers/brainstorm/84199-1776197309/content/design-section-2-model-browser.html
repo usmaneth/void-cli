@@ -1,0 +1,68 @@
+<h2>Design Section 2: OpenRouter Model Browser</h2>
+<p class="subtitle">Full-catalog model picker with search, filters, favorites, and smart suggestions</p>
+
+<div class="section">
+  <h3>UX Flow</h3>
+
+  <div class="mockup">
+    <div class="mockup-header">void › /model</div>
+    <div class="mockup-body" style="font-family: monospace; font-size: 12px; line-height: 1.8; color: #e2e8f0; background: #0d1117; padding: 16px; border-radius: 8px;">
+      <div style="color: #7c3aed; font-weight: bold;">╔══ Model Browser ═══════════════════════════════════╗</div>
+      <div style="color: #a78bfa;">  Search: <span style="color: #e2e8f0; background: #1e293b; padding: 2px 6px;">gemini pro▌</span></div>
+      <div style="color: #64748b;">  ─────────────────────────────────────────────────</div>
+      <div style="color: #fbbf24;">  ★ Favorites</div>
+      <div style="color: #e2e8f0;">    › <span style="color: #22c55e;">●</span> claude-opus-4-6 <span style="color: #64748b;">Anthropic · $15/$75 · 1M ctx</span></div>
+      <div style="color: #e2e8f0;">    › <span style="color: #22c55e;">●</span> openai/gpt-5 <span style="color: #64748b;">OpenAI · $10/$30 · 1M ctx</span></div>
+      <div style="color: #e2e8f0;">    › <span style="color: #22c55e;">●</span> thudm/glm-5.1 <span style="color: #64748b;">Zhipu · $2/$6 · 128K ctx</span></div>
+      <div style="color: #64748b;">  ─────────────────────────────────────────────────</div>
+      <div style="color: #38bdf8;">  💡 Suggested for this task <span style="color: #64748b;">(frontend component)</span></div>
+      <div style="color: #e2e8f0;">    › google/gemini-3.1-pro <span style="color: #64748b;">Google · $1.25/$5 · 2M ctx</span></div>
+      <div style="color: #64748b;">  ─────────────────────────────────────────────────</div>
+      <div style="color: #94a3b8;">  Filter: <span style="background: #7c3aed; color: white; padding: 1px 6px; border-radius: 3px; font-size: 11px;">All</span> <span style="background: #1e293b; padding: 1px 6px; border-radius: 3px; font-size: 11px;">Anthropic</span> <span style="background: #1e293b; padding: 1px 6px; border-radius: 3px; font-size: 11px;">OpenAI</span> <span style="background: #1e293b; padding: 1px 6px; border-radius: 3px; font-size: 11px;">Google</span> <span style="background: #1e293b; padding: 1px 6px; border-radius: 3px; font-size: 11px;">Meta</span> <span style="background: #1e293b; padding: 1px 6px; border-radius: 3px; font-size: 11px;">Zhipu</span></div>
+      <div style="color: #e2e8f0;">    › google/gemini-3.1-pro <span style="color: #64748b;">$1.25/$5 · 2M ctx</span></div>
+      <div style="color: #e2e8f0;">    › google/gemini-3.1-flash <span style="color: #64748b;">$0.075/$0.30 · 1M ctx</span></div>
+      <div style="color: #e2e8f0;">    › google/gemini-2.5-pro <span style="color: #64748b;">$1.25/$10 · 1M ctx</span></div>
+      <div style="color: #e2e8f0;">    › google/gemma-3-27b <span style="color: #64748b;">$0.10/$0.20 · 96K ctx</span></div>
+      <div style="color: #64748b;">    ... 12 more Google models</div>
+      <div style="color: #7c3aed; font-weight: bold;">╚═══════════════════════════════════════════════════╝</div>
+      <div style="color: #64748b; margin-top: 8px;">  ↑↓ navigate · enter select · ⌘+F favorite · tab filter · esc cancel</div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Architecture</h3>
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+    <div class="mockup">
+      <div class="mockup-header">Data Flow</div>
+      <div class="mockup-body" style="font-size: 13px;">
+        <p><strong>1. Fetch models</strong> — GET <code>openrouter.ai/api/v1/models</code> on first <code>/model</code> open. Cache for 1 hour in <code>~/.void/cache/openrouter-models.json</code>.</p>
+        <p><strong>2. Favorites</strong> — Stored in <code>settings.json</code> as <code>favoriteModels: string[]</code>. Toggle with <code>⌘+F</code> hotkey while model is highlighted.</p>
+        <p><strong>3. Smart suggestions</strong> — Lightweight heuristic based on recent tool use and file types in context. Sees <code>.tsx</code> files → suggests design-capable models. Sees test files → suggests reasoning models.</p>
+        <p><strong>4. Provider filter</strong> — Tab cycles through providers extracted from model IDs (part before <code>/</code>). Filters the list in real-time.</p>
+      </div>
+    </div>
+    <div class="mockup">
+      <div class="mockup-header">Files Changed</div>
+      <div class="mockup-body" style="font-size: 13px;">
+        <p><code>src/utils/model/modelOptions.ts</code><br>→ Add OpenRouter model fetching + caching</p>
+        <p><code>src/components/ModelPicker.tsx</code><br>→ Search bar, filter tabs, favorites section, smart suggestions</p>
+        <p><code>src/utils/model/modelSuggestions.ts</code> <span style="color: #22c55e;">(new)</span><br>→ Context-aware model suggestion engine</p>
+        <p><code>src/utils/settings/types.ts</code><br>→ Add <code>favoriteModels</code> to settings schema</p>
+        <p><code>src/utils/model/openrouterModels.ts</code> <span style="color: #22c55e;">(new)</span><br>→ OpenRouter API client + model cache</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Hotkeys</h3>
+  <div style="font-family: monospace; font-size: 13px; line-height: 2;">
+    <div><kbd style="background: #374151; padding: 2px 8px; border-radius: 4px;">↑↓</kbd> Navigate models</div>
+    <div><kbd style="background: #374151; padding: 2px 8px; border-radius: 4px;">Enter</kbd> Select model</div>
+    <div><kbd style="background: #374151; padding: 2px 8px; border-radius: 4px;">⌘+F</kbd> Toggle favorite on highlighted model</div>
+    <div><kbd style="background: #374151; padding: 2px 8px; border-radius: 4px;">Tab</kbd> Cycle provider filter (All → Anthropic → OpenAI → Google → ...)</div>
+    <div><kbd style="background: #374151; padding: 2px 8px; border-radius: 4px;">Esc</kbd> Cancel / close picker</div>
+    <div><kbd style="background: #374151; padding: 2px 8px; border-radius: 4px;">Type</kbd> Live search filter</div>
+  </div>
+</div>

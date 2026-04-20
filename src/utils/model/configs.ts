@@ -1,7 +1,7 @@
 import type { ModelName } from './model.js'
 import type { APIProvider } from './providers.js'
 
-export type ModelConfig = Record<APIProvider, ModelName>
+export type ModelConfig = Partial<Record<APIProvider, ModelName>>
 
 // OpenRouter model IDs use provider/model format (e.g. "anthropic/claude-opus-4.6").
 // For non-Claude models, users specify the OpenRouter model ID via --model or

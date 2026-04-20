@@ -1,0 +1,52 @@
+<h2>Final UI: /swarm — Multi-Model Parallel Implementation</h2>
+<p class="subtitle">Exactly as rendered by the Ink SwarmRenderer component</p>
+
+<div style="background: #0d1117; border-radius: 12px; padding: 0; font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', monospace; font-size: 13px; line-height: 1.7; color: #e2e8f0; overflow: hidden;">
+  <div style="border: 2px solid #7c3aed; border-radius: 8px; padding: 12px 16px;">
+    <!-- Title bar -->
+    <div style="display: flex; justify-content: space-between;">
+      <span style="color: #7c3aed; font-weight: bold; font-size: 14px; letter-spacing: 3px;">◈ S W A R M</span>
+      <span style="color: #a78bfa; font-weight: bold;">BUILDING</span>
+    </div>
+    <div style="color: #64748b;">Coordinator: claude-opus-4-6 · 3 workers · elapsed 1m 23s</div>
+    <div style="color: #64748b;">Build a dashboard with real-time analytics and REST API</div>
+
+    <div style="color: #374151; margin: 8px 0;">────────────────────────────────────────────────────────────────────────────</div>
+
+    <!-- Frontend worker -->
+    <div style="color: #22c55e;">&nbsp;&nbsp;┌ <strong>Frontend</strong> → google/gemini-3.1-pro <span style="color: #64748b;">worktree: swarm/frontend</span></div>
+    <div style="color: #22c55e;">&nbsp;&nbsp;│ <span style="color: #fbbf24;">▶</span> <span style="color: #64748b;">RUNNING · 2/4 tasks</span></div>
+    <div style="color: #22c55e;">&nbsp;&nbsp;│ <span style="color: #22c55e;">●</span> <span style="color: #e2e8f0;">Create DashboardLayout component</span></div>
+    <div style="color: #22c55e;">&nbsp;&nbsp;│ <span style="color: #22c55e;">●</span> <span style="color: #e2e8f0;">Create ChartCard component</span></div>
+    <div style="color: #22c55e;">&nbsp;&nbsp;│ <span style="color: #fbbf24;">◐</span> <span style="color: #e2e8f0;">Responsive sidebar navigation</span> <span style="color: #64748b;">writing...</span></div>
+    <div style="color: #22c55e;">&nbsp;&nbsp;│ <span style="color: #64748b;">○</span> <span style="color: #64748b;">Dark mode theme toggle</span></div>
+    <div style="color: #22c55e;">&nbsp;&nbsp;└</div>
+
+    <!-- Backend worker -->
+    <div style="color: #38bdf8; margin-top: 4px;">&nbsp;&nbsp;┌ <strong>Backend</strong> → openai/gpt-5.4 <span style="color: #64748b;">worktree: swarm/backend</span></div>
+    <div style="color: #38bdf8;">&nbsp;&nbsp;│ <span style="color: #22c55e;">✓</span> <span style="color: #64748b;">DONE · 3/3 tasks</span></div>
+    <div style="color: #38bdf8;">&nbsp;&nbsp;│ <span style="color: #22c55e;">●</span> <span style="color: #e2e8f0;">REST API routes (/api/analytics/*)</span></div>
+    <div style="color: #38bdf8;">&nbsp;&nbsp;│ <span style="color: #22c55e;">●</span> <span style="color: #e2e8f0;">Database schema + migrations</span></div>
+    <div style="color: #38bdf8;">&nbsp;&nbsp;│ <span style="color: #22c55e;">●</span> <span style="color: #e2e8f0;">WebSocket server for live updates</span></div>
+    <div style="color: #38bdf8;">&nbsp;&nbsp;└</div>
+
+    <!-- Wiring worker -->
+    <div style="color: #a78bfa; margin-top: 4px;">&nbsp;&nbsp;┌ <strong>Wiring</strong> → claude-opus-4-6 <span style="color: #64748b;">waiting for frontend + backend</span></div>
+    <div style="color: #a78bfa;">&nbsp;&nbsp;│ <span style="color: #64748b;">○</span> <span style="color: #64748b;">PENDING · 0/3 tasks</span></div>
+    <div style="color: #a78bfa;">&nbsp;&nbsp;│ <span style="color: #64748b;">○ Connect frontend hooks to API client</span></div>
+    <div style="color: #a78bfa;">&nbsp;&nbsp;│ <span style="color: #64748b;">○ WebSocket reconnection + error boundaries</span></div>
+    <div style="color: #a78bfa;">&nbsp;&nbsp;│ <span style="color: #64748b;">○ E2E type safety (shared types between FE/BE)</span></div>
+    <div style="color: #a78bfa;">&nbsp;&nbsp;└</div>
+
+    <div style="color: #374151; margin: 8px 0;">────────────────────────────────────────────────────────────────────────────</div>
+
+    <!-- Progress bar -->
+    <div>
+      <span style="color: #64748b;">Progress: </span>
+      <span style="color: #22c55e;">████████████████████</span><span style="color: #374151;">░░░░░░░░░░░░░░░░░░░░░░░░░░░░</span>
+      <span style="color: #a78bfa; font-weight: bold;"> 47%</span>
+    </div>
+    <div style="color: #64748b;">1/3 workers finished · Est. cost $2.40 · Elapsed 1m 23s</div>
+    <div style="color: #64748b;">enter inject guidance · ctrl+c abort · tab switch focus</div>
+  </div>
+</div>

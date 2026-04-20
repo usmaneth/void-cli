@@ -1,0 +1,171 @@
+<h2>Design Section 3b: Swarm Mode — Multi-Model Implementation</h2>
+<p class="subtitle">Different models build different parts of the codebase simultaneously, each playing to their strengths</p>
+
+<div class="section">
+  <h3>The Vision</h3>
+  <div class="mockup">
+    <div class="mockup-header">void › /swarm "Build a dashboard with real-time analytics and REST API"</div>
+    <div class="mockup-body" style="font-family: monospace; font-size: 12px; line-height: 1.7; color: #e2e8f0; background: #0d1117; padding: 16px; border-radius: 8px;">
+      <div style="color: #7c3aed; font-weight: bold;">╔══ Swarm ══════════════════════════════════════════════╗</div>
+      <div style="color: #64748b;">  Coordinator: Opus 4.6</div>
+      <div style="color: #64748b;">  ─────────────────────────────────────────────────────</div>
+      <div>&nbsp;</div>
+      <div style="color: #a78bfa;">  📋 Opus decomposed the task into 3 workstreams:</div>
+      <div>&nbsp;</div>
+      <div style="color: #38bdf8;">  ┌ <span style="font-weight: bold;">Frontend</span> → Gemini 3.1 Pro <span style="color: #64748b;">worktree: swarm/frontend</span></div>
+      <div style="color: #38bdf8;">  │</div>
+      <div style="color: #22c55e;">  │ ● Dashboard layout with chart grid</div>
+      <div style="color: #22c55e;">  │ ● Real-time WebSocket data display</div>
+      <div style="color: #fbbf24;">  │ ◐ Responsive sidebar navigation <span style="color: #64748b;">writing...</span></div>
+      <div style="color: #64748b;">  │ ○ Dark mode theme toggle</div>
+      <div style="color: #38bdf8;">  └</div>
+      <div>&nbsp;</div>
+      <div style="color: #22c55e;">  ┌ <span style="font-weight: bold;">Backend</span> → GPT-5.4 / Codex <span style="color: #64748b;">worktree: swarm/backend</span></div>
+      <div style="color: #22c55e;">  │</div>
+      <div style="color: #22c55e;">  │ ● REST API routes (/api/analytics/*)</div>
+      <div style="color: #22c55e;">  │ ● Database schema + migrations</div>
+      <div style="color: #22c55e;">  │ ● WebSocket server for live updates</div>
+      <div style="color: #fbbf24;">  │ ◐ Rate limiting middleware <span style="color: #64748b;">writing...</span></div>
+      <div style="color: #22c55e;">  └</div>
+      <div>&nbsp;</div>
+      <div style="color: #a78bfa;">  ┌ <span style="font-weight: bold;">Wiring</span> → Opus 4.6 <span style="color: #64748b;">waiting for frontend + backend</span></div>
+      <div style="color: #a78bfa;">  │</div>
+      <div style="color: #64748b;">  │ ○ Connect frontend hooks to API client</div>
+      <div style="color: #64748b;">  │ ○ WebSocket reconnection + error boundaries</div>
+      <div style="color: #64748b;">  │ ○ E2E type safety (shared types between FE/BE)</div>
+      <div style="color: #64748b;">  │ ○ Merge all worktrees + resolve conflicts</div>
+      <div style="color: #a78bfa;">  └</div>
+      <div>&nbsp;</div>
+      <div style="color: #64748b;">  ─────────────────────────────────────────────────────</div>
+      <div style="color: #94a3b8;">  Progress: <span style="color: #22c55e;">████████</span><span style="color: #fbbf24;">██</span><span style="color: #374151;">██████████</span> 47%</div>
+      <div style="color: #64748b;">  Tokens: 42K in · 18K out · Est. cost: $2.40</div>
+      <div style="color: #7c3aed; font-weight: bold;">╚══════════════════════════════════════════════════════╝</div>
+      <div style="color: #64748b; margin-top: 8px;">  enter inject guidance · ctrl+c abort · ctrl+p pause agent · tab switch focus</div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>How It Works</h3>
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+    <div class="mockup">
+      <div class="mockup-header">Execution Flow</div>
+      <div class="mockup-body" style="font-size: 13px;">
+        <p><strong>Phase 1 — Decompose</strong><br>
+        Opus (coordinator) reads the codebase, understands the request, and breaks it into workstreams. Each workstream gets: a clear scope, file boundaries, and a model assignment based on strengths.</p>
+
+        <p><strong>Phase 2 — Build (parallel)</strong><br>
+        Each model gets its own git worktree and works independently. They can only touch files in their assigned scope. Real-time progress streams back to the swarm UI.</p>
+
+        <p><strong>Phase 3 — Wire + Merge</strong><br>
+        The coordinator merges all worktrees, resolves conflicts, adds integration code (shared types, API clients, error handling), and runs tests.</p>
+
+        <p><strong>Phase 4 — Review</strong><br>
+        Optional: run a deliberation round where all models review the merged result and flag issues.</p>
+      </div>
+    </div>
+    <div class="mockup">
+      <div class="mockup-header">Model Assignment Defaults</div>
+      <div class="mockup-body" style="font-size: 13px;">
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr style="border-bottom: 1px solid #374151;">
+            <td style="padding: 6px 0; color: #94a3b8;">Domain</td>
+            <td style="padding: 6px 0;">Default Model</td>
+          </tr>
+          <tr style="border-bottom: 1px solid #374151;">
+            <td style="padding: 6px 0; color: #38bdf8;">Frontend / UI</td>
+            <td style="padding: 6px 0;">Gemini 3.1 Pro</td>
+          </tr>
+          <tr style="border-bottom: 1px solid #374151;">
+            <td style="padding: 6px 0; color: #22c55e;">Backend / API</td>
+            <td style="padding: 6px 0;">GPT-5.4 / Codex</td>
+          </tr>
+          <tr style="border-bottom: 1px solid #374151;">
+            <td style="padding: 6px 0; color: #a78bfa;">Wiring / Arch</td>
+            <td style="padding: 6px 0;">Opus 4.6</td>
+          </tr>
+          <tr style="border-bottom: 1px solid #374151;">
+            <td style="padding: 6px 0; color: #fbbf24;">Tests</td>
+            <td style="padding: 6px 0;">Sonnet 4.6 (fast)</td>
+          </tr>
+          <tr>
+            <td style="padding: 6px 0; color: #ef4444;">Debugging</td>
+            <td style="padding: 6px 0;">Opus 4.6</td>
+          </tr>
+        </table>
+        <p style="color: #64748b; margin-top: 8px; font-size: 12px;">Fully configurable. Override per-task or in settings.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Auth Integration — All Providers</h3>
+  <div class="mockup">
+    <div class="mockup-header">void › /provider</div>
+    <div class="mockup-body" style="font-family: monospace; font-size: 12px; line-height: 1.8; color: #e2e8f0; background: #0d1117; padding: 16px; border-radius: 8px;">
+      <div style="color: #7c3aed; font-weight: bold;">  Provider Status</div>
+      <div style="color: #64748b;">  ─────────────────────────────────────────</div>
+      <div>  <span style="color: #22c55e;">●</span> Anthropic <span style="color: #64748b;">OAuth · Claude Team</span></div>
+      <div>  <span style="color: #22c55e;">●</span> OpenRouter <span style="color: #64748b;">API key · keychain</span></div>
+      <div>  <span style="color: #22c55e;">●</span> OpenAI <span style="color: #64748b;">API key · keychain</span></div>
+      <div>  <span style="color: #22c55e;">●</span> Google Gemini <span style="color: #64748b;">API key · keychain</span></div>
+      <div>  <span style="color: #ef4444;">○</span> AWS Bedrock <span style="color: #64748b;">not configured</span></div>
+      <div>  <span style="color: #ef4444;">○</span> Azure Foundry <span style="color: #64748b;">not configured</span></div>
+      <div style="color: #64748b;">  ─────────────────────────────────────────</div>
+      <div style="color: #94a3b8;">  /provider add openai</div>
+      <div style="color: #94a3b8;">  /provider add gemini</div>
+      <div style="color: #94a3b8;">  /provider status</div>
+    </div>
+  </div>
+
+  <div style="margin-top: 12px;">
+    <div class="mockup">
+      <div class="mockup-header">New Providers</div>
+      <div class="mockup-body" style="font-size: 13px;">
+        <p><strong>OpenAI Direct</strong> — API key stored in macOS Keychain (<code>Void-openai</code>). Calls OpenAI API directly (not via OpenRouter). Needed for Codex integration — same auth flow the codex plugin uses, but native.</p>
+        <p><strong>Google Gemini</strong> — API key stored in Keychain (<code>Void-gemini</code>). Calls <code>generativelanguage.googleapis.com</code> directly. Used by the Designer Agent and available as a model in the picker.</p>
+        <p>Both also fall back to env vars: <code>OPENAI_API_KEY</code>, <code>GEMINI_API_KEY</code>.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Relationship: Deliberation vs Swarm</h3>
+  <div class="split">
+    <div class="mockup">
+      <div class="mockup-header">Deliberation → Think</div>
+      <div class="mockup-body" style="font-size: 13px;">
+        <p><code>/deliberate "how should we..."</code></p>
+        <p>Models debate sequentially. Output is a plan or recommendation. No code written. You decide what to implement.</p>
+        <p style="color: #a78bfa; font-weight: bold;">Input: question → Output: answer</p>
+      </div>
+    </div>
+    <div class="mockup">
+      <div class="mockup-header">Swarm → Build</div>
+      <div class="mockup-body" style="font-size: 13px;">
+        <p><code>/swarm "build a dashboard with..."</code></p>
+        <p>Models work in parallel on isolated worktrees. Output is actual code, merged and tested. Coordinator handles integration.</p>
+        <p style="color: #22c55e; font-weight: bold;">Input: spec → Output: working code</p>
+      </div>
+    </div>
+  </div>
+  <p style="color: #94a3b8; margin-top: 12px; text-align: center;">They compose: <code>/deliberate</code> first to design, then <code>/swarm</code> to build the winning approach.</p>
+</div>
+
+<div class="section">
+  <h3>New Files</h3>
+  <div style="font-family: monospace; font-size: 12px; line-height: 2; color: #94a3b8;">
+    <div><span style="color: #22c55e;">src/swarm/types.ts</span> — SwarmConfig, Workstream, ModelAssignment</div>
+    <div><span style="color: #22c55e;">src/swarm/coordinator.ts</span> — Task decomposition, model assignment, merge orchestration</div>
+    <div><span style="color: #22c55e;">src/swarm/worker.ts</span> — Per-model agent worker (wraps Agent tool with worktree)</div>
+    <div><span style="color: #22c55e;">src/swarm/renderer.ts</span> — Ink component for multi-agent progress UI</div>
+    <div><span style="color: #22c55e;">src/swarm/merger.ts</span> — Git worktree merge + conflict resolution</div>
+    <div><span style="color: #22c55e;">src/commands/swarm/</span> — /swarm slash command</div>
+    <div><span style="color: #22c55e;">src/providers/openai.ts</span> — Direct OpenAI API client</div>
+    <div><span style="color: #22c55e;">src/providers/gemini.ts</span> — Direct Google Gemini API client</div>
+    <div><span style="color: #94a3b8;">src/commands/provider/provider.ts</span> — Extended with openai + gemini subcommands</div>
+    <div><span style="color: #94a3b8;">src/utils/settings/types.ts</span> — Swarm defaults + provider configs</div>
+  </div>
+</div>

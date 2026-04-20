@@ -1,0 +1,54 @@
+<h2>Void CLI — Full Feature Design Summary</h2>
+<p class="subtitle">5 features that turn Void into a multi-model AI development platform</p>
+
+<div class="section">
+  <h3>1. Fix Plugin Marketplace</h3>
+  <p>Change 3 files to point <code>void-plugins-official</code> → <code>claude-plugins-official</code>. Unlocks all 33 official plugins (superpowers, figma, slack, etc.) for Void.</p>
+  <p style="color: #64748b;">Scope: ~6 lines changed. Ships immediately.</p>
+</div>
+
+<div class="section">
+  <h3>2. OpenRouter Model Browser</h3>
+  <p>Full-catalog model picker with live search, provider filter tabs (Tab to cycle), favorites (⌘+F to pin), smart context-aware suggestions, pricing display, and 1-hour model cache from OpenRouter API.</p>
+  <p style="color: #64748b;">New files: openrouterModels.ts, modelSuggestions.ts. Modified: ModelPicker.tsx, modelOptions.ts, settings types.</p>
+</div>
+
+<div class="section">
+  <h3>3. Deliberation Room + Swarm Mode</h3>
+  <p><strong>/deliberate</strong> — 2-3 models in round-based debate. Anti-sycophancy prompts force real challenge. Human can inject thoughts mid-round. Auto-stops on convergence.</p>
+  <p><strong>/swarm</strong> — Multi-model parallel implementation. Opus coordinates, decomposes task into workstreams, each model builds in isolated worktrees, coordinator merges + wires. Default assignments: Gemini → frontend, GPT-5.4 → backend, Opus → architecture.</p>
+  <p style="color: #64748b;">New modules: src/deliberation/, src/swarm/. Registered as built-in skills with smart triggers.</p>
+</div>
+
+<div class="section">
+  <h3>4. Designer Agent (Gemini 3.1 Pro)</h3>
+  <p>Built-in frontend design specialist. Two modes: <strong>/design</strong> for design-first visual specs, or auto-invoked mid-flow when visual work is detected. Reads existing design system (tailwind, tokens, components) before writing. Outputs production-grade, beautiful, modern UI code. Claude handles types/state/backend after.</p>
+
+  <p><strong>Designer prompt emphasis:</strong></p>
+  <ul>
+    <li>Beautiful, modern UI components — not generic/template-looking</li>
+    <li>Smooth animations and micro-interactions on everything</li>
+    <li>Contemporary design trends — glassmorphism, gradients, depth</li>
+    <li>Premium feel — the kind of UI that makes people say "who designed this?"</li>
+    <li>Component library quality — every element polished, consistent, reusable</li>
+    <li>Pixel-perfect spacing, intentional typography, deliberate color choices</li>
+  </ul>
+
+  <p style="color: #64748b;">New module: src/agents/designer/. Direct Gemini API via @google/genai SDK.</p>
+</div>
+
+<div class="section">
+  <h3>5. Provider Auth (OpenAI + Google Gemini)</h3>
+  <p><strong>/provider add openai</strong> and <strong>/provider add gemini</strong> with macOS Keychain storage. Both also support env var fallback (OPENAI_API_KEY, GEMINI_API_KEY). Extends existing /provider command. Enables direct API calls for swarm workers and designer agent.</p>
+  <p style="color: #64748b;">New: src/providers/openai.ts, src/providers/gemini.ts. Modified: provider command, settings types.</p>
+</div>
+
+<div class="section">
+  <h3>6. Smart Mode Triggers</h3>
+  <p>All three modes (deliberate, swarm, designer) registered as built-in skills with whenToUse heuristics. The main Void agent dynamically <em>suggests</em> the right mode based on conversation context — never auto-launches, always asks first. Feels like a smart teammate saying "hey, this might be a good spot to bring in the team."</p>
+</div>
+
+<div style="background: #1a1a2e; border: 2px solid #7c3aed; border-radius: 12px; padding: 24px; margin-top: 24px; text-align: center;">
+  <h3 style="color: #a78bfa; margin: 0 0 8px 0;">Ready to write the spec?</h3>
+  <p style="color: #94a3b8; margin: 0;">Approve this design and I'll write the full spec doc, then create the implementation plan.</p>
+</div>

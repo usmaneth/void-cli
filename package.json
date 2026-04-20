@@ -23,6 +23,7 @@
     "start": "node dist/entrypoints/cli.js"
   },
   "dependencies": {
+    "@ai-sdk/vercel": "^2.0.43",
     "@alcalzone/ansi-tokenize": "^0.3.0",
     "@anthropic-ai/bedrock-sdk": "^0.26.4",
     "@anthropic-ai/sdk": "^0.81.0",
@@ -54,6 +55,7 @@
     "cli-highlight": "^2.1.11",
     "code-excerpt": "^4.0.0",
     "diff": "^8.0.4",
+    "drizzle-orm": "^0.45.2",
     "effect": "^3.21.1",
     "emoji-regex": "^10.6.0",
     "env-paths": "^4.0.0",

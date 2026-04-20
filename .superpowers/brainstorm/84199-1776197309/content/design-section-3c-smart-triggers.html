@@ -1,0 +1,144 @@
+<h2>Design Section 3c: Smart Mode Triggers</h2>
+<p class="subtitle">Void dynamically suggests deliberation and swarm — like how superpowers auto-invokes skills</p>
+
+<div class="section">
+  <h3>The Pattern</h3>
+  <p>Today, superpowers skills fire automatically based on context — brainstorming triggers before creative work, TDD triggers before implementation. Deliberation and Swarm should work the same way: the main Void agent recognizes when these modes would help and suggests them inline.</p>
+</div>
+
+<div class="section">
+  <h3>What It Looks Like</h3>
+
+  <div class="mockup">
+    <div class="mockup-header">Example 1: Auto-suggest Deliberation</div>
+    <div class="mockup-body" style="font-family: monospace; font-size: 12px; line-height: 1.8; color: #e2e8f0; background: #0d1117; padding: 16px; border-radius: 8px;">
+      <div style="color: #94a3b8;">you › should we use websockets or SSE for the real-time updates?</div>
+      <div>&nbsp;</div>
+      <div style="color: #a78bfa;">void › This is a meaningful architecture decision with real tradeoffs.</div>
+      <div style="color: #a78bfa;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; I can answer this myself, or we can <span style="color: #fbbf24; font-weight: bold;">deliberate</span> on it —</div>
+      <div style="color: #a78bfa;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; I'd pull in GLM 5.1 and Gemini to stress-test the choice</div>
+      <div style="color: #a78bfa;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; before we commit. Want to open the room?</div>
+      <div>&nbsp;</div>
+      <div style="color: #94a3b8;">you › yeah do it</div>
+      <div>&nbsp;</div>
+      <div style="color: #7c3aed;">╔══ Deliberation Room ════════════════════════════════╗</div>
+      <div style="color: #64748b;">  Topic: WebSocket vs SSE for real-time dashboard updates</div>
+      <div style="color: #64748b;">  Models: Opus 4.6 · GLM 5.1 · Gemini 3.1 Pro</div>
+      <div style="color: #7c3aed;">╚════════════════════════════════════════════════════╝</div>
+    </div>
+  </div>
+
+  <div class="mockup" style="margin-top: 16px;">
+    <div class="mockup-header">Example 2: Auto-suggest Swarm</div>
+    <div class="mockup-body" style="font-family: monospace; font-size: 12px; line-height: 1.8; color: #e2e8f0; background: #0d1117; padding: 16px; border-radius: 8px;">
+      <div style="color: #94a3b8;">you › build a settings page with a form, API endpoint to save</div>
+      <div style="color: #94a3b8;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; preferences, and database migration for the new table</div>
+      <div>&nbsp;</div>
+      <div style="color: #a78bfa;">void › This has clean frontend/backend/data separation — perfect</div>
+      <div style="color: #a78bfa;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; for <span style="color: #22c55e; font-weight: bold;">swarm mode</span>. I'd split it:</div>
+      <div style="color: #a78bfa;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; • Gemini → settings form UI + responsive layout</div>
+      <div style="color: #a78bfa;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; • GPT-5.4 → API route + validation + DB migration</div>
+      <div style="color: #a78bfa;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; • I'll wire them together after</div>
+      <div style="color: #a78bfa;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Should I swarm it or handle it myself?</div>
+      <div>&nbsp;</div>
+      <div style="color: #94a3b8;">you › swarm it</div>
+      <div>&nbsp;</div>
+      <div style="color: #7c3aed;">╔══ Swarm ════════════════════════════════════════════╗</div>
+      <div style="color: #64748b;">  Coordinator: Opus 4.6</div>
+      <div style="color: #64748b;">  Workstreams: 3 (frontend · backend · wiring)</div>
+      <div style="color: #7c3aed;">╚════════════════════════════════════════════════════╝</div>
+    </div>
+  </div>
+
+  <div class="mockup" style="margin-top: 16px;">
+    <div class="mockup-header">Example 3: Auto-suggest Designer</div>
+    <div class="mockup-body" style="font-family: monospace; font-size: 12px; line-height: 1.8; color: #e2e8f0; background: #0d1117; padding: 16px; border-radius: 8px;">
+      <div style="color: #94a3b8;">you › this dashboard looks pretty basic, can we make it look 10x</div>
+      <div>&nbsp;</div>
+      <div style="color: #a78bfa;">void › Sounds like a job for the <span style="color: #38bdf8; font-weight: bold;">designer</span>. I'll bring in</div>
+      <div style="color: #a78bfa;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Gemini 3.1 Pro to redesign the dashboard — it'll</div>
+      <div style="color: #a78bfa;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; handle the visual overhaul and I'll make sure</div>
+      <div style="color: #a78bfa;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; nothing breaks underneath. Launching designer...</div>
+      <div>&nbsp;</div>
+      <div style="color: #7c3aed;">╔══ Designer · Gemini 3.1 Pro ════════════════════════╗</div>
+      <div style="color: #64748b;">  Analyzing current dashboard components...</div>
+      <div style="color: #7c3aed;">╚════════════════════════════════════════════════════╝</div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Trigger Heuristics</h3>
+  <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
+    <div class="mockup">
+      <div class="mockup-header" style="color: #fbbf24;">Deliberate</div>
+      <div class="mockup-body" style="font-size: 12px;">
+        <ul style="margin: 0; padding-left: 16px;">
+          <li>Architecture decisions</li>
+          <li>"Should we X or Y?"</li>
+          <li>Tradeoff discussions</li>
+          <li>Design pattern selection</li>
+          <li>"What's the best way to..."</li>
+          <li>User explicitly stuck</li>
+        </ul>
+      </div>
+    </div>
+    <div class="mockup">
+      <div class="mockup-header" style="color: #22c55e;">Swarm</div>
+      <div class="mockup-body" style="font-size: 12px;">
+        <ul style="margin: 0; padding-left: 16px;">
+          <li>Multi-layer features (FE+BE+DB)</li>
+          <li>Large feature with clear boundaries</li>
+          <li>"Build X with Y and Z"</li>
+          <li>Full-stack task description</li>
+          <li>3+ independent components</li>
+          <li>User says "full feature"</li>
+        </ul>
+      </div>
+    </div>
+    <div class="mockup">
+      <div class="mockup-header" style="color: #38bdf8;">Designer</div>
+      <div class="mockup-body" style="font-size: 12px;">
+        <ul style="margin: 0; padding-left: 16px;">
+          <li>"Make it look better"</li>
+          <li>"Redesign this"</li>
+          <li>"10x the UI"</li>
+          <li>Editing .tsx with layout work</li>
+          <li>"Beautiful", "polished", "modern"</li>
+          <li>Visual mockup requests</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Implementation: Registered as Skills</h3>
+  <p>Each mode registers as a built-in skill with trigger conditions — same mechanism superpowers uses. The main agent's system prompt includes awareness of all three modes and when to suggest them.</p>
+
+  <div class="mockup">
+    <div class="mockup-header">src/skills/bundled/deliberate.ts</div>
+    <div class="mockup-body" style="font-family: monospace; font-size: 12px; color: #94a3b8;">
+      name: 'deliberate'<br>
+      description: 'Multi-model deliberation for hard decisions'<br>
+      whenToUse: 'Architecture decisions, tradeoff discussions,<br>
+      &nbsp;&nbsp;design pattern selection, or when user is stuck on a<br>
+      &nbsp;&nbsp;choice between approaches'<br>
+      aliases: ['debate', 'discuss']
+    </div>
+  </div>
+
+  <div class="mockup" style="margin-top: 12px;">
+    <div class="mockup-header">src/skills/bundled/swarm.ts</div>
+    <div class="mockup-body" style="font-family: monospace; font-size: 12px; color: #94a3b8;">
+      name: 'swarm'<br>
+      description: 'Multi-model parallel implementation'<br>
+      whenToUse: 'Multi-layer features with clear frontend/backend/<br>
+      &nbsp;&nbsp;data separation, large features with 3+ independent<br>
+      &nbsp;&nbsp;components, or full-stack tasks'<br>
+      aliases: ['crew', 'team']
+    </div>
+  </div>
+
+  <p style="color: #94a3b8; margin-top: 12px; font-size: 13px;"><strong>Key:</strong> Void always <em>suggests</em> the mode, never auto-launches. You stay in control — "yeah do it" or "nah I'll handle it" and the agent continues normally.</p>
+</div>

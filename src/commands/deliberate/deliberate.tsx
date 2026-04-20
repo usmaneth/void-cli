@@ -18,6 +18,7 @@ import type {
 } from '../../deliberation/types.js'
 import type { DeliberationCallbacks } from '../../deliberation/engine.js'
 import { runDeliberation } from '../../deliberation/engine.js'
+import { launchVoidex } from '../../utils/voidexLauncher.js'
 import {
   DeliberationRenderer,
   type ModelStatus,

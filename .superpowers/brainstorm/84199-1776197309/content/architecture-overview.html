@@ -1,0 +1,85 @@
+<h2>Void CLI — Feature Architecture</h2>
+<p class="subtitle">Four interconnected systems. Two approaches to wire them together.</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Plugin-First — Everything as Plugins</h3>
+      <p>All four features ship as <strong>separate plugins</strong> in a Void marketplace repo you own. OpenRouter browser, Deliberation Room, Gemini Designer, and Provider Config each live in their own plugin with agents, skills, and scripts.</p>
+      <div class="pros-cons">
+        <div class="pros">
+          <h4>Pros</h4>
+          <ul>
+            <li>Zero changes to Void core — stays in sync with upstream Claude Code</li>
+            <li>Each feature is independently installable/removable</li>
+            <li>Other Void users could install your plugins</li>
+            <li>Fast to ship — plugin structure is well-defined</li>
+          </ul>
+        </div>
+        <div class="cons">
+          <h4>Cons</h4>
+          <ul>
+            <li>Model picker UI can't be modified from a plugin — it's hardcoded in core</li>
+            <li>Deliberation room needs deep integration with the main loop</li>
+            <li>Some features will feel bolted-on rather than native</li>
+            <li>Limited to Bash + skills — no React component access</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Core-Native — Build Into Void's Source</h3>
+      <p>All four features are built directly into Void's codebase. Model picker gets a real OpenRouter browser component. Deliberation room is a new execution mode alongside council. Designer agent is a built-in agent type. Provider config gets a proper settings UI.</p>
+      <div class="pros-cons">
+        <div class="pros">
+          <h4>Pros</h4>
+          <ul>
+            <li>Fully native UX — model picker, hotkeys, settings all feel integrated</li>
+            <li>Direct access to React components (Ink), state management, streaming</li>
+            <li>Deliberation room can hook into the main conversation loop</li>
+            <li>Single build, single binary — no plugin dependency chain</li>
+          </ul>
+        </div>
+        <div class="cons">
+          <h4>Cons</h4>
+          <ul>
+            <li>Harder to merge upstream Claude Code updates (more divergence)</li>
+            <li>Larger codebase to maintain</li>
+            <li>All-or-nothing — can't disable individual features easily</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Hybrid — Core for UI, Plugins for Agents <span style="color: #22c55e; font-size: 0.8em;">★ Recommended</span></h3>
+      <p>Split by what <em>needs</em> core access vs what <em>works great</em> as a plugin. Model picker + deliberation mode + provider config go into Void's source (they need React/Ink and main loop access). Designer agent ships as a plugin (it's self-contained — just an agent definition + Gemini SDK script).</p>
+      <div class="pros-cons">
+        <div class="pros">
+          <h4>Pros</h4>
+          <ul>
+            <li>Native UX where it matters (model picker, deliberation, hotkeys)</li>
+            <li>Designer agent is portable — works with any Claude Code fork</li>
+            <li>Clean separation: core handles orchestration, plugin handles design AI</li>
+            <li>Manageable upstream divergence — only UI/model code diverges</li>
+          </ul>
+        </div>
+        <div class="cons">
+          <h4>Cons</h4>
+          <ul>
+            <li>Two places to maintain code (core + plugin)</li>
+            <li>Need to coordinate versioning between core and plugin</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

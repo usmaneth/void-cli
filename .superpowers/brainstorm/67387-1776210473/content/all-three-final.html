@@ -1,0 +1,157 @@
+<h2>Final UI — All Three Commands</h2>
+<p class="subtitle">Exactly as rendered by the Ink components in your terminal</p>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- 1. MODEL BROWSER -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<div class="section">
+  <h3>/model — Model Browser</h3>
+  <div style="background: #0d1117; border-radius: 12px; padding: 0; font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', monospace; font-size: 12.5px; line-height: 1.7; color: #e2e8f0; overflow: hidden;">
+    <div style="border: 2px solid #7c3aed; border-radius: 8px; padding: 12px 16px;">
+      <div style="color: #7c3aed; font-weight: bold; font-size: 13px; letter-spacing: 3px;">◈ M O D E L   B R O W S E R</div>
+      <div style="margin-top: 6px;">
+        <span style="color: #a78bfa;">Search: </span>
+        <span style="background: #1e293b; padding: 2px 8px; border-radius: 3px; color: #e2e8f0;">gemini pro<span style="color: #a78bfa;">▌</span></span>
+      </div>
+      <div style="color: #374151; margin: 6px 0;">────────────────────────────────────────────────────────────────────────</div>
+      <div style="color: #fbbf24; font-weight: bold;">★ Favorites</div>
+      <div>&nbsp;&nbsp;› <span style="color: #22c55e;">●</span> <span style="color: #e2e8f0;">claude-opus-4-6</span> <span style="color: #64748b;">Anthropic · $15/$75 · 1M ctx</span></div>
+      <div>&nbsp;&nbsp;› <span style="color: #22c55e;">●</span> <span style="color: #e2e8f0;">openai/gpt-5</span> <span style="color: #64748b;">OpenAI · $10/$30 · 1M ctx</span></div>
+      <div>&nbsp;&nbsp;› <span style="color: #22c55e;">●</span> <span style="color: #e2e8f0;">thudm/glm-5.1</span> <span style="color: #64748b;">Zhipu · $2/$6 · 128K ctx</span></div>
+      <div style="color: #374151; margin: 6px 0;">────────────────────────────────────────────────────────────────────────</div>
+      <div><span style="color: #38bdf8; font-weight: bold;">💡 Suggested for this task</span> <span style="color: #64748b;">(frontend component)</span></div>
+      <div>&nbsp;&nbsp;› <span style="color: #e2e8f0;">google/gemini-3.1-pro</span> <span style="color: #64748b;">Google · $1.25/$5 · 2M ctx</span></div>
+      <div style="color: #374151; margin: 6px 0;">────────────────────────────────────────────────────────────────────────</div>
+      <div>
+        <span style="color: #64748b;">Filter: </span>
+        <span style="background: #7c3aed; color: white; padding: 1px 8px; border-radius: 3px; font-size: 11px;">All</span>
+        <span style="color: #64748b; padding: 0 6px;">Anthropic</span>
+        <span style="color: #64748b; padding: 0 6px;">OpenAI</span>
+        <span style="color: #64748b; padding: 0 6px;">Google</span>
+        <span style="color: #64748b; padding: 0 6px;">Meta</span>
+        <span style="color: #64748b; padding: 0 6px;">Zhipu</span>
+      </div>
+      <div style="margin-top: 4px;">&nbsp;&nbsp;› <span style="color: #e2e8f0;">google/gemini-3.1-pro</span> <span style="color: #64748b;">$1.25/$5 · 2M ctx</span></div>
+      <div>&nbsp;&nbsp;› <span style="color: #e2e8f0;">google/gemini-3.1-flash</span> <span style="color: #64748b;">$0.075/$0.30 · 1M ctx</span></div>
+      <div>&nbsp;&nbsp;› <span style="color: #e2e8f0;">google/gemini-2.5-pro</span> <span style="color: #64748b;">$1.25/$10 · 1M ctx</span></div>
+      <div style="color: #64748b;">&nbsp;&nbsp;&nbsp;&nbsp;... 12 more Google models</div>
+      <div style="color: #374151; margin: 6px 0;">────────────────────────────────────────────────────────────────────────</div>
+      <div style="color: #64748b;">200+ models loaded · ★ 3 favorited</div>
+      <div style="color: #64748b;">↑↓ navigate · enter select · ⌘+F favorite · tab filter · esc cancel</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- 2. SWARM -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<div class="section" style="margin-top: 32px;">
+  <h3>/swarm — Multi-Model Parallel Implementation</h3>
+  <div style="background: #0d1117; border-radius: 12px; padding: 0; font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', monospace; font-size: 12.5px; line-height: 1.7; color: #e2e8f0; overflow: hidden;">
+    <div style="border: 2px solid #7c3aed; border-radius: 8px; padding: 12px 16px;">
+      <div style="display: flex; justify-content: space-between;">
+        <span style="color: #7c3aed; font-weight: bold; font-size: 13px; letter-spacing: 3px;">◈ S W A R M</span>
+        <span style="color: #a78bfa; font-weight: bold;">BUILDING</span>
+      </div>
+      <div style="color: #64748b;">Coordinator: claude-opus-4-6 · 3 workers · elapsed 1m 23s</div>
+      <div style="color: #64748b;">Build a dashboard with real-time analytics and REST API</div>
+      <div style="color: #374151; margin: 6px 0;">────────────────────────────────────────────────────────────────────────</div>
+
+      <!-- Frontend -->
+      <div style="color: #22c55e;">&nbsp;&nbsp;┌ <strong>Frontend</strong> → google/gemini-3.1-pro <span style="color: #64748b;">worktree: swarm/frontend</span></div>
+      <div style="color: #22c55e;">&nbsp;&nbsp;│ <span style="color: #fbbf24;">▶</span> <span style="color: #64748b;">RUNNING · 2/4 tasks</span></div>
+      <div style="color: #22c55e;">&nbsp;&nbsp;│ <span style="color: #22c55e;">●</span> <span style="color: #e2e8f0;">Create DashboardLayout component</span></div>
+      <div style="color: #22c55e;">&nbsp;&nbsp;│ <span style="color: #22c55e;">●</span> <span style="color: #e2e8f0;">Create ChartCard component</span></div>
+      <div style="color: #22c55e;">&nbsp;&nbsp;│ <span style="color: #fbbf24;">◐</span> <span style="color: #e2e8f0;">Responsive sidebar navigation</span> <span style="color: #64748b;">writing...</span></div>
+      <div style="color: #22c55e;">&nbsp;&nbsp;│ <span style="color: #64748b;">○ Dark mode theme toggle</span></div>
+      <div style="color: #22c55e;">&nbsp;&nbsp;└</div>
+
+      <!-- Backend -->
+      <div style="color: #38bdf8; margin-top: 4px;">&nbsp;&nbsp;┌ <strong>Backend</strong> → openai/gpt-5.4 <span style="color: #64748b;">worktree: swarm/backend</span></div>
+      <div style="color: #38bdf8;">&nbsp;&nbsp;│ <span style="color: #22c55e;">✓</span> <span style="color: #64748b;">DONE · 3/3 tasks</span></div>
+      <div style="color: #38bdf8;">&nbsp;&nbsp;│ <span style="color: #22c55e;">●</span> <span style="color: #e2e8f0;">REST API routes (/api/analytics/*)</span></div>
+      <div style="color: #38bdf8;">&nbsp;&nbsp;│ <span style="color: #22c55e;">●</span> <span style="color: #e2e8f0;">Database schema + migrations</span></div>
+      <div style="color: #38bdf8;">&nbsp;&nbsp;│ <span style="color: #22c55e;">●</span> <span style="color: #e2e8f0;">WebSocket server for live updates</span></div>
+      <div style="color: #38bdf8;">&nbsp;&nbsp;└</div>
+
+      <!-- Wiring -->
+      <div style="color: #a78bfa; margin-top: 4px;">&nbsp;&nbsp;┌ <strong>Wiring</strong> → claude-opus-4-6 <span style="color: #64748b;">waiting for frontend + backend</span></div>
+      <div style="color: #a78bfa;">&nbsp;&nbsp;│ <span style="color: #64748b;">○ PENDING · 0/3 tasks</span></div>
+      <div style="color: #a78bfa;">&nbsp;&nbsp;│ <span style="color: #64748b;">○ Connect frontend hooks to API client</span></div>
+      <div style="color: #a78bfa;">&nbsp;&nbsp;│ <span style="color: #64748b;">○ WebSocket reconnection + error boundaries</span></div>
+      <div style="color: #a78bfa;">&nbsp;&nbsp;│ <span style="color: #64748b;">○ E2E type safety (shared types)</span></div>
+      <div style="color: #a78bfa;">&nbsp;&nbsp;└</div>
+
+      <div style="color: #374151; margin: 6px 0;">────────────────────────────────────────────────────────────────────────</div>
+      <div>
+        <span style="color: #64748b;">Progress: </span>
+        <span style="color: #22c55e;">████████████████████</span><span style="color: #374151;">░░░░░░░░░░░░░░░░░░░░░░░░░░░░</span>
+        <span style="color: #a78bfa; font-weight: bold;"> 47%</span>
+      </div>
+      <div style="color: #64748b;">1/3 workers finished · Est. cost $2.40 · Elapsed 1m 23s</div>
+      <div style="color: #64748b;">enter inject guidance · ctrl+c abort · tab switch focus</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- 3. DELIBERATION -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<div class="section" style="margin-top: 32px;">
+  <h3>/deliberate — Deliberation Room</h3>
+  <div style="background: #0d1117; border-radius: 12px; padding: 0; font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', monospace; font-size: 12.5px; line-height: 1.7; color: #e2e8f0; overflow: hidden;">
+    <div style="border: 2px solid #7c3aed; border-radius: 8px; padding: 12px 16px;">
+      <div style="display: flex; justify-content: space-between;">
+        <span style="color: #7c3aed; font-weight: bold; font-size: 13px; letter-spacing: 2px;">◈ D E L I B E R A T I O N   R O O M</span>
+        <span style="color: #fbbf24; font-weight: bold;">DEBATING</span>
+      </div>
+      <div style="color: #64748b;">Topic: Redis vs Postgres for session caching</div>
+      <div style="color: #64748b;">Models: <span style="color: #a78bfa;">●</span> opus · <span style="color: #22c55e;">●</span> glm-5.1 · <span style="color: #38bdf8;">◉</span> gemini-3.1-pro</div>
+      <div style="margin-top: 4px;">
+        <span style="color: #64748b;">Round </span>
+        <span style="color: #7c3aed;">████████████████</span><span style="color: #374151;">░░░░░░░░░░░░░░░░░░░░░░░░</span>
+        <span style="font-weight: bold;"> 2/5</span>
+      </div>
+      <div style="color: #374151; margin: 6px 0;">────────────────────────────────────────────────────────────────────────</div>
+
+      <div style="font-weight: bold; color: #94a3b8;">Round 1</div>
+
+      <!-- Opus -->
+      <div style="margin-top: 6px;">
+        <div style="color: #a78bfa;">&nbsp;&nbsp;┌ <strong>Opus 4.6</strong> <span style="color: #64748b;">Round 1 · initial position</span></div>
+        <div style="color: #a78bfa;">&nbsp;&nbsp;│ <span style="color: #64748b;">1.2s · 850↑ 420↓ · $0.037</span></div>
+        <div style="color: #a78bfa;">&nbsp;&nbsp;│ <span style="color: #e2e8f0;">I'd start with Redis for session caching. It's purpose-built for</span></div>
+        <div style="color: #a78bfa;">&nbsp;&nbsp;│ <span style="color: #e2e8f0;">key-value access patterns with sub-ms latency. The TTL support</span></div>
+        <div style="color: #a78bfa;">&nbsp;&nbsp;│ <span style="color: #e2e8f0;">maps directly to session expiry. Pub/sub for cross-instance invalidation.</span></div>
+        <div style="color: #a78bfa;">&nbsp;&nbsp;└</div>
+      </div>
+
+      <!-- GLM -->
+      <div style="margin-top: 6px;">
+        <div style="color: #22c55e;">&nbsp;&nbsp;┌ <strong>GLM 5.1</strong> <span style="color: #64748b;">Round 1 · responding to Opus 4.6</span></div>
+        <div style="color: #22c55e;">&nbsp;&nbsp;│ <span style="color: #64748b;">0.9s · 1.2k↑ 380↓ · $0.012</span></div>
+        <div style="color: #22c55e;">&nbsp;&nbsp;│ <span style="color: #e2e8f0;">Redis is fast but adds operational complexity. Have you considered</span></div>
+        <div style="color: #22c55e;">&nbsp;&nbsp;│ <span style="color: #e2e8f0;">Postgres with UNLOGGED tables? Same sub-ms reads, zero additional</span></div>
+        <div style="color: #22c55e;">&nbsp;&nbsp;│ <span style="color: #e2e8f0;">infrastructure, and you keep ACID guarantees for the rest of your data.</span></div>
+        <div style="color: #22c55e;">&nbsp;&nbsp;└</div>
+      </div>
+
+      <!-- Gemini streaming -->
+      <div style="margin-top: 6px;">
+        <div style="color: #38bdf8;">&nbsp;&nbsp;┌ <strong>Gemini 3.1 Pro</strong> <span style="color: #fbbf24; font-weight: bold;">STREAMING</span></div>
+        <div style="color: #38bdf8;">&nbsp;&nbsp;│ <span style="color: #e2e8f0;">Both valid points. But before choosing the store, profile your</span></div>
+        <div style="color: #38bdf8;">&nbsp;&nbsp;│ <span style="color: #e2e8f0;">actual session access patterns. If sessions are read-heavy with</span></div>
+        <div style="color: #38bdf8;">&nbsp;&nbsp;│ <span style="color: #e2e8f0;">rare writes, both work. If you need atomic read-modify-write,</span></div>
+        <div style="color: #38bdf8;">&nbsp;&nbsp;│ <span style="color: #fbbf24;">▌</span></div>
+        <div style="color: #38bdf8;">&nbsp;&nbsp;└</div>
+      </div>
+
+      <div style="color: #374151; margin: 6px 0;">────────────────────────────────────────────────────────────────────────</div>
+      <div style="color: #64748b;">3 models · total cost $0.049</div>
+      <div style="color: #64748b;">ctrl+c stop · ctrl+s save transcript · enter inject thoughts</div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,38 @@
+<h2>Design Section 1: Fix Plugin Marketplace Access</h2>
+<p class="subtitle">One-line fix unlocks all 33 official plugins for Void</p>
+
+<div class="section">
+  <h3>The Problem</h3>
+  <p>Void tries to install from <code>anthropics/void-plugins-official</code> — a repo that doesn't exist. Both the GCS CDN path and the git fallback point to the wrong name. Claude Code uses <code>anthropics/claude-plugins-official</code> which has all 33 plugins.</p>
+</div>
+
+<div class="section">
+  <h3>The Fix (3 files, ~6 lines)</h3>
+
+  <div class="mockup">
+    <div class="mockup-header">src/utils/plugins/officialMarketplace.ts</div>
+    <div class="mockup-body" style="font-family: monospace; font-size: 13px; line-height: 1.6;">
+      <div style="color: #ef4444;">- repo: 'anthropics/void-plugins-official'</div>
+      <div style="color: #22c55e;">+ repo: 'anthropics/claude-plugins-official'</div>
+      <br>
+      <div style="color: #ef4444;">- OFFICIAL_MARKETPLACE_NAME = 'void-plugins-official'</div>
+      <div style="color: #22c55e;">+ OFFICIAL_MARKETPLACE_NAME = 'claude-plugins-official'</div>
+    </div>
+  </div>
+
+  <div class="mockup" style="margin-top: 12px;">
+    <div class="mockup-header">src/utils/plugins/officialMarketplaceGcs.ts</div>
+    <div class="mockup-body" style="font-family: monospace; font-size: 13px; line-height: 1.6;">
+      <div style="color: #ef4444;">- GCS_BASE = '...plugins/void-plugins-official'</div>
+      <div style="color: #22c55e;">+ GCS_BASE = '...plugins/claude-plugins-official'</div>
+      <br>
+      <div style="color: #ef4444;">- ARC_PREFIX = 'marketplaces/void-plugins-official/'</div>
+      <div style="color: #22c55e;">+ ARC_PREFIX = 'marketplaces/claude-plugins-official/'</div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Result</h3>
+  <p>After this fix, <code>/plugin</code> in Void shows the same 33 plugins as Claude Code: superpowers, figma, slack, telegram, frontend-design, code-review, pr-review-toolkit, LSP integrations, and everything else.</p>
+</div>
