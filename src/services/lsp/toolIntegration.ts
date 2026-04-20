@@ -28,6 +28,7 @@ import {
   uriToPath,
   type DiagnosticChangeEvent,
 } from './diagnostics.js'
+import { captureDiagnosticsSnapshot } from './historySnapshot.js'
 import { watchFile } from './watcher.js'
 
 const DEFAULT_TIMEOUT_MS = 1200
@@ -115,4 +116,26 @@ export function appendDiagnosticsToResult(
   const block = formatDiagnosticsForToolResult(filePath)
   if (!block) return result
   return `${result}\n\n${block}`
+}
+
+/**
+ * Capture a snapshot of the current diagnostic cache for this file, keyed by
+ * tool-use-id. The snapshot survives later cache churn so the session-history
+ * renderer can later show *historical* diagnostics ("these were the errors
+ * present when this edit ran") rather than whatever the live cache holds at
+ * render time. No-op when VOID_INLINE_DIAGNOSTICS is off.
+ *
+ * Call this from the FileEdit / FileWrite tool execute paths *after* the
+ * tool-result has been assembled (so it includes any diagnostics that
+ * arrived during the post-edit wait window).
+ */
+export function captureToolResultDiagnostics(
+  toolUseId: string,
+  filePath: string,
+): void {
+  try {
+    captureDiagnosticsSnapshot(toolUseId, filePath)
+  } catch {
+    // Snapshot capture is best-effort — never surface its failures.
+  }
 }
