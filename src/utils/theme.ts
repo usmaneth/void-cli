@@ -1,4 +1,9 @@
 import chalk, { Chalk } from 'chalk'
+import {
+  getOpenCodeTheme,
+  hasOpenCodeTheme,
+  OPENCODE_THEME_NAMES,
+} from '../services/themes/registry.js'
 import { env } from './env.js'
 
 export type Theme = {
@@ -88,7 +93,16 @@ export type Theme = {
   rainbow_violet_shimmer: string
 }
 
-export const THEME_NAMES = [
+/**
+ * Built-in void theme names (compile-time tuple).
+ *
+ * Opencode-ported themes are loaded dynamically from
+ * `src/services/themes/opencode/` at runtime (see `BUILTIN_THEME_NAMES`
+ * and `THEME_NAMES`). Because those names are driven by files on disk
+ * they cannot appear in this compile-time tuple, so `ThemeName` widens
+ * to `string` and runtime lookups fall through to the registry.
+ */
+export const BUILTIN_THEME_NAMES = [
   'dark',
   'light',
   'light-daltonized',
@@ -102,16 +116,34 @@ export const THEME_NAMES = [
   'solar-flare',
 ] as const
 
-/** A renderable theme. Always resolvable to a concrete color palette. */
-export type ThemeName = (typeof THEME_NAMES)[number]
+/** Built-in theme names (narrow type). */
+export type BuiltinThemeName = (typeof BUILTIN_THEME_NAMES)[number]
 
-export const THEME_SETTINGS = ['auto', ...THEME_NAMES] as const
+/**
+ * All theme names available at runtime: built-ins + opencode-ported.
+ * Regenerated on import from the registry, which reads the themes
+ * directory at module load.
+ */
+export const THEME_NAMES: readonly string[] = Object.freeze([
+  ...BUILTIN_THEME_NAMES,
+  ...OPENCODE_THEME_NAMES.filter(
+    (n) => !BUILTIN_THEME_NAMES.includes(n as BuiltinThemeName),
+  ),
+])
+
+/** A renderable theme. Always resolvable to a concrete color palette. */
+export type ThemeName = BuiltinThemeName | string
+
+export const THEME_SETTINGS: readonly string[] = Object.freeze([
+  'auto',
+  ...THEME_NAMES,
+])
 
 /**
  * A theme preference as stored in user config. `'auto'` follows the system
  * dark/light mode and is resolved to a ThemeName at runtime.
  */
-export type ThemeSetting = (typeof THEME_SETTINGS)[number]
+export type ThemeSetting = 'auto' | ThemeName
 
 /**
  * Light theme using explicit RGB values to avoid inconsistencies
@@ -814,9 +846,27 @@ export function getTheme(themeName: ThemeName): Theme {
       return midnightPurpleTheme
     case 'solar-flare':
       return solarFlareTheme
-    default:
+    case 'dark':
       return darkTheme
+    default: {
+      // Delegate unknown names to the opencode theme registry. If no
+      // match is found (e.g. config points at a deleted custom theme),
+      // fall back to the void-branded dark theme.
+      if (hasOpenCodeTheme(themeName)) {
+        const mapped = getOpenCodeTheme(themeName, 'dark')
+        if (mapped) return mapped
+      }
+      return darkTheme
+    }
   }
+}
+
+/** Returns whether `name` is a valid renderable theme name. */
+export function isKnownTheme(name: string): boolean {
+  return (
+    (BUILTIN_THEME_NAMES as readonly string[]).includes(name) ||
+    hasOpenCodeTheme(name)
+  )
 }
 
 // Create a chalk instance with 256-color level for Apple Terminal

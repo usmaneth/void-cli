@@ -98,7 +98,7 @@ function handleSave(name?: string) {
   }
 
   if (name) {
-    manager.currentSession.title = name
+    manager.setTitle(name)
   }
 
   const ended = manager.endSession()
