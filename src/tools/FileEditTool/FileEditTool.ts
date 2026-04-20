@@ -4,6 +4,7 @@ import { getFeatureValue_CACHED_MAY_BE_STALE } from '../../services/analytics/gr
 import { diagnosticTracker } from '../../services/diagnosticTracking.js'
 import { clearDeliveredDiagnosticsForFile } from '../../services/lsp/LSPDiagnosticRegistry.js'
 import { getLspServerManager } from '../../services/lsp/manager.js'
+import { appendDiagnosticsToResult } from '../../services/lsp/toolIntegration.js'
 import { notifyVscodeFileUpdated } from '../../services/mcp/vscodeSdkMcp.js'
 import { checkTeamMemSecrets } from '../../services/teamMemorySync/teamMemSecretGuard.js'
 import {
@@ -578,18 +579,17 @@ export const FileEditTool = buildTool({
       ? '.  The user modified your proposed changes before accepting them. '
       : ''
 
-    if (replaceAll) {
-      return {
-        tool_use_id: toolUseID,
-        type: 'tool_result',
-        content: `The file ${filePath} has been updated${modifiedNote}. All occurrences were successfully replaced.`,
-      }
-    }
+    const base = replaceAll
+      ? `The file ${filePath} has been updated${modifiedNote}. All occurrences were successfully replaced.`
+      : `The file ${filePath} has been updated successfully${modifiedNote}.`
 
+    // When the LSP aggregator is enabled (VOID_LSP_SERVER=1), surface any
+    // current diagnostics inline so the agent sees type/lint errors without
+    // needing to open the file or run a separate tool.
     return {
       tool_use_id: toolUseID,
       type: 'tool_result',
-      content: `The file ${filePath} has been updated successfully${modifiedNote}.`,
+      content: appendDiagnosticsToResult(base, filePath),
     }
   },
 } satisfies ToolDef<ReturnType<typeof inputSchema>, FileEditOutput>)
