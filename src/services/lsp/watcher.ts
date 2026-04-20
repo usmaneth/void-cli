@@ -21,7 +21,7 @@
 
 import chokidar, { type FSWatcher } from 'chokidar'
 import * as path from 'path'
-import { logForDebugging } from '../../utils/debug.js'
+import { logForDebugging } from './_logShim.js'
 import {
   clearDiagnosticsForFile,
   isLspServerEnabled,

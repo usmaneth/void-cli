@@ -30,13 +30,17 @@
 import { execFileSync } from 'child_process'
 import { existsSync } from 'fs'
 import * as path from 'path'
-import { logForDebugging } from '../../utils/debug.js'
-import { getCwd } from '../../utils/cwd.js'
+import { logForDebugging } from './_logShim.js'
 import { isLspServerEnabled } from './diagnostics.js'
-import {
-  createLSPServerInstance,
-  type LSPServerInstance,
-} from './LSPServerInstance.js'
+
+/**
+ * Local default for workspace-root walks when no stopAt is given. We can't
+ * import getCwd() from utils without pulling in bootstrap state (breaks tests
+ * in stripped builds). process.cwd() is the same value in practice.
+ */
+function currentWorkingDirectory(): string {
+  return process.cwd()
+}
 
 /**
  * Shape of a registered server config — matches the duck-typed fields that
@@ -113,10 +117,20 @@ const BUILTIN_LANGS: BuiltinLang[] = [
 ]
 
 /**
- * Cache: languageName -> resolved LSPServerInstance (null = not available /
- * already failed probe, undefined = not yet probed).
+ * Cache: languageName -> resolved LSPServerInstance-like handle (null = not
+ * available / already failed probe, undefined = not yet probed).
+ *
+ * We type this loosely to avoid a static import of LSPServerInstance.ts,
+ * which transitively depends on LSPClient.ts + vscode-jsonrpc; keeping the
+ * dependency lazy makes builtinDefaults importable in environments where
+ * those packages aren't hydrated (e.g. stripped test runs).
  */
-const instanceCache = new Map<string, LSPServerInstance | null>()
+type RunningServer = {
+  start: () => Promise<void>
+  stop: () => Promise<void>
+  readonly state?: unknown
+}
+const instanceCache = new Map<string, RunningServer | null>()
 
 /**
  * Cache `which` probes so we don't fork for every file touch. A null entry
@@ -145,10 +159,21 @@ export function whichSync(binary: string): string | null {
         .trim()
       result = out.split(/\r?\n/)[0] ?? null
     } else {
-      const out = execFileSync('command', ['-v', binary], {
-        stdio: ['ignore', 'pipe', 'ignore'],
-        shell: '/bin/sh',
-      })
+      // Spawn /bin/sh directly with `-c` + a single quoted arg to avoid the
+      // Node DEP0190 warning (args-with-shell:true). `command -v` is the
+      // posix-standard way to resolve a binary, handles builtins, and prints
+      // an absolute path for PATH-resolved executables.
+      // The binary name is sanitized via a strict allowlist below.
+      if (!/^[A-Za-z0-9._+-]+$/.test(binary)) {
+        // Defensive: never interpolate arbitrary strings into a shell.
+        whichCache.set(binary, null)
+        return null
+      }
+      const out = execFileSync(
+        '/bin/sh',
+        ['-c', `command -v ${binary}`],
+        { stdio: ['ignore', 'pipe', 'ignore'] },
+      )
         .toString()
         .trim()
       result = out || null
@@ -169,7 +194,9 @@ export function findWorkspaceRoot(
   markers: string[],
   stopAt?: string,
 ): string | undefined {
-  const stop = stopAt ? path.resolve(stopAt) : path.resolve(getCwd())
+  const stop = stopAt
+    ? path.resolve(stopAt)
+    : path.resolve(currentWorkingDirectory())
   let dir = path.resolve(startDir)
   // Walk up at most 64 levels — belt-and-suspenders against symlink loops.
   for (let i = 0; i < 64; i++) {
@@ -227,7 +254,8 @@ export function resolveBuiltinConfigForFile(
   }
 
   const fileDir = path.dirname(path.resolve(filePath))
-  const root = findWorkspaceRoot(fileDir, lang.rootMarkers) ?? getCwd()
+  const root =
+    findWorkspaceRoot(fileDir, lang.rootMarkers) ?? currentWorkingDirectory()
 
   const config: BuiltinServerConfig = {
     command: chosen.command,
@@ -256,7 +284,7 @@ export function resolveBuiltinConfigForFile(
  */
 export function getBuiltinServerForFile(
   filePath: string,
-): LSPServerInstance | undefined {
+): RunningServer | undefined {
   if (!isLspServerEnabled()) return undefined
 
   const resolved = resolveBuiltinConfigForFile(filePath)
@@ -268,11 +296,18 @@ export function getBuiltinServerForFile(
   if (cached) return cached
 
   try {
-    // Cast to any for the duck-typed config — the underlying LSPServerInstance
-    // reads only the fields we've set and types.ts is a stub (= any).
+    // Lazy require so this module is importable in test environments that
+    // don't hydrate the full LSPServerInstance graph.
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { createLSPServerInstance } = require('./LSPServerInstance.js') as {
+      createLSPServerInstance: (
+        name: string,
+        cfg: unknown,
+      ) => RunningServer
+    }
     const instance = createLSPServerInstance(
       `builtin:${lang.name}`,
-      config as unknown as Parameters<typeof createLSPServerInstance>[1],
+      config as unknown,
     )
     instanceCache.set(lang.name, instance)
     return instance

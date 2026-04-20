@@ -25,10 +25,7 @@
 
 import { EventEmitter } from 'events'
 import { fileURLToPath, pathToFileURL } from 'url'
-import { logForDebugging } from '../../utils/debug.js'
-import { toError } from '../../utils/errors.js'
-import { logError } from '../../utils/log.js'
-import { getLspServerManager } from './manager.js'
+import { logError, logForDebugging, toError } from './_logShim.js'
 
 /**
  * Single LSP diagnostic. Mirrors vscode-languageserver-types Diagnostic but
@@ -268,7 +265,23 @@ export async function refreshDiagnosticsForFile(
   fsPath: string,
   contentHint?: string,
 ): Promise<void> {
-  const manager = getLspServerManager()
+  // Lazy require avoids a static cycle with manager.ts (which transitively
+  // pulls in a large portion of the void-cli bootstrap graph). At runtime
+  // manager.js is always available; in tests that don't touch it, the
+  // try/catch swallows the miss and turns this function into a no-op.
+  let getLspServerManager:
+    | undefined
+    | (() => { changeFile: (...args: unknown[]) => Promise<void>
+               saveFile: (...args: unknown[]) => Promise<void> } | undefined)
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    getLspServerManager = (require('./manager.js') as {
+      getLspServerManager: typeof getLspServerManager
+    }).getLspServerManager
+  } catch {
+    return
+  }
+  const manager = getLspServerManager?.()
   if (!manager) return
 
   try {
