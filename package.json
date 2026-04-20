@@ -124,5 +124,8 @@
     "oxlint": "^1.60.0",
     "typescript": "^6.0.2",
     "vitest": "^4.1.4"
+  },
+  "overrides": {
+    "@anthropic-ai/sandbox-runtime": "file:./stubs/@anthropic-ai/sandbox-runtime"
   }
 }
