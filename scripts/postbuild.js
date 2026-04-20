@@ -35,7 +35,8 @@ if (!existsSync(link)) {
 
 // --- 2. Copy non-TS assets from src/ to dist/ that tsc skips ---
 // This includes plain .js stubs and .md files imported at runtime.
-const COPY_EXTENSIONS = new Set(['.js', '.md']);
+const COPY_EXTENSIONS = new Set(['.js', '.md', '.json']);
+const COPY_FILENAMES = new Set(['NOTICE']);
 function copyAssets(dir) {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     const fullPath = join(dir, entry.name);
@@ -43,7 +44,7 @@ function copyAssets(dir) {
       copyAssets(fullPath);
     } else {
       const ext = entry.name.slice(entry.name.lastIndexOf('.'));
-      if (COPY_EXTENSIONS.has(ext)) {
+      if (COPY_EXTENSIONS.has(ext) || COPY_FILENAMES.has(entry.name)) {
         const rel = relative(src, fullPath);
         const destPath = join(dist, rel);
         const destDir = dirname(destPath);

@@ -2,8 +2,10 @@
 import { toolMatchesName, type Tool, type Tools } from './Tool.js'
 import { AgentTool } from './tools/AgentTool/AgentTool.js'
 import { SkillTool } from './tools/SkillTool/SkillTool.js'
+import { ApplyPatchTool } from './tools/ApplyPatchTool/ApplyPatchTool.js'
 import { BashTool } from './tools/BashTool/BashTool.js'
 import { FileEditTool } from './tools/FileEditTool/FileEditTool.js'
+import { MultiEditTool } from './tools/MultiEditTool/MultiEditTool.js'
 import { FileReadTool } from './tools/FileReadTool/FileReadTool.js'
 import { FileWriteTool } from './tools/FileWriteTool/FileWriteTool.js'
 import { GlobTool } from './tools/GlobTool/GlobTool.js'
@@ -202,6 +204,8 @@ export function getAllBaseTools(): Tools {
     ExitPlanModeV2Tool,
     FileReadTool,
     FileEditTool,
+    MultiEditTool,
+    ApplyPatchTool,
     FileWriteTool,
     NotebookEditTool,
     WebFetchTool,
