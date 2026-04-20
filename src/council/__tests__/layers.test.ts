@@ -21,6 +21,7 @@ import {
   AuthLayer,
   ProviderLayer,
   PermissionLayer,
+  ConsensusLayer,
 } from '../layers/index.js'
 import {
   makeCouncilRuntime,
@@ -66,6 +67,7 @@ const composeLayers = (args: {
     args.permission
       ? PermissionLayer.mockLayer(args.permission)
       : PermissionLayer.defaultLayer,
+    ConsensusLayer.defaultLayer,
   ).pipe(Layer.provide(AuthLayer.mockLayer({ openrouter: 'test-key' })))
 
 describe('council effect layers', () => {
