@@ -612,17 +612,57 @@ function createFileSuggestionItem(
 }
 
 /**
- * Find matching files and folders for a given query using the TS file index
+ * Find matching files and folders for a given query using the TS file index.
+ *
+ * Applies frecency-aware re-ranking on top of the fuzzy matcher: we ask the
+ * index for a wider pool (MAX_SUGGESTIONS * 3) and let files that the user
+ * has touched recently bubble up. The final score stored in item.metadata.score
+ * is the COMBINED score (lower = better, kept consistent with caller expectations).
  */
 const MAX_SUGGESTIONS = 15
+const FRECENCY_POOL_MULT = 3
+const FRECENCY_BOOST_WEIGHT = 0.4 // 0 = no frecency, 1 = frecency dominates
+
 function findMatchingFiles(
   fileIndex: FileIndex,
   partialPath: string,
 ): SuggestionItem[] {
-  const results = fileIndex.search(partialPath, MAX_SUGGESTIONS)
-  return results.map(result =>
-    createFileSuggestionItem(result.path, result.score),
-  )
+  const pool = MAX_SUGGESTIONS * FRECENCY_POOL_MULT
+  const results = fileIndex.search(partialPath, pool)
+  if (results.length === 0) return []
+
+  // Lazy-load to avoid circular imports and startup cost.
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { getFrecencyStore } = require('../services/frecency/store.js') as {
+    getFrecencyStore: () => { score: (p: string) => number }
+  }
+  const store = getFrecencyStore()
+
+  // Normalize frecency across pool so the weight is stable regardless of the
+  // absolute magnitude of frecency scores (which grow unboundedly with use).
+  let maxFrecency = 0
+  const frecencies = new Array<number>(results.length)
+  for (let i = 0; i < results.length; i++) {
+    const f = store.score(results[i]!.path)
+    frecencies[i] = f
+    if (f > maxFrecency) maxFrecency = f
+  }
+
+  const combined = results.map((r, i) => {
+    // r.score is normalized position, 0 = best. Convert to weight in [0,1].
+    const fuzzyWeight = 1 - Math.min(1, Math.max(0, r.score))
+    const frecWeight = maxFrecency > 0 ? frecencies[i]! / maxFrecency : 0
+    const combinedWeight =
+      (1 - FRECENCY_BOOST_WEIGHT) * fuzzyWeight +
+      FRECENCY_BOOST_WEIGHT * frecWeight
+    // Invert back to position-style score (lower = better) for compatibility.
+    return { path: r.path, score: 1 - combinedWeight }
+  })
+
+  combined.sort((a, b) => a.score - b.score)
+  return combined
+    .slice(0, MAX_SUGGESTIONS)
+    .map(r => createFileSuggestionItem(r.path, r.score))
 }
 
 /**

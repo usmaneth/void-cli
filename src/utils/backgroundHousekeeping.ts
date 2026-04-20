@@ -1,5 +1,6 @@
 import { feature } from '../bun-bundle-shim.js'
 import { initAutoDream } from '../services/autoDream/autoDream.js'
+import { initFrecency } from '../services/frecency/init.js'
 import { initMagicDocs } from '../services/MagicDocs/magicDocs.js'
 import { initSkillImprovement } from './hooks/skillImprovement.js'
 
@@ -29,6 +30,7 @@ const RECURRING_CLEANUP_INTERVAL_MS = 24 * 60 * 60 * 1000
 const DELAY_VERY_SLOW_OPERATIONS_THAT_HAPPEN_EVERY_SESSION = 10 * 60 * 1000
 
 export function startBackgroundHousekeeping(): void {
+  initFrecency()
   void initMagicDocs()
   void initSkillImprovement()
   if (feature('EXTRACT_MEMORIES')) {
