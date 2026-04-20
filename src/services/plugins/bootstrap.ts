@@ -18,18 +18,29 @@
  */
 
 import { isEnvTruthy } from '../../utils/envUtils.js'
-import { logForDebugging } from '../../utils/debug.js'
-import { registerBundledSkill } from '../../skills/bundledSkills.js'
 import type { AdapterLogger } from './adapter.js'
-import {
-  attachAll,
-  getPluginSkills,
-  runPluginInits,
-  setAdapterLogger,
-  setBuiltinSkillNames,
-  setBuiltinToolNames,
-} from './pluginAdapter.js'
 import { loadPlugins, type LoadedPlugin, type LoadError } from './loader.js'
+
+/**
+ * Minimal interface the bootstrap needs from an adapter. The production
+ * adapter (./pluginAdapter.ts) satisfies this; tests can pass a pure stub
+ * without dragging in the host module graph.
+ */
+export type BootAdapter = {
+  attachAll: (plugins: readonly LoadedPlugin[]) => unknown
+  getPluginSkills: () => readonly unknown[]
+  runPluginInits: () => Promise<void>
+  setLogger?: (logger: AdapterLogger) => void
+  setBuiltinToolNames?: (names: Iterable<string>) => void
+  setBuiltinSkillNames?: (names: Iterable<string>) => void
+}
+
+/**
+ * Minimal interface for the host skill registration. The production value is
+ * `registerBundledSkill` from src/skills/bundledSkills.ts. Tests pass a
+ * capturing stub.
+ */
+export type SkillRegistrar = (skill: unknown) => void
 
 /**
  * Feature flag: set `VOID_PLUGINS=1` to enable the SDK plugin pipeline.
@@ -50,9 +61,17 @@ export type BootOptions = {
   logger?: AdapterLogger
   /** Override loader injection for tests. */
   loader?: typeof loadPlugins
-  /** Callback to register a skill into the host's bundled-skills registry.
-   * Tests override to capture what would've been registered. */
-  registerSkill?: typeof registerBundledSkill
+  /**
+   * Adapter to wire plugins into. Defaults to the production singleton from
+   * ./pluginAdapter.js. Tests pass a pure stub.
+   */
+  adapter?: BootAdapter
+  /**
+   * Callback that registers a plugin skill into the host's bundled-skills
+   * registry. Defaults to `registerBundledSkill` from src/skills/bundledSkills.
+   * Tests pass a capturing stub.
+   */
+  registerSkill?: SkillRegistrar
 }
 
 export type BootResult = {
@@ -82,9 +101,22 @@ export async function bootPluginRuntime(
     }
   }
 
-  if (options.logger) setAdapterLogger(options.logger)
-  if (options.builtinToolNames) setBuiltinToolNames(options.builtinToolNames)
-  if (options.builtinSkillNames) setBuiltinSkillNames(options.builtinSkillNames)
+  // Resolve adapter + skill registrar. Lazy-import the production defaults
+  // so this module stays test-friendly (the production defaults pull in the
+  // host module graph via adapterTranslators → Tool.ts → bootstrap/state).
+  const adapter: BootAdapter =
+    options.adapter ?? (await import('./pluginAdapter.js'))
+  const registerSkill: SkillRegistrar =
+    options.registerSkill ??
+    ((await import('../../skills/bundledSkills.js')).registerBundledSkill as SkillRegistrar)
+
+  if (options.logger && adapter.setLogger) adapter.setLogger(options.logger)
+  if (options.builtinToolNames && adapter.setBuiltinToolNames) {
+    adapter.setBuiltinToolNames(options.builtinToolNames)
+  }
+  if (options.builtinSkillNames && adapter.setBuiltinSkillNames) {
+    adapter.setBuiltinSkillNames(options.builtinSkillNames)
+  }
 
   const loader = options.loader ?? loadPlugins
   const { loaded, errors } = await loader({ plugins: options.plugins })
@@ -93,31 +125,35 @@ export async function bootPluginRuntime(
   // shouldn't block the session. Users see these in debug logs; managed
   // consoles may pipe debug to Sentry/Honeycomb.
   for (const err of errors) {
-    logForDebugging(
-      `[plugin-runtime] Failed to load ${err.id} (${err.reason}): ${err.error.message}`,
-    )
-  }
-
-  attachAll(loaded)
-
-  // Register plugin skills into the host's bundled-skills registry so the
-  // skill picker / SkillTool can find them without knowing plugins exist.
-  const registerSkill = options.registerSkill ?? registerBundledSkill
-  const registeredSkillNames: string[] = []
-  for (const skill of getPluginSkills()) {
-    try {
-      registerSkill(skill)
-      registeredSkillNames.push(skill.name)
-    } catch (err) {
-      logForDebugging(
-        `[plugin-runtime] Failed to register skill ${skill.name}: ${
-          err instanceof Error ? err.message : String(err)
-        }`,
-      )
+    // Use the injected logger when available; fall back to the host's
+    // logForDebugging in production paths.
+    const msg = `[plugin-runtime] Failed to load ${err.id} (${err.reason}): ${err.error.message}`
+    if (options.logger) options.logger.warn(msg)
+    else {
+      const { logForDebugging } = await import('../../utils/debug.js')
+      logForDebugging(msg)
     }
   }
 
-  await runPluginInits()
+  adapter.attachAll(loaded)
+
+  // Register plugin skills into the host's bundled-skills registry so the
+  // skill picker / SkillTool can find them without knowing plugins exist.
+  const registeredSkillNames: string[] = []
+  for (const skill of adapter.getPluginSkills()) {
+    const skillName = (skill as { name?: string }).name
+    try {
+      registerSkill(skill)
+      if (skillName) registeredSkillNames.push(skillName)
+    } catch (err) {
+      const msg = `[plugin-runtime] Failed to register skill ${String(skillName)}: ${
+        err instanceof Error ? err.message : String(err)
+      }`
+      if (options.logger) options.logger.warn(msg)
+    }
+  }
+
+  await adapter.runPluginInits()
 
   return {
     enabled: true,
