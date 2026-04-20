@@ -80,6 +80,57 @@ export const PermissionsSchema = lazySchema(() =>
         .array(z.string())
         .optional()
         .describe('Additional directories to include in the permission scope'),
+      // Smart bash permission scopes (feature-flagged behind VOID_SMART_PERMISSIONS=1).
+      // Classifies bash commands by inferred semantic scope (read-only, write-file,
+      // network, exec, danger, …) and auto-allows / auto-denies on match.
+      // See src/services/permission/arity.ts.
+      bash: z
+        .object({
+          allowScopes: z
+            .array(
+              z.enum([
+                'read-only',
+                'write-file',
+                'delete-file',
+                'exec',
+                'network',
+                'shell-redirect',
+                'pipe',
+                'background',
+                'danger',
+              ]),
+            )
+            .optional()
+            .describe(
+              'Auto-allow bash commands whose ALL inferred scopes are in this list. ' +
+                "The 'danger' scope is never auto-allowed even if listed. " +
+                'Requires env VOID_SMART_PERMISSIONS=1 to take effect.',
+            ),
+          denyScopes: z
+            .array(
+              z.enum([
+                'read-only',
+                'write-file',
+                'delete-file',
+                'exec',
+                'network',
+                'shell-redirect',
+                'pipe',
+                'background',
+                'danger',
+              ]),
+            )
+            .optional()
+            .describe(
+              'Auto-deny bash commands whose ANY inferred scope is in this list. ' +
+                'Always applied, even without VOID_SMART_PERMISSIONS=1.',
+            ),
+        })
+        .optional()
+        .describe(
+          'Smart bash permission scope configuration. ' +
+            'Scopes are inferred from the parsed bash AST (tree-sitter).',
+        ),
     })
     .passthrough(),
 )

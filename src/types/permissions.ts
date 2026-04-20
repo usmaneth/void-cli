@@ -223,6 +223,12 @@ export type PermissionAskDecision<
    * message in the tool result. Used when users paste images as feedback.
    */
   contentBlocks?: ContentBlockParam[]
+  /**
+   * Inferred bash command scopes (see src/services/permission/scopes.ts).
+   * Only set for BashTool asks when the tree-sitter arity classifier has run.
+   * Used by the permission UI to show "This command will: write-file, network".
+   */
+  inferredScopes?: readonly string[]
 }
 
 /**

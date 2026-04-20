@@ -77,6 +77,15 @@ import { checkPermissionMode } from './modeValidation.js'
 import { checkPathConstraints } from './pathValidation.js'
 import { checkSedConstraints } from './sedValidation.js'
 import { shouldUseSandbox } from './shouldUseSandbox.js'
+import {
+  classifyArity,
+  evaluateScopePolicy,
+  readScopePolicy,
+  sessionAllowsScopes,
+  smartPermissionsEnabled,
+  sortScopesForDisplay,
+  scopeLabel,
+} from '../../services/permission/index.js'
 
 // DCE cliff: Bun's feature() evaluator has a per-function complexity budget.
 // bashToolHasPermission is right at the limit. `import { X as Y }` aliases
@@ -1658,9 +1667,120 @@ export async function executeAsyncClassifierCheck(
 }
 
 /**
- * The main implementation to check if we need to ask for user permission to call BashTool with a given input
+ * Run the tree-sitter scope classifier and, if the user has opted in via
+ * settings, short-circuit with an auto-allow / auto-deny. Otherwise return
+ * the inferred scope list so downstream `ask` results can surface it.
+ *
+ * Feature flag: auto-allow only fires when `VOID_SMART_PERMISSIONS=1`.
+ * Auto-deny fires regardless — deny is always safer than silent allow.
+ *
+ * Fail-closed: if the parse fails, we return `{ scopes: [], decision: 'prompt' }`
+ * so the existing permission machinery runs unchanged.
+ */
+async function evaluateBashScopePermission(
+  command: string,
+): Promise<{
+  decision: 'allow' | 'deny' | 'prompt'
+  scopes: readonly string[]
+  reason?: string
+}> {
+  try {
+    const arity = await classifyArity(command)
+    const scopes = sortScopesForDisplay(arity.scopes).map(scopeLabel)
+
+    const policy = readScopePolicy()
+    const effectiveAllow = smartPermissionsEnabled() ? policy.allowScopes : []
+    const raw = evaluateScopePolicy(arity, {
+      allowScopes: effectiveAllow,
+      denyScopes: policy.denyScopes,
+    })
+    if (raw === 'deny') {
+      return {
+        decision: 'deny',
+        scopes,
+        reason: `Bash command scope(s) ${scopes.join(', ')} are denied by permissions.bash.denyScopes`,
+      }
+    }
+    if (raw === 'allow') {
+      return {
+        decision: 'allow',
+        scopes,
+        reason: `Auto-allowed by permissions.bash.allowScopes (scope: ${scopes.join(', ')})`,
+      }
+    }
+    // Session-level acceptance: user clicked "Accept scope for session" on a
+    // prior prompt. Only active while VOID_SMART_PERMISSIONS=1.
+    if (
+      smartPermissionsEnabled() &&
+      !arity.parseFailed &&
+      arity.scopes.size > 0 &&
+      !arity.scopes.has('danger') &&
+      sessionAllowsScopes(arity.scopes)
+    ) {
+      return {
+        decision: 'allow',
+        scopes,
+        reason: `Auto-allowed by session scope acceptance (scope: ${scopes.join(', ')})`,
+      }
+    }
+    return { decision: 'prompt', scopes }
+  } catch {
+    // Fail-closed.
+    return { decision: 'prompt', scopes: [] }
+  }
+}
+
+/**
+ * The main implementation to check if we need to ask for user permission to call BashTool with a given input.
+ *
+ * Wraps the legacy pipeline (`_bashToolHasPermissionLegacy`) with the smart
+ * bash scope classifier (`evaluateBashScopePermission`). Order of operations:
+ *
+ *   1. Classify command scopes (fails-closed on parse error).
+ *   2. If ANY scope is in `permissions.bash.denyScopes` → deny.
+ *   3. If VOID_SMART_PERMISSIONS=1 and ALL scopes are in allowScopes → allow.
+ *   4. Otherwise run the legacy pipeline and, on its ask, tag `inferredScopes`
+ *      onto the result so the prompt UI can show "This command will: …".
  */
 export async function bashToolHasPermission(
+  input: z.infer<typeof BashTool.inputSchema>,
+  context: ToolUseContext,
+  getCommandSubcommandPrefixFn = getCommandSubcommandPrefix,
+): Promise<PermissionResult> {
+  const scopeEval = await evaluateBashScopePermission(input.command)
+  if (scopeEval.decision === 'deny') {
+    return {
+      behavior: 'deny',
+      message: scopeEval.reason ?? 'Bash command denied by scope policy',
+      decisionReason: {
+        type: 'other' as const,
+        reason: scopeEval.reason ?? 'Bash command denied by scope policy',
+      },
+    }
+  }
+  if (scopeEval.decision === 'allow') {
+    return {
+      behavior: 'allow' as const,
+      updatedInput: input,
+    }
+  }
+  const result = await _bashToolHasPermissionLegacy(
+    input,
+    context,
+    getCommandSubcommandPrefixFn,
+  )
+  // Tag inferredScopes onto any ask result so the UI can surface them.
+  if (result.behavior === 'ask' && scopeEval.scopes.length > 0) {
+    return { ...result, inferredScopes: scopeEval.scopes }
+  }
+  return result
+}
+
+/**
+ * Legacy permission pipeline, unchanged from before the scope classifier
+ * was introduced. Kept internal; callers use {@link bashToolHasPermission}.
+ */
+async function _bashToolHasPermissionLegacy(
   input: z.infer<typeof BashTool.inputSchema>,
   context: ToolUseContext,
   getCommandSubcommandPrefixFn = getCommandSubcommandPrefix,
