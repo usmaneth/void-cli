@@ -5,6 +5,7 @@ import { getFeatureValue_CACHED_MAY_BE_STALE } from '../../services/analytics/gr
 import { diagnosticTracker } from '../../services/diagnosticTracking.js'
 import { clearDeliveredDiagnosticsForFile } from '../../services/lsp/LSPDiagnosticRegistry.js'
 import { getLspServerManager } from '../../services/lsp/manager.js'
+import { appendDiagnosticsToResult } from '../../services/lsp/toolIntegration.js'
 import { notifyVscodeFileUpdated } from '../../services/mcp/vscodeSdkMcp.js'
 import { checkTeamMemSecrets } from '../../services/teamMemorySync/teamMemSecretGuard.js'
 import {
@@ -416,19 +417,16 @@ export const FileWriteTool = buildTool({
     }
   },
   mapToolResultToToolResultBlockParam({ filePath, type }, toolUseID) {
-    switch (type) {
-      case 'create':
-        return {
-          tool_use_id: toolUseID,
-          type: 'tool_result',
-          content: `File created successfully at: ${filePath}`,
-        }
-      case 'update':
-        return {
-          tool_use_id: toolUseID,
-          type: 'tool_result',
-          content: `The file ${filePath} has been updated successfully.`,
-        }
+    // Surface LSP diagnostics (when the VOID_LSP_SERVER aggregator is on) so
+    // the agent sees errors without needing to open the file separately.
+    const base =
+      type === 'create'
+        ? `File created successfully at: ${filePath}`
+        : `The file ${filePath} has been updated successfully.`
+    return {
+      tool_use_id: toolUseID,
+      type: 'tool_result',
+      content: appendDiagnosticsToResult(base, filePath),
     }
   },
 } satisfies ToolDef<InputSchema, Output>)

@@ -23,6 +23,7 @@ import {
 } from '../utils/context.js'
 import { renderModelName } from '../utils/model/model.js'
 import { getCurrentUsage } from '../utils/tokens.js'
+import { LspStatus } from './LspStatus.js'
 
 // Visual bar characters
 const FILLED = '█'
@@ -171,6 +172,7 @@ function SessionHUDImpl({
       <Text color={sessionCost > 1 ? 'yellow' : undefined}>
         {formatUSD(sessionCost)}
       </Text>
+      <LspStatus />
       <Text dimColor>{' ─'}</Text>
     </Box>
   )
