@@ -2,6 +2,10 @@
   "name": "void-cli",
   "version": "0.1.0",
   "type": "module",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
   "bin": {
     "void": "./bin/void"
   },
@@ -9,7 +13,8 @@
     "build": "tsc && node scripts/postbuild.js",
     "postinstall": "node scripts/postbuild.js 2>/dev/null || true",
     "check": "tsc --noEmit",
-    "start": "node dist/entrypoints/cli.js"
+    "start": "node dist/entrypoints/cli.js",
+    "test:plugin": "cd packages/plugin && npm test"
   },
   "dependencies": {
     "@alcalzone/ansi-tokenize": "^0.3.0",
