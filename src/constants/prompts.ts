@@ -61,6 +61,7 @@ import { logForDebugging } from '../utils/debug.js'
 import { loadMemoryPrompt } from '../memdir/memdir.js'
 import { isUndercover } from '../utils/undercover.js'
 import { isMcpInstructionsDeltaEnabled } from '../utils/mcpInstructionsDelta.js'
+import { getMergedInstructionsPrompt } from '../services/instructions/inject.js'
 
 // Dead code elimination: conditional imports for feature-gated modules
 /* eslint-disable @typescript-eslint/no-require-imports */
@@ -475,6 +476,7 @@ export async function getSystemPrompt(
 ${CYBER_RISK_INSTRUCTION}`,
       getSystemRemindersSection(),
       await loadMemoryPrompt(),
+      getMergedInstructionsPrompt(),
       envInfo,
       getLanguageSection(settings.language),
       // When delta enabled, instructions are announced via persisted
@@ -494,6 +496,15 @@ ${CYBER_RISK_INSTRUCTION}`,
       getSessionSpecificGuidanceSection(enabledTools, skillToolCommands),
     ),
     systemPromptSection('memory', () => loadMemoryPrompt()),
+    // Layered user/workspace/local instructions (from settings:
+    // `instructions`, `instructionFiles`, plus auto-discovered CLAUDE.md /
+    // AGENTS.md). Read per turn — file cache is mtime-keyed, so unchanged
+    // files don't bust the prompt cache; edits correctly invalidate.
+    DANGEROUS_uncachedSystemPromptSection(
+      'layered_instructions',
+      () => getMergedInstructionsPrompt(),
+      'layered instruction files may be edited between turns',
+    ),
     systemPromptSection('ant_model_override', () =>
       getAntModelOverrideSection(),
     ),
