@@ -9,7 +9,8 @@
     "build": "tsc && node scripts/postbuild.js",
     "postinstall": "node scripts/postbuild.js 2>/dev/null || true",
     "check": "tsc --noEmit",
-    "start": "node dist/entrypoints/cli.js"
+    "start": "node dist/entrypoints/cli.js",
+    "test:streaming": "node --test dist/components/streaming/__tests__/aggregator.test.js dist/components/streaming/__tests__/progressBridge.test.js dist/components/streaming/__tests__/toolCardSnapshot.test.js"
   },
   "dependencies": {
     "@alcalzone/ansi-tokenize": "^0.3.0",

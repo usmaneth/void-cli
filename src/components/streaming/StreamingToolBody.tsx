@@ -1,34 +1,32 @@
 /**
  * Renders the streamed body of a ToolCard by subscribing to the
- * PartStream for a given toolUseID.
+ * PartStream for a given toolUseID, converting the aggregated parts
+ * into a `StreamingView` (see streamingView.ts) and then to JSX.
  *
- * One component per tool-type so each can render its shape — Bash lines
- * (10-line collapse), file meta, diff skeleton, result counter — in
- * the incremental style ported from opencode's session renderer.
- *
- * Falls back to `children` (the old blob rendering) when:
- * - VOID_STREAMING_PARTS is off
- * - no toolUseID was provided
- * - the stream has gone terminal AND we have a final children result
- *   (the old rendering is still higher-fidelity for the completed view)
+ * The split between streamingView.ts (pure, no React/Ink) and this
+ * file (React/Ink) lets snapshot tests exercise the decision logic
+ * without booting the terminal renderer.
  */
 
 import * as React from 'react'
 import { Box, Text } from '../../ink.js'
 import type { ToolCardType } from '../ToolCard.js'
-import type { AggregatedParts } from './aggregator.js'
 import { useToolPartStream } from './useToolPartStream.js'
-import type { ToolPart } from './toolParts.js'
+import {
+  computeStreamingView,
+  truncate,
+  type StreamingView,
+} from './streamingView.js'
 
-const BASH_COLLAPSE_MAX = 10
+// Simple ellipsis-style glyph. We intentionally avoid the heavier
+// <Spinner /> component here — ToolCard is nested inside a message,
+// and a one-row indicator reads cleanly alongside live content.
+const STREAM_GLYPH = '⋯'
 
 export type StreamingToolBodyProps = {
   type: ToolCardType
   toolUseID: string
-  /** Final-state children from the legacy renderer; used as a fallback. */
   fallback: React.ReactNode
-  /** Force the streaming render even when a fallback is available.
-   *  Useful for tests / snapshots of the in-flight state. */
   forceStreaming?: boolean
 }
 
@@ -39,81 +37,49 @@ export function StreamingToolBody({
   forceStreaming = false,
 }: StreamingToolBodyProps): React.ReactNode {
   const agg = useToolPartStream(toolUseID)
-  return renderStreamingBody({ type, agg, fallback, forceStreaming })
+  const view = computeStreamingView({
+    type,
+    agg,
+    hasFallback: fallback != null,
+    forceStreaming,
+  })
+  return <ViewRenderer view={view} fallback={fallback} />
 }
 
-/** Pure renderer — split out so snapshot tests can exercise it without
- *  needing a live EventEmitter. */
-export function renderStreamingBody(args: {
-  type: ToolCardType
-  agg: AggregatedParts
+/** Re-exported for completeness — mostly consumed by tests. */
+export { computeStreamingView } from './streamingView.js'
+
+function ViewRenderer({
+  view,
+  fallback,
+}: {
+  view: StreamingView
   fallback: React.ReactNode
-  forceStreaming?: boolean
 }): React.ReactNode {
-  const { type, agg, fallback, forceStreaming } = args
-
-  // If nothing has streamed yet and we have a final fallback, keep
-  // that. This is the resumed-transcript path — we never had a live
-  // stream to begin with.
-  const hasParts = agg.ordered.length > 0
-  const terminal = agg.done || agg.cancelled
-  if (!hasParts && !forceStreaming) {
-    return fallback
-  }
-
-  // Terminal state + a non-null fallback → show the legacy renderer,
-  // which already has full-fidelity formatting for the final result.
-  // We still want terminal state to mean "stop the spinner" though;
-  // renderByType checks agg.done before rendering a spinner row.
-  if (terminal && fallback != null && !forceStreaming) {
-    return fallback
-  }
-
-  return renderByType(type, agg)
-}
-
-function renderByType(
-  type: ToolCardType,
-  agg: AggregatedParts,
-): React.ReactNode {
-  switch (type) {
+  switch (view.kind) {
+    case 'fallback':
+      return fallback
     case 'bash':
-      return <BashStreamBody agg={agg} />
+      return <BashView view={view} />
     case 'read':
-      return <ReadStreamBody agg={agg} />
+      return <ReadView view={view} />
     case 'edit':
-    case 'write':
-      return <EditStreamBody agg={agg} />
-    case 'glob':
-    case 'grep':
-      return <SearchStreamBody agg={agg} />
-    default:
-      return <GenericStreamBody agg={agg} />
+      return <EditView view={view} />
+    case 'search':
+      return <SearchView view={view} />
+    case 'generic':
+      return <GenericView view={view} />
   }
 }
 
-function InterruptedTag({ cancelled }: { cancelled: boolean }): React.ReactNode {
-  if (!cancelled) return null
-  return (
-    <Box>
-      <Text color="red">◆ interrupted</Text>
-    </Box>
-  )
-}
-
-// Simple ellipsis-style animated glyph. Deliberately not using the
-// heavyweight <Spinner /> component here — we want a one-row indicator
-// that doesn't conflict with the global streaming spinner.
-const STREAM_GLYPH = '⋯'
-
-function StreamingSpinnerRow({
-  agg,
+function Spinner({
+  show,
   label,
 }: {
-  agg: AggregatedParts
+  show: boolean
   label: string
 }): React.ReactNode {
-  if (agg.done || agg.cancelled) return null
+  if (!show) return null
   return (
     <Box flexDirection="row" gap={1}>
       <Text color="cyan">{STREAM_GLYPH}</Text>
@@ -122,183 +88,149 @@ function StreamingSpinnerRow({
   )
 }
 
-function BashStreamBody({
-  agg,
+function Interrupted({
+  show,
 }: {
-  agg: AggregatedParts
+  show: boolean
 }): React.ReactNode {
-  const lines = agg.ordered.filter(
-    (p): p is Extract<ToolPart, { kind: 'bash_line' }> =>
-      p.kind === 'bash_line',
+  if (!show) return null
+  return (
+    <Box>
+      <Text color="red">◆ interrupted</Text>
+    </Box>
   )
-  // Respect the 10-line collapse limit: show last N, note truncation.
-  const visible = lines.slice(-BASH_COLLAPSE_MAX)
-  const hiddenCount = lines.length - visible.length
+}
+
+function BashView({
+  view,
+}: {
+  view: Extract<StreamingView, { kind: 'bash' }>
+}): React.ReactNode {
   return (
     <Box flexDirection="column">
-      {hiddenCount > 0 && (
+      {view.hiddenCount > 0 && (
         <Box>
-          <Text dimColor>… {hiddenCount} earlier line{hiddenCount === 1 ? '' : 's'} hidden …</Text>
+          <Text dimColor>
+            … {view.hiddenCount} earlier line
+            {view.hiddenCount === 1 ? '' : 's'} hidden …
+          </Text>
         </Box>
       )}
-      {visible.map(line => (
-        <Box key={line.id}>
-          <Text color={line.stream === 'stderr' ? 'red' : undefined}>
-            {line.text}
+      {view.visible.map((text, i) => (
+        <Box key={`line-${i}`}>
+          <Text color={view.streams[i] === 'stderr' ? 'red' : undefined}>
+            {text}
           </Text>
         </Box>
       ))}
-      <StreamingSpinnerRow agg={agg} label="running…" />
-      <InterruptedTag cancelled={agg.cancelled} />
+      <Spinner show={view.showSpinner} label="running…" />
+      <Interrupted show={view.interrupted} />
     </Box>
   )
 }
 
-function ReadStreamBody({
-  agg,
+function ReadView({
+  view,
 }: {
-  agg: AggregatedParts
+  view: Extract<StreamingView, { kind: 'read' }>
 }): React.ReactNode {
-  const pathPart = agg.ordered.find(p => p.kind === 'read_path') as
-    | Extract<ToolPart, { kind: 'read_path' }>
-    | undefined
-  const metaPart = agg.ordered.find(p => p.kind === 'read_meta') as
-    | Extract<ToolPart, { kind: 'read_meta' }>
-    | undefined
+  const metaText = [
+    typeof view.sizeBytes === 'number' ? `${view.sizeBytes} bytes` : '',
+    typeof view.lineCount === 'number' ? `${view.lineCount} lines` : '',
+  ]
+    .filter(Boolean)
+    .join(' · ')
   return (
     <Box flexDirection="column">
-      {pathPart && (
+      {view.path && (
         <Box>
           <Text>Reading </Text>
-          <Text bold>{pathPart.path}</Text>
+          <Text bold>{view.path}</Text>
         </Box>
       )}
-      {metaPart && (
+      {metaText && (
         <Box>
-          <Text dimColor>
-            {typeof metaPart.sizeBytes === 'number'
-              ? `${metaPart.sizeBytes} bytes`
-              : ''}
-            {typeof metaPart.sizeBytes === 'number' &&
-            typeof metaPart.lineCount === 'number'
-              ? ' · '
-              : ''}
-            {typeof metaPart.lineCount === 'number'
-              ? `${metaPart.lineCount} lines`
-              : ''}
-          </Text>
+          <Text dimColor>{metaText}</Text>
         </Box>
       )}
-      <StreamingSpinnerRow agg={agg} label="loading…" />
-      <InterruptedTag cancelled={agg.cancelled} />
+      <Spinner show={view.showSpinner} label="loading…" />
+      <Interrupted show={view.interrupted} />
     </Box>
   )
 }
 
-function EditStreamBody({
-  agg,
+function EditView({
+  view,
 }: {
-  agg: AggregatedParts
+  view: Extract<StreamingView, { kind: 'edit' }>
 }): React.ReactNode {
-  const skel = agg.ordered.find(p => p.kind === 'edit_skeleton') as
-    | Extract<ToolPart, { kind: 'edit_skeleton' }>
-    | undefined
-  const hunks = agg.ordered.filter(
-    (p): p is Extract<ToolPart, { kind: 'edit_hunk' }> =>
-      p.kind === 'edit_hunk',
-  )
   return (
     <Box flexDirection="column">
-      {skel && (
+      {view.path && (
         <Box>
           <Text>Editing </Text>
-          <Text bold>{skel.path}</Text>
-          {typeof skel.hunkCount === 'number' && (
+          <Text bold>{view.path}</Text>
+          {typeof view.hunkCount === 'number' && (
             <Text dimColor>
-              {' '}· {skel.hunkCount} hunk{skel.hunkCount === 1 ? '' : 's'}
+              {' '}· {view.hunkCount} hunk{view.hunkCount === 1 ? '' : 's'}
             </Text>
           )}
         </Box>
       )}
-      {hunks.map(h => (
-        <Box key={h.id} flexDirection="column">
-          {h.beforeSnippet && (
+      {view.hunks.map((h, i) => (
+        <Box key={`h-${i}`} flexDirection="column">
+          {h.before && (
             <Box>
-              <Text color="red">- {truncate(h.beforeSnippet, 80)}</Text>
+              <Text color="red">- {truncate(h.before, 80)}</Text>
             </Box>
           )}
-          {h.afterSnippet && (
+          {h.after && (
             <Box>
-              <Text color="green">+ {truncate(h.afterSnippet, 80)}</Text>
+              <Text color="green">+ {truncate(h.after, 80)}</Text>
             </Box>
           )}
         </Box>
       ))}
-      <StreamingSpinnerRow agg={agg} label="computing diff…" />
-      <InterruptedTag cancelled={agg.cancelled} />
+      <Spinner show={view.showSpinner} label="computing diff…" />
+      <Interrupted show={view.interrupted} />
     </Box>
   )
 }
 
-function SearchStreamBody({
-  agg,
+function SearchView({
+  view,
 }: {
-  agg: AggregatedParts
+  view: Extract<StreamingView, { kind: 'search' }>
 }): React.ReactNode {
-  const count = agg.ordered.find(p => p.kind === 'search_count') as
-    | Extract<ToolPart, { kind: 'search_count' }>
-    | undefined
   return (
     <Box flexDirection="column">
       <Box>
         <Text>
-          {count ? `${count.total} result${count.total === 1 ? '' : 's'}` : 'searching…'}
+          {typeof view.count === 'number'
+            ? `${view.count} result${view.count === 1 ? '' : 's'}`
+            : 'searching…'}
         </Text>
       </Box>
-      <StreamingSpinnerRow agg={agg} label="searching…" />
-      <InterruptedTag cancelled={agg.cancelled} />
+      <Spinner show={view.showSpinner} label="searching…" />
+      <Interrupted show={view.interrupted} />
     </Box>
   )
 }
 
-function GenericStreamBody({
-  agg,
+function GenericView({
+  view,
 }: {
-  agg: AggregatedParts
+  view: Extract<StreamingView, { kind: 'generic' }>
 }): React.ReactNode {
   return (
     <Box flexDirection="column">
-      {agg.ordered.map(p => (
-        <Box key={p.id}>
-          <Text dimColor>{renderGenericPart(p)}</Text>
+      {view.lines.map((line, i) => (
+        <Box key={`g-${i}`}>
+          <Text dimColor>{line}</Text>
         </Box>
       ))}
-      <StreamingSpinnerRow agg={agg} label="working…" />
-      <InterruptedTag cancelled={agg.cancelled} />
+      <Spinner show={view.showSpinner} label="working…" />
+      <Interrupted show={view.interrupted} />
     </Box>
   )
-}
-
-function renderGenericPart(p: ToolPart): string {
-  switch (p.kind) {
-    case 'text_line':
-      return p.text
-    case 'bash_line':
-      return p.text
-    case 'read_path':
-      return p.path
-    case 'read_meta':
-      return `${p.sizeBytes ?? '?'} bytes · ${p.lineCount ?? '?'} lines`
-    case 'edit_skeleton':
-      return `edit ${p.path}`
-    case 'edit_hunk':
-      return `hunk ${p.hunkIndex}`
-    case 'search_count':
-      return `${p.total} results`
-  }
-}
-
-function truncate(s: string, n: number): string {
-  if (s.length <= n) return s
-  return s.slice(0, n - 1) + '…'
 }
