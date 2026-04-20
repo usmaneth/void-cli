@@ -17,6 +17,7 @@ import type {
   ScopedMcpServerConfig,
   ServerResource,
 } from './types.js'
+import { emitMcpResourcesChanged } from './mcpResourcesEvents.js'
 
 /* eslint-disable @typescript-eslint/no-require-imports */
 const fetchMcpSkillsForClient = feature('MCP_SKILLS')
@@ -736,9 +737,19 @@ export function useManageMCPConnections(
                     // MCP skills changed — invalidate skill-search index so
                     // next discovery rebuilds with the new set.
                     clearSkillIndexCache?.()
+                    emitMcpResourcesChanged({
+                      server: client.name,
+                      resources: newResources,
+                      cleared: newResources.length === 0,
+                    })
                   } else {
                     const newResources = await fetchResourcesForClient(client)
                     updateServer({ ...client, resources: newResources })
+                    emitMcpResourcesChanged({
+                      server: client.name,
+                      resources: newResources,
+                      cleared: newResources.length === 0,
+                    })
                   }
                 } catch (error) {
                   logMCPError(

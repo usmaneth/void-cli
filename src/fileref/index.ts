@@ -1,5 +1,9 @@
 import * as fs from "node:fs"
 import * as path from "node:path"
+import {
+  extractLines,
+  parseLineRange,
+} from "../services/autocomplete/line-range.js"
 
 // ---------------------------------------------------------------------------
 // Types
@@ -12,6 +16,10 @@ export interface FileReference {
   isDirectory: boolean
   size?: number
   language?: string
+  /** 1-indexed start line when the user typed `@path#L12[-34]`. */
+  startLine?: number
+  /** 1-indexed end line, inclusive. Undefined for bare `#L12` or open-ended `#L12-`. */
+  endLine?: number
 }
 
 export interface FileRefMatch {
@@ -134,7 +142,10 @@ export function detectLanguage(filePath: string): string | undefined {
 // ---------------------------------------------------------------------------
 
 function resolveFileReference(rawPath: string, cwd: string): FileReference {
-  const resolved = path.resolve(cwd, rawPath)
+  // Strip a `#L12-34` style suffix first; it isn't part of the on-disk path.
+  const parsed = parseLineRange(rawPath)
+  const pathOnly = parsed.path
+  const resolved = path.resolve(cwd, pathOnly)
   const relativePath = path.relative(cwd, resolved)
 
   let exists = false
@@ -162,6 +173,8 @@ function resolveFileReference(rawPath: string, cwd: string): FileReference {
     isDirectory,
     size,
     language,
+    startLine: parsed.hasLineRange ? parsed.startLine : undefined,
+    endLine: parsed.hasLineRange ? parsed.endLine : undefined,
   }
 }
 
@@ -200,8 +213,11 @@ function isPathLike(segment: string): boolean {
   if (!/^[.\w/~]/.test(segment)) {
     return false
   }
+  // Strip a trailing `#L12[-34]` line-range suffix before the heuristic check
+  // so bare-filename mentions like `@foo.ts#L12` still qualify as paths.
+  const withoutRange = segment.replace(/#L\d+(?::\d+)?(?:-\d*(?::\d+)?)?$/, "")
   // Must look like a path: contains / or a file extension (.xx)
-  return /\//.test(segment) || /\.\w+$/.test(segment)
+  return /\//.test(withoutRange) || /\.\w+$/.test(withoutRange)
 }
 
 /**
@@ -353,6 +369,7 @@ export class FileRefCompleter {
   /**
    * Read the content of a file reference, respecting a size limit (default 100KB).
    * Returns the file content as a string, or an error/truncation message.
+   * When `ref.startLine` is set, only that slice is returned.
    */
   getFileContent(ref: FileReference, maxBytes: number = 100 * 1024): string {
     if (!ref.exists) {
@@ -363,18 +380,32 @@ export class FileRefCompleter {
     }
 
     try {
+      let content: string
+      let truncationNote = ""
       if (ref.size !== undefined && ref.size > maxBytes) {
-        // Read only up to the limit
         const fd = fs.openSync(ref.path, "r")
         const buffer = Buffer.alloc(maxBytes)
         const bytesRead = fs.readSync(fd, buffer, 0, maxBytes, 0)
         fs.closeSync(fd)
-        return (
-          buffer.subarray(0, bytesRead).toString("utf-8") +
-          `\n\n[Truncated: file is ${ref.size} bytes, showing first ${maxBytes} bytes]`
-        )
+        content = buffer.subarray(0, bytesRead).toString("utf-8")
+        truncationNote = `\n\n[Truncated: file is ${ref.size} bytes, showing first ${maxBytes} bytes]`
+      } else {
+        content = fs.readFileSync(ref.path, "utf-8")
       }
-      return fs.readFileSync(ref.path, "utf-8")
+
+      if (ref.startLine !== undefined) {
+        const slice = extractLines(content, ref.startLine, ref.endLine)
+        if (slice) {
+          const headerEnd =
+            slice.endLine === slice.startLine
+              ? `L${slice.startLine}`
+              : `L${slice.startLine}-${slice.endLine}`
+          return `[Lines ${headerEnd} of ${ref.relativePath}]\n${slice.text}${truncationNote}`
+        }
+        // Range out of bounds -- fall through to full content with a warning.
+        return `[Requested line range is out of bounds; showing full file]\n${content}${truncationNote}`
+      }
+      return content + truncationNote
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
       return `[Error reading file: ${message}]`
@@ -472,6 +503,19 @@ export function expandFileReferences(
       continue
     }
 
+    // Bump frecency for every mentioned, existing file. Done lazily via dynamic
+    // require so the frecency store is only instantiated when actually used
+    // (the fileref module has callers that run before ~/.void/ exists).
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const mod = require("../services/frecency/store.js") as {
+        getFrecencyStore: () => { bump: (p: string) => void }
+      }
+      mod.getFrecencyStore().bump(ref.path)
+    } catch {
+      // Non-fatal -- frecency is best-effort.
+    }
+
     if (ref.isDirectory) {
       const listing = completer.getDirectoryListing(ref)
       blocks.push(
@@ -480,8 +524,12 @@ export function expandFileReferences(
     } else {
       const content = completer.getFileContent(ref)
       const langAttr = ref.language ? ` language="${ref.language}"` : ""
+      const rangeAttr =
+        ref.startLine !== undefined
+          ? ` lines="${ref.startLine}${ref.endLine !== undefined ? `-${ref.endLine}` : "-"}"`
+          : ""
       blocks.push(
-        `<file-reference path="${ref.relativePath}"${langAttr}>\n${content}\n</file-reference>`,
+        `<file-reference path="${ref.relativePath}"${langAttr}${rangeAttr}>\n${content}\n</file-reference>`,
       )
     }
   }
