@@ -687,6 +687,14 @@ export const SettingsSchema = lazySchema(() =>
         .boolean()
         .optional()
         .describe('Whether to disable syntax highlighting in diffs'),
+      diffMode: z
+        .enum(['split', 'unified', 'auto'])
+        .optional()
+        .describe(
+          'Layout for file diffs. "split" renders before/after side-by-side, ' +
+            '"unified" uses the classic +/- single-column view, and "auto" ' +
+            '(default) picks split when the terminal is at least 120 columns wide.',
+        ),
       terminalTitleFromRename: z
         .boolean()
         .optional()
