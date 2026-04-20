@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "skipLibCheck": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "allowJs": true,
+    "resolveJsonModule": true,
+    "strict": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "outDir": "out",
+    "types": ["vite/client", "node", "electron"]
+  },
+  "include": ["src", "package.json", "scripts"],
+  "exclude": ["node_modules", "dist", "out", "e2e"]
+}

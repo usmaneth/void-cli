@@ -76,6 +76,36 @@ git clone https://github.com/usmaneth/void-cli.git && cd void-cli && bun install
 
 ---
 
+## Voidex — the desktop app
+
+Void ships with **Voidex**, an Electron desktop companion at `apps/voidex/`.
+Voidex is forked from opencode's `packages/desktop-electron` (MIT) and
+rebranded for Void.
+
+```bash
+# dev loop (electron-vite hot reload)
+bun run --cwd apps/voidex dev
+
+# or open from the CLI
+void
+> /voidex            # fresh chat window
+> /swarm --gui add dark mode     # swarm mode prefilled
+> /deliberate --gui Rust vs Go   # deliberation prefilled
+
+# or directly
+voidex --mode plan "migrate to SQLite sessions"
+```
+
+Build a signed-ready DMG/NSIS/AppImage with:
+
+```bash
+VOIDEX_CHANNEL=prod bun run --cwd apps/voidex package:mac
+```
+
+See [`apps/voidex/README.md`](./apps/voidex/README.md) for the full guide.
+
+---
+
 ## Multi-Provider Setup
 
 Void supports **5 providers simultaneously**. You can use native Anthropic for Claude models and OpenRouter for everything else — at the same time.

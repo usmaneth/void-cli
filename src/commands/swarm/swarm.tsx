@@ -30,6 +30,7 @@ import { decomposeTask } from '../../swarm/coordinator.js'
 import { SwarmRenderer } from '../../swarm/renderer.js'
 import { runWorker } from '../../swarm/worker.js'
 import { mergeWorktrees } from '../../swarm/merger.js'
+import { launchVoidex } from '../../utils/voidexLauncher.js'
 import {
   extractFriendlyModelsFromText,
   resolveFriendlyModelInput,
@@ -960,8 +961,36 @@ function SwarmRunner({
   )
 }
 
+function extractGuiFlag(args: string): { args: string; gui: boolean } {
+  const tokens = (args || '').split(/\s+/)
+  const filtered: string[] = []
+  let gui = false
+  for (const t of tokens) {
+    if (t === '--gui' || t === '-g') gui = true
+    else filtered.push(t)
+  }
+  return { args: filtered.join(' ').trim(), gui }
+}
+
 export const call: LocalJSXCommandCall = async (onDone, context, args) => {
-  const parsed = parseSwarmArgs(args)
+  const stripped = extractGuiFlag(args)
+  if (stripped.gui) {
+    // /swarm --gui hands off to Voidex without disturbing the TUI flow.
+    const result = launchVoidex({
+      mode: 'swarm',
+      prompt: stripped.args,
+      cwd: process.env.VOID_LAUNCH_CWD || process.cwd(),
+    })
+    onDone(
+      result.ok
+        ? `Opened Voidex in swarm mode${stripped.args ? ' with your prompt' : ''}.`
+        : `Failed to open Voidex: ${result.error}`,
+      { display: 'system' },
+    )
+    return null
+  }
+
+  const parsed = parseSwarmArgs(stripped.args)
   const settings = getSettingsForSource('userSettings')
   const swarmSettings = settings?.swarm
   const appState = context.getAppState()
