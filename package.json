@@ -2,6 +2,10 @@
   "name": "void-cli",
   "version": "0.1.0",
   "type": "module",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
   "bin": {
     "void": "./bin/void"
   },

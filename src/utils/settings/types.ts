@@ -565,6 +565,19 @@ export const SettingsSchema = lazySchema(() =>
         .describe(
           'Enabled plugins using plugin-id@marketplace-id format. Example: { "formatter@anthropic-tools": true }. Also supports extended format with version constraints.',
         ),
+      // @void-cli/plugin SDK plugin list — npm package names or local paths
+      // resolved by the SDK loader (src/services/plugins/loader.ts). Separate
+      // from enabledPlugins above (which is the marketplace flow).
+      plugins: z
+        .array(z.string())
+        .optional()
+        .describe(
+          'SDK plugins authored against @void-cli/plugin. Entries may be ' +
+            'npm package names (typically void-plugin-* or @scope/void-plugin-*) ' +
+            'or absolute/relative paths to a plugin entry file. Plugins from ' +
+            '~/.void/plugins/ and ./.void/plugins/ are discovered automatically ' +
+            'and do not need to be listed here.',
+        ),
       // Extra marketplaces for this repository (usually for project settings)
       extraKnownMarketplaces: z
         .record(z.string(), ExtraKnownMarketplaceSchema())
