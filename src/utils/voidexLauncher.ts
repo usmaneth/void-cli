@@ -18,7 +18,7 @@
  * handoff file format are intentionally preserved so upstream /voidex users
  * don't see a breaking change.
  */
-import { spawn } from 'node:child_process'
+import { spawn, spawnSync } from 'node:child_process'
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
@@ -63,6 +63,54 @@ function findElectron(root: string): string | null {
   ]
   for (const p of candidates) if (existsSync(p)) return p
   return null
+}
+
+function hasCommand(cmd: string): boolean {
+  const result = spawnSync(process.platform === 'win32' ? 'where' : 'which', [cmd], {
+    stdio: 'ignore',
+  })
+  return result.status === 0
+}
+
+/**
+ * First-use bootstrap: run `bun install` (or `npm install`) in apps/voidex
+ * to pull down electron on demand. Blocks the caller; streams output to the
+ * parent terminal so users see progress. Safe to call repeatedly — a noop
+ * once electron is resolvable, and skipped if a prior attempt recorded a
+ * permanent failure in `node_modules/.voidex-bootstrap-failed`.
+ */
+function bootstrapVoidex(root: string, appPath: string): { ok: boolean; error?: string } {
+  const failMarker = join(root, 'node_modules', '.voidex-bootstrap-failed')
+  if (existsSync(failMarker)) {
+    return {
+      ok: false,
+      error: `Previous bootstrap attempt failed. Delete ${failMarker} to retry, or install manually with \`bun install\` at the repo root.`,
+    }
+  }
+
+  const tool = hasCommand('bun') ? 'bun' : hasCommand('npm') ? 'npm' : null
+  if (!tool) {
+    return { ok: false, error: 'Neither `bun` nor `npm` found on PATH — install one to bootstrap Voidex.' }
+  }
+
+  // User-visible progress. Keep stderr streaming so install errors are legible.
+  process.stderr.write(`\n[voidex] first-time setup — installing electron via ${tool}…\n`)
+  const result = spawnSync(tool, ['install'], {
+    cwd: appPath,
+    stdio: 'inherit',
+    env: process.env,
+  })
+
+  if (result.status !== 0) {
+    try {
+      mkdirSync(dirname(failMarker), { recursive: true })
+      writeFileSync(failMarker, new Date().toISOString())
+    } catch {}
+    return { ok: false, error: `${tool} install failed with exit code ${result.status}. Check the output above and retry.` }
+  }
+
+  process.stderr.write(`[voidex] bootstrap complete\n\n`)
+  return { ok: true }
 }
 
 function resolveAppTarget(root: string): { electronArg: string; mode: 'built' | 'dev' } {
@@ -118,13 +166,21 @@ export function launchVoidex(options: VoidexLaunchOptions = {}): VoidexLaunchRes
     return { ok: true, pid: child.pid, appPath }
   }
 
-  const electron = findElectron(root)
+  let electron = findElectron(root)
   if (!electron) {
-    return {
-      ok: false,
-      error:
-        'electron is not installed. Run `bun install` at the repo root (workspaces will install apps/voidex), then try again. Alternatively set VOIDEX_BIN to an installed Voidex.app.',
-      appPath,
+    // First-use: try to install electron automatically. Blocks until install
+    // finishes; stdio is inherited so the user sees progress live.
+    const boot = bootstrapVoidex(root, appPath)
+    if (!boot.ok) {
+      return { ok: false, error: boot.error, appPath }
+    }
+    electron = findElectron(root)
+    if (!electron) {
+      return {
+        ok: false,
+        error: `Bootstrap ran but electron is still missing at ${appPath}/node_modules/.bin/electron. Run \`bun install\` manually to diagnose.`,
+        appPath,
+      }
     }
   }
 

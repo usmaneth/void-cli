@@ -62,10 +62,36 @@ if [ ! -d "$APP_DIR" ]; then
   exit 1
 fi
 
+# First-use bootstrap: install electron on demand, then re-probe.
 if [ -z "$ELECTRON_BIN" ]; then
-  echo "Error: electron is not installed." >&2
-  echo "Run '(cd \"$ROOT_DIR\" && bun install)' first, or set VOIDEX_BIN to an installed Voidex." >&2
-  exit 1
+  FAIL_MARKER="$ROOT_DIR/node_modules/.voidex-bootstrap-failed"
+  if [ -f "$FAIL_MARKER" ]; then
+    echo "[voidex] Previous bootstrap attempt failed. Delete $FAIL_MARKER to retry, or run 'bun install' manually." >&2
+    exit 1
+  fi
+  if command -v bun >/dev/null 2>&1; then
+    INSTALL_TOOL="bun"
+  elif command -v npm >/dev/null 2>&1; then
+    INSTALL_TOOL="npm"
+  else
+    echo "[voidex] Neither bun nor npm found on PATH — cannot bootstrap." >&2
+    exit 1
+  fi
+  echo "[voidex] first-time setup — installing electron via $INSTALL_TOOL…" >&2
+  if (cd "$APP_DIR" && "$INSTALL_TOOL" install); then
+    echo "[voidex] bootstrap complete" >&2
+    for candidate in \
+      "$ROOT_DIR/node_modules/.bin/electron" \
+      "$APP_DIR/node_modules/.bin/electron"; do
+      if [ -x "$candidate" ]; then ELECTRON_BIN="$candidate"; break; fi
+    done
+  fi
+  if [ -z "$ELECTRON_BIN" ]; then
+    mkdir -p "$ROOT_DIR/node_modules"
+    date -u +%Y-%m-%dT%H:%M:%SZ > "$FAIL_MARKER"
+    echo "Error: electron install failed. See output above, or run '(cd \"$APP_DIR\" && bun install)' manually." >&2
+    exit 1
+  fi
 fi
 
 # Prefer built bundle; fall back to running the app dir (electron reads its package.json).
