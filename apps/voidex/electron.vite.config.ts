@@ -1,4 +1,5 @@
 import { defineConfig } from "electron-vite"
+import solidPlugin from "vite-plugin-solid"
 
 // Voidex — resolves the build channel from VOIDEX_CHANNEL at build time so the
 // produced main bundle knows which update feed and app-id to use.
@@ -31,10 +32,15 @@ export default defineConfig({
   },
   renderer: {
     root: "src/renderer",
+    // The Solid plugin handles TSX compilation for our new renderer. The full
+    // @void-cli/voidex-app vite plugin (which adds Tailwind 4, theme preload,
+    // etc.) will be swapped in once the SDK adapter to `void serve` lands.
+    plugins: [solidPlugin() as any],
     define: {
       "import.meta.env.VITE_VOIDEX_CHANNEL": JSON.stringify(channel),
     },
     build: {
+      target: "esnext",
       rollupOptions: {
         input: {
           main: "src/renderer/index.html",
