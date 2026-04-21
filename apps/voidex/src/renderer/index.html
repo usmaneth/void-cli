@@ -1,118 +1,17 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="en" style="background-color: var(--background-base, #0b0b0e)">
   <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ws://127.0.0.1:* http://127.0.0.1:*;" />
-    <meta http-equiv="X-Content-Security-Policy" content="default-src 'self'" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ws://127.0.0.1:* http://127.0.0.1:*;"
+    />
     <title>Voidex</title>
-    <link rel="stylesheet" href="./styles.css" />
   </head>
-  <body>
-    <!-- App shell: three columns, header with void asterisk, composer at the bottom. -->
-    <div id="app" class="app" data-channel="dev">
-      <header class="titlebar" role="banner">
-        <div class="titlebar-left">
-          <span class="asterisk" aria-hidden="true">✱</span>
-          <span class="product">Voidex</span>
-          <span class="sep">·</span>
-          <span class="product-sub" id="channel-label">dev</span>
-        </div>
-        <div class="titlebar-center">
-          <div class="bridge-status" id="bridge-status">
-            <span class="dot dot-idle"></span>
-            <span id="bridge-status-text">bridge: offline</span>
-          </div>
-        </div>
-        <div class="titlebar-right">
-          <button class="btn btn-ghost" id="btn-start-bridge" title="Start void serve bridge">Start bridge</button>
-          <button class="btn btn-ghost" id="btn-new-session" title="New session (Shift+Cmd+S)">New</button>
-        </div>
-      </header>
-
-      <main class="shell">
-        <!-- Sidebar -->
-        <aside class="sidebar">
-          <section class="panel">
-            <h3 class="panel-title">Projects</h3>
-            <ul id="project-list" class="list">
-              <li class="list-item active"><span class="list-item-dot"></span>void-cli</li>
-              <li class="list-item"><span class="list-item-dot"></span>trading-bot</li>
-              <li class="list-item"><span class="list-item-dot"></span>klipt</li>
-              <li class="list-item list-item-muted">+ add project</li>
-            </ul>
-          </section>
-
-          <section class="panel">
-            <h3 class="panel-title">Threads</h3>
-            <ul id="thread-list" class="list">
-              <!-- populated dynamically -->
-            </ul>
-          </section>
-
-          <section class="panel">
-            <h3 class="panel-title">Modes</h3>
-            <div class="chip-row">
-              <button class="chip chip-active" data-mode="chat">Chat</button>
-              <button class="chip" data-mode="swarm">Swarm</button>
-              <button class="chip" data-mode="deliberate">Deliberate</button>
-              <button class="chip" data-mode="plan">Plan</button>
-            </div>
-          </section>
-        </aside>
-
-        <!-- Transcript -->
-        <section class="main-pane">
-          <div class="hint" id="handoff-banner" hidden></div>
-          <div id="transcript" class="transcript">
-            <div class="welcome">
-              <h1 class="hero">
-                <span class="hero-asterisk">✱</span>
-                <span class="hero-title">Voidex</span>
-              </h1>
-              <p class="hero-sub">Void's desktop console. Swarm, deliberate, and ship from one window.</p>
-              <ul class="hero-tips">
-                <li>Press <kbd>/</kbd> to type a slash command (try <code>/swarm</code> or <code>/deliberate</code>).</li>
-                <li>Start the bridge to talk to <code>void serve</code>, or just scribble offline.</li>
-                <li>Pick a mode in the sidebar to prefill the composer.</li>
-              </ul>
-            </div>
-          </div>
-          <footer class="composer">
-            <div class="composer-meta">
-              <span id="composer-mode" class="badge">chat</span>
-              <span class="composer-cwd" id="composer-cwd">~</span>
-            </div>
-            <textarea
-              id="composer-input"
-              placeholder="Ask, code, deliberate…  (⌘+Enter to send)"
-              rows="3"
-            ></textarea>
-            <div class="composer-actions">
-              <div class="composer-toggles">
-                <label class="toggle"><input type="checkbox" id="toggle-ask" /> Ask-only</label>
-                <label class="toggle"><input type="checkbox" id="toggle-council" /> Council</label>
-              </div>
-              <div>
-                <button id="btn-send" class="btn btn-primary">Send</button>
-              </div>
-            </div>
-          </footer>
-        </section>
-
-        <!-- Diff review drawer -->
-        <aside class="drawer" id="diff-drawer" hidden>
-          <header class="drawer-header">
-            <span>Diff review</span>
-            <button class="btn btn-ghost" id="btn-close-drawer">×</button>
-          </header>
-          <div class="drawer-body">
-            <p class="dim">Pending edits will appear here.</p>
-          </div>
-        </aside>
-      </main>
-    </div>
-
-    <script type="module" src="./main.ts"></script>
+  <body class="antialiased overscroll-none overflow-hidden">
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root" class="flex flex-col h-dvh"></div>
+    <script type="module" src="./entry.tsx"></script>
   </body>
 </html>

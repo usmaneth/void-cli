@@ -16,6 +16,7 @@ const api: VoidexAPI = {
   bridgeStop: () => ipcRenderer.invoke("bridge-stop"),
   bridgeStatus: () => ipcRenderer.invoke("bridge-status"),
   bridgeWsUrl: () => ipcRenderer.invoke("bridge-ws-url"),
+  sidecarHealth: () => ipcRenderer.invoke("sidecar-health"),
   onBridgeStatus: (cb) => {
     const handler = (_: unknown, status: BridgeStatus) => cb(status)
     ipcRenderer.on("bridge-status", handler)
@@ -29,10 +30,17 @@ const api: VoidexAPI = {
 
   openDirectoryPicker: (opts) => ipcRenderer.invoke("open-directory-picker", opts),
   openFilePicker: (opts) => ipcRenderer.invoke("open-file-picker", opts),
+  saveFilePicker: (opts) => ipcRenderer.invoke("save-file-picker", opts),
   openLink: (url) => ipcRenderer.send("open-link", url),
   openPath: (path, app) => ipcRenderer.invoke("open-path", path, app),
   readClipboardImage: () => ipcRenderer.invoke("read-clipboard-image"),
   showNotification: (title, body) => ipcRenderer.send("show-notification", title, body),
+
+  getWslEnabled: () => ipcRenderer.invoke("get-wsl-enabled"),
+  setWslEnabled: (v) => ipcRenderer.invoke("set-wsl-enabled", v),
+  getDisplayBackend: () => ipcRenderer.invoke("get-display-backend"),
+  setDisplayBackend: (b) => ipcRenderer.invoke("set-display-backend", b),
+  checkAppExists: (appName) => ipcRenderer.invoke("check-app-exists", appName),
 
   getWindowCount: () => ipcRenderer.invoke("get-window-count"),
   getWindowFocused: () => ipcRenderer.invoke("get-window-focused"),

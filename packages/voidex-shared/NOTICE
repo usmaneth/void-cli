@@ -1,0 +1,14 @@
+Voidex Shared — derived work
+============================
+
+This package is a fork of opencode's `@opencode-ai/shared` package (small
+utility library shared across opencode packages). The original source is
+distributed by opencode under the MIT license; the original copyright remains
+with its authors:
+
+  Copyright (c) opencode authors (https://opencode.ai)
+
+  Copyright (c) 2026 void-cli contributors
+
+Both the original opencode source and these modifications are distributed
+under the MIT license.

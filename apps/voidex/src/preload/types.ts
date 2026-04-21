@@ -38,6 +38,15 @@ export type VoidexGlobals = {
   }
 }
 
+export type DisplayBackend = "auto" | "wayland" | "x11"
+
+export type SidecarHealth = {
+  ok: boolean
+  url?: string
+  state: "idle" | "starting" | "ready" | "error" | "stopped"
+  error?: string
+}
+
 export type VoidexAPI = {
   parseMarkdownCommand: (md: string) => Promise<string>
   setBackgroundColor: (color: string) => Promise<void>
@@ -49,6 +58,12 @@ export type VoidexAPI = {
   bridgeStop: () => Promise<void>
   bridgeStatus: () => Promise<BridgeStatus>
   bridgeWsUrl: () => Promise<string | null>
+  /**
+   * Sidecar health — a Platform-facing wrapper around the bridge state. Returns
+   * a normalized shape the opencode `PlatformProvider` expects for its health
+   * indicator. Currently driven off bridgeStatus.
+   */
+  sidecarHealth: () => Promise<SidecarHealth>
   onBridgeStatus: (cb: (status: BridgeStatus) => void) => () => void
 
   storeGet: (name: string, key: string) => Promise<string | null>
@@ -58,6 +73,8 @@ export type VoidexAPI = {
 
   openDirectoryPicker: (opts?: { multiple?: boolean; title?: string; defaultPath?: string }) => Promise<string | string[] | null>
   openFilePicker: (opts?: { multiple?: boolean; title?: string; defaultPath?: string; extensions?: string[] }) => Promise<string | string[] | null>
+  /** Native save-file dialog. Tauri provides this; we expose via Electron's dialog. */
+  saveFilePicker: (opts?: { title?: string; defaultPath?: string }) => Promise<string | null>
   openLink: (url: string) => void
   openPath: (path: string, app?: string) => Promise<void>
   readClipboardImage: () => Promise<{ buffer: ArrayBuffer; width: number; height: number } | null>
@@ -69,6 +86,25 @@ export type VoidexAPI = {
   getZoomFactor: () => Promise<number>
   setZoomFactor: (factor: number) => Promise<void>
   setTitlebar: (theme: TitlebarTheme) => Promise<void>
+
+  /**
+   * True only on WSL hosts; opencode's PlatformProvider uses this to decide
+   * whether to surface the "wsl integration" toggle. Always false on macOS/
+   * Linux/Windows desktops.
+   */
+  getWslEnabled: () => Promise<boolean>
+  setWslEnabled: (v: boolean) => Promise<void>
+
+  /**
+   * Preferred display backend on Linux. Returns `null` on non-Linux platforms;
+   * on Linux, we prefer whichever session the user is actually running under
+   * (via XDG_SESSION_TYPE), falling back to `null` if unknown.
+   */
+  getDisplayBackend: () => Promise<DisplayBackend | null>
+  setDisplayBackend: (backend: DisplayBackend) => Promise<void>
+
+  /** Probe whether a desktop app exists. Used by openPath's "open in <editor>" menu. */
+  checkAppExists: (appName: string) => Promise<boolean>
 
   onMenuCommand: (cb: (id: string) => void) => () => void
   onDeepLink: (cb: (urls: string[]) => void) => () => void

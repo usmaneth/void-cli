@@ -1,0 +1,18 @@
+Voidex SDK — derived work
+=========================
+
+This package is a fork of opencode's `@opencode-ai/sdk` package (the TypeScript
+SDK for the opencode HTTP/WebSocket server). The original source is
+distributed by opencode under the MIT license; the original copyright remains
+with its authors:
+
+  Copyright (c) opencode authors (https://opencode.ai)
+
+For Voidex we plan to either wrap or replace the transport so calls route to
+`void serve` (the local Hono server introduced by void-cli PR #80). Until that
+adapter lands the SDK still targets the opencode wire protocol verbatim.
+
+  Copyright (c) 2026 void-cli contributors
+
+Both the original opencode source and these modifications are distributed
+under the MIT license.
