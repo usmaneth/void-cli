@@ -58,5 +58,10 @@ export default defineConfig({
         },
       },
     },
+    // @pierre/diffs ships a web worker that needs ES output (not the default IIFE)
+    // because it's a code-splitting build.
+    worker: {
+      format: "es",
+    },
   },
 })
