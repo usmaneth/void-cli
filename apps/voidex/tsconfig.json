@@ -12,6 +12,8 @@
     "isolatedModules": true,
     "noEmit": true,
     "outDir": "out",
+    "jsx": "preserve",
+    "jsxImportSource": "solid-js",
     "types": ["vite/client", "node", "electron"]
   },
   "include": ["src", "package.json", "scripts"],
