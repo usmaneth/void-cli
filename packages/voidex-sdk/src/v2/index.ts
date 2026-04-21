@@ -1,5 +1,6 @@
 export * from "./client.js"
 export * from "./server.js"
+export { buildVoidexFetch, type VoidexAdapterConfig, VOIDEX_DEFAULT_SERVE_URL } from "./voidex-adapter.js"
 
 import { createOpencodeClient } from "./client.js"
 import { createOpencodeServer } from "./server.js"

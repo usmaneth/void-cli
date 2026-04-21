@@ -3,7 +3,9 @@ export * from "./gen/types.gen.js"
 import { createClient } from "./gen/client/client.gen.js"
 import { type Config } from "./gen/client/types.gen.js"
 import { OpencodeClient } from "./gen/sdk.gen.js"
+import { buildVoidexFetch, type VoidexAdapterConfig } from "./voidex-adapter.js"
 export { type Config as OpencodeClientConfig, OpencodeClient }
+export { buildVoidexFetch, type VoidexAdapterConfig } from "./voidex-adapter.js"
 
 function pick(value: string | null, fallback?: string, encode?: (value: string) => string) {
   if (!value) return
@@ -43,7 +45,37 @@ function rewrite(request: Request, values: { directory?: string; workspace?: str
   return next
 }
 
-export function createOpencodeClient(config?: Config & { directory?: string; experimental_workspaceID?: string }) {
+export function createOpencodeClient(
+  config?: Config & {
+    directory?: string
+    experimental_workspaceID?: string
+    /**
+     * When set, re-routes all SDK calls through a `void serve` adapter instead
+     * of talking to an opencode server. Accepts either a full VoidexAdapterConfig
+     * or `true` to enable with defaults (voidServeUrl inferred from baseUrl).
+     */
+    voidex?: boolean | VoidexAdapterConfig
+  },
+) {
+  // Voidex adapter: install a custom fetch that rewrites opencode paths to
+  // void-serve's schema. Enabled by passing `voidex: true` or by omitting a
+  // fetch override when the baseUrl looks like a local void serve (default).
+  const voidexEnabled =
+    config?.voidex === true ||
+    (typeof config?.voidex === "object" && config.voidex !== null)
+  if (voidexEnabled && !config?.fetch) {
+    const adapterCfg: VoidexAdapterConfig =
+      typeof config?.voidex === "object" ? config!.voidex! : {}
+    const voidServeUrl = adapterCfg.voidServeUrl ?? (config?.baseUrl as string | undefined)
+    config = {
+      ...config,
+      fetch: buildVoidexFetch({
+        ...adapterCfg,
+        voidServeUrl,
+      }) as Config["fetch"],
+    }
+  }
+
   if (!config?.fetch) {
     const customFetch: any = (req: any) => {
       // @ts-ignore
