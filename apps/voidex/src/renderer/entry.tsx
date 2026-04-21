@@ -18,10 +18,11 @@
 import { createSignal, onCleanup, onMount, Show } from "solid-js"
 import { render } from "solid-js/web"
 
-// NOTE: @void-cli/voidex-app/index.css imports Tailwind 4 + @void-cli/voidex-ui
-// styles which need the @tailwindcss/vite plugin wired up before they compile.
-// Skipped for this PR — enable once voidex-ui's CSS pipeline is integrated.
-// import "@void-cli/voidex-app/index.css"
+// Voidex CSS pipeline: voidex-app/index.css pulls in Tailwind 4 + the vendored
+// opencode UI theme tokens; renderer/styles.css overlays the Voidex-specific
+// scaffold (titlebar, hero, pills). The @tailwindcss/vite plugin is wired into
+// electron.vite.config.ts so these imports produce a real CSS bundle.
+import "@void-cli/voidex-app/index.css"
 import "./styles.css"
 
 import type { BridgeStatus, VoidexAPI, VoidexGlobals } from "../preload/types"
