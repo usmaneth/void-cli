@@ -74,17 +74,25 @@ function hasCommand(cmd: string): boolean {
 
 /**
  * First-use bootstrap: run `bun install` (or `npm install`) in apps/voidex
- * to pull down electron on demand. Blocks the caller; streams output to the
- * parent terminal so users see progress. Safe to call repeatedly — a noop
- * once electron is resolvable, and skipped if a prior attempt recorded a
- * permanent failure in `node_modules/.voidex-bootstrap-failed`.
+ * to pull down electron on demand, then `bun run build` to produce
+ * out/main/index.js. Blocks the caller; streams output to the parent
+ * terminal so users see progress. Safe to call repeatedly — skipped if a
+ * prior attempt recorded a permanent failure in
+ * `node_modules/.voidex-bootstrap-failed`.
+ *
+ * `needsInstall` / `needsBuild` let the caller skip whichever step is
+ * already satisfied on subsequent launches.
  */
-function bootstrapVoidex(root: string, appPath: string): { ok: boolean; error?: string } {
+function bootstrapVoidex(
+  root: string,
+  appPath: string,
+  steps: { install: boolean; build: boolean },
+): { ok: boolean; error?: string } {
   const failMarker = join(root, 'node_modules', '.voidex-bootstrap-failed')
   if (existsSync(failMarker)) {
     return {
       ok: false,
-      error: `Previous bootstrap attempt failed. Delete ${failMarker} to retry, or install manually with \`bun install\` at the repo root.`,
+      error: `Previous bootstrap attempt failed. Delete ${failMarker} to retry, or run \`bun install && bun run --cwd apps/voidex build\` manually.`,
     }
   }
 
@@ -93,20 +101,29 @@ function bootstrapVoidex(root: string, appPath: string): { ok: boolean; error?: 
     return { ok: false, error: 'Neither `bun` nor `npm` found on PATH — install one to bootstrap Voidex.' }
   }
 
-  // User-visible progress. Keep stderr streaming so install errors are legible.
-  process.stderr.write(`\n[voidex] first-time setup — installing electron via ${tool}…\n`)
-  const result = spawnSync(tool, ['install'], {
-    cwd: appPath,
-    stdio: 'inherit',
-    env: process.env,
-  })
-
-  if (result.status !== 0) {
+  const recordFailure = (message: string): { ok: false; error: string } => {
     try {
       mkdirSync(dirname(failMarker), { recursive: true })
       writeFileSync(failMarker, new Date().toISOString())
     } catch {}
-    return { ok: false, error: `${tool} install failed with exit code ${result.status}. Check the output above and retry.` }
+    return { ok: false, error: message }
+  }
+
+  if (steps.install) {
+    process.stderr.write(`\n[voidex] first-time setup — installing dependencies via ${tool}…\n`)
+    const install = spawnSync(tool, ['install'], { cwd: appPath, stdio: 'inherit', env: process.env })
+    if (install.status !== 0) {
+      return recordFailure(`${tool} install failed with exit code ${install.status}. Check the output above and retry.`)
+    }
+  }
+
+  if (steps.build) {
+    process.stderr.write(`[voidex] building desktop app (electron-vite build)…\n`)
+    // `bun run build` + `npm run build` both invoke the package.json "build" script.
+    const build = spawnSync(tool, ['run', 'build'], { cwd: appPath, stdio: 'inherit', env: process.env })
+    if (build.status !== 0) {
+      return recordFailure(`${tool} run build failed with exit code ${build.status}. Check the output above and retry.`)
+    }
   }
 
   process.stderr.write(`[voidex] bootstrap complete\n\n`)
@@ -167,18 +184,29 @@ export function launchVoidex(options: VoidexLaunchOptions = {}): VoidexLaunchRes
   }
 
   let electron = findElectron(root)
-  if (!electron) {
-    // First-use: try to install electron automatically. Blocks until install
-    // finishes; stdio is inherited so the user sees progress live.
-    const boot = bootstrapVoidex(root, appPath)
+  const builtEntry = join(appPath, 'out', 'main', 'index.js')
+  const needsInstall = !electron
+  const needsBuild = !existsSync(builtEntry)
+
+  if (needsInstall || needsBuild) {
+    // First-use: install deps and/or build the app on demand. Blocks until
+    // done; stdio is inherited so the user sees progress live.
+    const boot = bootstrapVoidex(root, appPath, { install: needsInstall, build: needsBuild })
     if (!boot.ok) {
       return { ok: false, error: boot.error, appPath }
     }
-    electron = findElectron(root)
+    if (!electron) electron = findElectron(root)
     if (!electron) {
       return {
         ok: false,
         error: `Bootstrap ran but electron is still missing at ${appPath}/node_modules/.bin/electron. Run \`bun install\` manually to diagnose.`,
+        appPath,
+      }
+    }
+    if (!existsSync(builtEntry)) {
+      return {
+        ok: false,
+        error: `Bootstrap ran but ${builtEntry} is still missing. Run \`bun run --cwd apps/voidex build\` manually to diagnose.`,
         appPath,
       }
     }
