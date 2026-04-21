@@ -27,6 +27,17 @@ const api: VoidexAPI = {
   storeSet: (name, key, value) => ipcRenderer.invoke("store-set", name, key, value),
   storeDelete: (name, key) => ipcRenderer.invoke("store-delete", name, key),
   storeKeys: (name) => ipcRenderer.invoke("store-keys", name),
+  // No dedicated main-process handlers yet — emulate via delete-per-key and
+  // keys.length. This keeps the Platform's AsyncStorage adapter happy without
+  // forcing a matching IPC surface on day one.
+  storeClear: async (name) => {
+    const keys: string[] = await ipcRenderer.invoke("store-keys", name)
+    await Promise.all(keys.map((k) => ipcRenderer.invoke("store-delete", name, k)))
+  },
+  storeLength: async (name) => {
+    const keys: string[] = await ipcRenderer.invoke("store-keys", name)
+    return keys.length
+  },
 
   openDirectoryPicker: (opts) => ipcRenderer.invoke("open-directory-picker", opts),
   openFilePicker: (opts) => ipcRenderer.invoke("open-file-picker", opts),
@@ -41,10 +52,51 @@ const api: VoidexAPI = {
   getDisplayBackend: () => ipcRenderer.invoke("get-display-backend"),
   setDisplayBackend: (b) => ipcRenderer.invoke("set-display-backend", b),
   checkAppExists: (appName) => ipcRenderer.invoke("check-app-exists", appName),
+  // Not implemented in main yet; return null so opencode's callers fall back
+  // to the raw name.
+  resolveAppPath: async (_appName: string) => null,
+  // No-op passthrough: Voidex isn't WSL-aware, so identity-return the path.
+  wslPath: async (path: string, _target: "windows" | "linux") => path,
+  getWslConfig: async () => ({ enabled: false }),
+  setWslConfig: async (_cfg: { enabled: boolean }) => undefined,
+  // Persist the preferred server URL in the `platform` electron-store bucket
+  // alongside other platform settings (display backend, WSL).
+  getDefaultServerUrl: async () => {
+    const url = await ipcRenderer.invoke("store-get", "platform", "defaultServerUrl")
+    return typeof url === "string" ? url : null
+  },
+  setDefaultServerUrl: async (url: string | null) => {
+    if (url) {
+      await ipcRenderer.invoke("store-set", "platform", "defaultServerUrl", url)
+    } else {
+      await ipcRenderer.invoke("store-delete", "platform", "defaultServerUrl")
+    }
+  },
 
   getWindowCount: () => ipcRenderer.invoke("get-window-count"),
   getWindowFocused: () => ipcRenderer.invoke("get-window-focused"),
+  // Voidex doesn't expose a main-process show/focus handler yet. A best-effort
+  // `window.focus()` is enough for the notification-click path the renderer uses.
+  showWindow: async () => {
+    try {
+      window.focus()
+    } catch {
+      /* noop */
+    }
+  },
+  setWindowFocus: async () => {
+    try {
+      window.focus()
+    } catch {
+      /* noop */
+    }
+  },
   relaunch: () => ipcRenderer.send("relaunch"),
+  // HTTP mode means there's nothing to wait for beyond the renderer being
+  // ready. Resolve immediately with no credentials — callers treat `undefined`
+  // as "no sidecar, use the configured HTTP server".
+  awaitInitialization: async () => undefined as unknown as any,
+  killSidecar: async () => undefined,
   getZoomFactor: () => ipcRenderer.invoke("get-zoom-factor"),
   setZoomFactor: (factor) => ipcRenderer.invoke("set-zoom-factor", factor),
   setTitlebar: (theme: TitlebarTheme) => ipcRenderer.invoke("set-titlebar", theme),
