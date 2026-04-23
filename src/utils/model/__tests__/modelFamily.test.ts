@@ -50,6 +50,20 @@ describe('resolveModelFamily', () => {
     expect(resolveModelFamily('qwq-32b-preview')).toBe('qwen')
   })
 
+  it('resolves Kimi and Moonshot variants to kimi', () => {
+    expect(resolveModelFamily('kimi-k2')).toBe('kimi')
+    expect(resolveModelFamily('kimi-k2-instruct')).toBe('kimi')
+    expect(resolveModelFamily('kimi-k1.5')).toBe('kimi')
+    expect(resolveModelFamily('moonshot-v1-128k')).toBe('kimi')
+  })
+
+  it('resolves GLM and ChatGLM variants to glm', () => {
+    expect(resolveModelFamily('glm-4.6')).toBe('glm')
+    expect(resolveModelFamily('glm-4.5-air')).toBe('glm')
+    expect(resolveModelFamily('glm-4-plus')).toBe('glm')
+    expect(resolveModelFamily('chatglm-6b')).toBe('glm')
+  })
+
   it('strips org prefixes from OpenRouter-style slugs', () => {
     expect(resolveModelFamily('anthropic/claude-sonnet-4-6')).toBe('anthropic')
     expect(resolveModelFamily('openai/gpt-5.4')).toBe('openai')
@@ -57,6 +71,10 @@ describe('resolveModelFamily', () => {
     expect(resolveModelFamily('xai/grok-4')).toBe('xai')
     expect(resolveModelFamily('deepseek/deepseek-v3')).toBe('deepseek')
     expect(resolveModelFamily('qwen/qwen2.5-coder-32b')).toBe('qwen')
+    expect(resolveModelFamily('moonshotai/kimi-k2')).toBe('kimi')
+    expect(resolveModelFamily('moonshot/kimi-k2-instruct')).toBe('kimi')
+    expect(resolveModelFamily('zhipuai/glm-4.6')).toBe('glm')
+    expect(resolveModelFamily('zhipu/glm-4.5-air')).toBe('glm')
   })
 
   it('handles triple-nested gateway slugs', () => {

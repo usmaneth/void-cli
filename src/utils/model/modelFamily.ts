@@ -22,6 +22,8 @@ export type ModelFamily =
   | 'xai'
   | 'deepseek'
   | 'qwen'
+  | 'kimi'
+  | 'glm'
 
 const DEFAULT_FAMILY: ModelFamily = 'anthropic'
 
@@ -69,6 +71,22 @@ export function resolveModelFamily(model: string | null | undefined): ModelFamil
     id.startsWith('qwq')
   ) {
     return 'qwen'
+  }
+  if (
+    id.startsWith('kimi-') ||
+    id.startsWith('kimi') ||
+    id.startsWith('moonshot-') ||
+    id.startsWith('moonshot')
+  ) {
+    return 'kimi'
+  }
+  if (
+    id.startsWith('glm-') ||
+    id.startsWith('glm') ||
+    id.startsWith('chatglm-') ||
+    id.startsWith('chatglm')
+  ) {
+    return 'glm'
   }
 
   return DEFAULT_FAMILY

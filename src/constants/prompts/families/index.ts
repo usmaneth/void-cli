@@ -20,6 +20,8 @@ import { GEMINI_FAMILY_PREFIX } from './gemini.js'
 import { XAI_FAMILY_PREFIX } from './xai.js'
 import { DEEPSEEK_FAMILY_PREFIX } from './deepseek.js'
 import { QWEN_FAMILY_PREFIX } from './qwen.js'
+import { KIMI_FAMILY_PREFIX } from './kimi.js'
+import { GLM_FAMILY_PREFIX } from './glm.js'
 
 const FAMILY_PREFIX_MAP: Record<ModelFamily, string> = {
   anthropic: ANTHROPIC_FAMILY_PREFIX,
@@ -28,6 +30,8 @@ const FAMILY_PREFIX_MAP: Record<ModelFamily, string> = {
   xai: XAI_FAMILY_PREFIX,
   deepseek: DEEPSEEK_FAMILY_PREFIX,
   qwen: QWEN_FAMILY_PREFIX,
+  kimi: KIMI_FAMILY_PREFIX,
+  glm: GLM_FAMILY_PREFIX,
 }
 
 /**
