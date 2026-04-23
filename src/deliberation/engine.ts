@@ -36,6 +36,8 @@ export interface DeliberationCallbacks {
 
 /** Per-million-token pricing for common models. */
 const PRICING: Record<string, { input: number; output: number }> = {
+  // Anthropic (direct) — 4.7 family (TODO: confirm published pricing)
+  'claude-opus-4-7': { input: 15, output: 75 },
   // Anthropic (direct) — 4.6 family
   'claude-opus-4-6': { input: 15, output: 75 },
   'claude-sonnet-4-6': { input: 3, output: 15 },

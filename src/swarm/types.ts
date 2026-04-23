@@ -25,10 +25,10 @@ export type WorkstreamDomain =
 export const DEFAULT_MODEL_ASSIGNMENTS: Record<WorkstreamDomain, string> = {
   frontend: 'google/gemini-3.1-pro',
   backend: 'openai/gpt-5.4',
-  wiring: 'claude-opus-4-6',
+  wiring: 'claude-opus-4-7',
   tests: 'claude-sonnet-4-6',
-  debugging: 'claude-opus-4-6',
-  custom: 'claude-opus-4-6',
+  debugging: 'claude-opus-4-7',
+  custom: 'claude-opus-4-7',
 }
 
 // ---------------------------------------------------------------------------
