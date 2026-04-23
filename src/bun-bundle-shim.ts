@@ -21,9 +21,11 @@ const DISABLED_FEATURES = new Set<string>([
   'SLOW_OPERATION_LOGGING',  // Internal logging
   'PROMPT_CACHE_BREAK_DETECTION', // Internal diagnostics
   'TRANSCRIPT_CLASSIFIER',  // Requires proprietary prompt files not in repo
-  'PROACTIVE',              // SleepTool source not in repo
-  'KAIROS',                 // SleepTool/SendUserFile/PushNotification not in repo
-  'KAIROS_PUSH_NOTIFICATION', // PushNotificationTool not in repo
+  'PROACTIVE',              // SleepTool deprecated — replaced by ScheduleWakeupTool (KAIROS_LOOP_DYNAMIC)
+  'KAIROS',                 // Umbrella flag; SendUserFile not in repo
+  'KAIROS_PUSH_NOTIFICATION', // PushNotificationTool in repo but pending Remote Control daemon bridge for mobile delivery
+  // KAIROS_LOOP_DYNAMIC: ENABLED — ScheduleWakeupTool + /loop dynamic mode
+  // wired via src/utils/loopWakeup.ts (setTimeout → enqueuePendingNotification).
   'KAIROS_GITHUB_WEBHOOKS', // SubscribePRTool not in repo
   'CONTEXT_COLLAPSE',       // CtxInspectTool not in repo
   'TERMINAL_PANEL',         // TerminalCaptureTool not in repo

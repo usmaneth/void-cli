@@ -24,10 +24,13 @@ const SuggestBackgroundPRTool =
     ? require('./tools/SuggestBackgroundPRTool/SuggestBackgroundPRTool.js')
         .SuggestBackgroundPRTool
     : null
-const SleepTool =
-  feature('PROACTIVE') || feature('KAIROS')
-    ? require('./tools/SleepTool/SleepTool.js').SleepTool
-    : null
+// SleepTool is replaced by ScheduleWakeupTool (non-blocking, self-paced).
+// SleepTool.js is not in this repo (only prompt.ts for SLEEP_TOOL_NAME
+// referenced by query.ts / classifierDecision.ts / prompts.ts).
+const ScheduleWakeupTool = feature('KAIROS_LOOP_DYNAMIC')
+  ? require('./tools/ScheduleWakeupTool/ScheduleWakeupTool.js')
+      .ScheduleWakeupTool
+  : null
 const cronTools = feature('AGENT_TRIGGERS')
   ? [
       require('./tools/ScheduleCronTool/CronCreateTool.js').CronCreateTool,
@@ -235,7 +238,7 @@ export function getAllBaseTools(): Tools {
     ...(VerifyPlanExecutionTool ? [VerifyPlanExecutionTool] : []),
     ...(process.env.USER_TYPE === 'ant' && REPLTool ? [REPLTool] : []),
     ...(WorkflowTool ? [WorkflowTool] : []),
-    ...(SleepTool ? [SleepTool] : []),
+    ...(ScheduleWakeupTool ? [ScheduleWakeupTool] : []),
     ...cronTools,
     ...(RemoteTriggerTool ? [RemoteTriggerTool] : []),
     ...(MonitorTool ? [MonitorTool] : []),
