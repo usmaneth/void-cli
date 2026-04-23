@@ -59,6 +59,18 @@ If auto-memory is empty, say so and offer to review VOID.md for cleanup.
 - Do NOT modify files without explicit user approval
 - Do NOT create new files unless the target doesn't exist yet
 - Ask about ambiguous entries — don't guess
+
+## Red Flags
+
+These thoughts mean STOP — you're rationalizing a bad memory decision:
+
+| Thought | Reality |
+|---------|---------|
+| "This probably isn't worth promoting, it's pretty generic" | If it appeared in auto-memory, something captured it for a reason. Propose a destination and let the user reject. |
+| "I'll just apply this promotion, it's obviously right" | Present ALL proposals first. User approval comes before any file write. |
+| "This entry is ambiguous — I'll guess VOID.md since it's project-ish" | Ambiguous entries go in the Ambiguous bucket of the report. Guessing puts team-wide rules in personal files (or vice versa). |
+| "CLAUDE.local.md doesn't exist, I'll skip this promotion" | Propose creating it. Skipping silently hides a valid personal rule. |
+| "I looked at auto-memory and VOID.md, that's enough" | All layers matter. Missing CLAUDE.local.md or team memory means missing duplicates and conflicts. |
 `
 
   registerBundledSkill({

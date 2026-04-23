@@ -56,6 +56,17 @@ If Slack MCP isn't available, format the report as a message the user can copy-p
 ## Notes
 - Don't kill or signal any processes — this is diagnostic only.
 - If the user gave an argument (e.g., a specific PID or symptom), focus there first.
+
+## Red Flags
+
+These thoughts mean STOP — you're rationalizing a bad diagnosis:
+
+| Thought | Reality |
+|---------|---------|
+| "CPU is high once, that's enough — must be the culprit" | A one-shot \`ps\` catches transient spikes. Sample twice, 1-2s apart, before calling anything stuck. |
+| "Nothing jumps out, I'll post an all-clear to the channel" | If every session is healthy, tell the user directly. Don't spam #claude-code-feedback with all-clears. |
+| "This session looks stuck — I'll just kill it" | Diagnostic only. Never send signals; the user may want the state preserved for inspection. |
+| "I'll skip the child processes, the parent PID is the story" | A hung \`git\` or \`node\` child routinely freezes the parent. Always check \`pgrep -lP\`. |
 `
 
 export function registerStuckSkill(): void {

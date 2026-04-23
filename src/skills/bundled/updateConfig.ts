@@ -440,6 +440,18 @@ If a hook isn't running:
 4. **Check hook type** - Is it "command", "prompt", or "agent"?
 5. **Test the command** - Run the hook command manually to see if it works
 6. **Use --debug** - Run \`void --debug\` to see hook execution logs
+
+## Red Flags
+
+These thoughts mean STOP — you're rationalizing a settings change that will fail silently or destroy the user's config:
+
+| Thought | Reality |
+|---------|---------|
+| "I'll just remember to run prettier myself after edits" | Automated behaviors require a hook — you are NOT the harness, you can't reliably fire on every Write. Write the hook. |
+| "I know the shape of this settings file, I'll skip the Read" | An invalid merge wipes the user's existing permissions, hooks, and env. Always Read before Edit. |
+| "The pipe-test passed, I'm done" | Pipe-test proves the command works; you still need \`jq -e\` validation and (for PreToolUse/PostToolUse) an end-to-end fire test. |
+| "Which scope is obvious — I'll pick user settings" | User vs project vs local has different git and team implications. When ambiguous, use AskUserQuestion. |
+| "I'll just replace the \`allow\` array with the new rule" | That deletes every existing permission. Merge arrays; never replace them. |
 `
 
 export function registerUpdateConfigSkill(): void {

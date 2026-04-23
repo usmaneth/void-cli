@@ -152,6 +152,17 @@ The runtime clamps to [60, 3600], so you don't need to clamp yourself.
 
 One short sentence on what you chose and why. Goes to telemetry and is shown back to the user. "checking long bun build" beats "waiting." The user reads this to understand what you're doing without having to predict your cadence in advance — make it specific.
 
+## Red Flags
+
+These thoughts mean STOP — you're rationalizing your way out of the loop:
+
+| Thought | Reality |
+|---------|---------|
+| "Nothing changed this tick, I'll just end the loop" | Dynamic mode is about watching over time. Schedule the next wakeup unless the user's intent is satisfied. |
+| "300s is a nice round number" | 300s is worst-of-both — pick 270s (cache stays warm) or 1200s+ (amortize the miss). |
+| "I'll sleep 60s to be responsive" | A long-running build doesn't finish faster because you checked 8 times. Pick a delay that matches what you're waiting for. |
+| "I should summarize progress before sleeping" | Long prose per turn burns cache. A one-line status update is usually enough. |
+
 ## Execute now
 
 Start the work. Do the first iteration now, then at the end of the turn call ${SCHEDULE_WAKEUP_TOOL_NAME} to schedule the next iteration. If the task is already done after this one turn, simply don't call ${SCHEDULE_WAKEUP_TOOL_NAME} — the loop ends.

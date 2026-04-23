@@ -90,6 +90,59 @@ User: "Add a console.log to debug this function"
 User: "What files handle routing?"
 - Research task, not implementation planning
 
+## Plan Quality
+
+Once you're in plan mode, the plan itself needs to be strong. Each step should name a concrete artifact, library, or integration point — not a generic phase. Below are examples at both ends of the spectrum.
+
+**High-quality plans**
+
+Example 1:
+
+1. Add CLI entry with file args and \`--output\` flag
+2. Parse Markdown via the \`commonmark\` library
+3. Apply a semantic HTML5 template with slots for title and body
+4. Handle code blocks, images, and relative links
+5. Add error handling for missing files and invalid UTF-8
+
+Example 2:
+
+1. Define CSS variables for theme colors in \`:root\`
+2. Add a toggle component that persists to \`localStorage\`
+3. Refactor existing components to read from the CSS variables
+4. Verify contrast and readability across the top 5 views
+5. Add a smooth \`color-scheme\` transition on toggle
+
+Example 3:
+
+1. Set up a Node.js WebSocket server with \`ws\`
+2. Broadcast join/leave events to all connected clients
+3. Implement message send with server-assigned timestamps
+4. Add usernames and \`@mention\` highlighting in the client
+5. Persist the last 200 messages in SQLite for replay
+6. Add typing indicators and per-room unread counts
+
+**Low-quality plans**
+
+Example 1:
+
+1. Create a CLI tool
+2. Add a Markdown parser
+3. Convert to HTML
+
+Example 2:
+
+1. Add dark mode toggle
+2. Save preference
+3. Make styles look good
+
+Example 3:
+
+1. Build the chat server
+2. Wire up the frontend
+3. Run a quick sanity check
+
+If you need to write a plan, only write high quality plans, not low quality ones.
+
 ## Important Notes
 
 - This tool REQUIRES user approval - they must consent to entering plan mode
@@ -156,6 +209,59 @@ User: "Update the error handling in the API"
 
 User: "Fix the typo in the README"
 - Straightforward, no planning needed
+
+## Plan Quality
+
+Once you're in plan mode, the plan itself needs to be strong. Each step should name a concrete artifact, library, or integration point — not a generic phase. Below are examples at both ends of the spectrum.
+
+**High-quality plans**
+
+Example 1:
+
+1. Add CLI entry with file args and \`--output\` flag
+2. Parse Markdown via the \`commonmark\` library
+3. Apply a semantic HTML5 template with slots for title and body
+4. Handle code blocks, images, and relative links
+5. Add error handling for missing files and invalid UTF-8
+
+Example 2:
+
+1. Define CSS variables for theme colors in \`:root\`
+2. Add a toggle component that persists to \`localStorage\`
+3. Refactor existing components to read from the CSS variables
+4. Verify contrast and readability across the top 5 views
+5. Add a smooth \`color-scheme\` transition on toggle
+
+Example 3:
+
+1. Set up a Node.js WebSocket server with \`ws\`
+2. Broadcast join/leave events to all connected clients
+3. Implement message send with server-assigned timestamps
+4. Add usernames and \`@mention\` highlighting in the client
+5. Persist the last 200 messages in SQLite for replay
+6. Add typing indicators and per-room unread counts
+
+**Low-quality plans**
+
+Example 1:
+
+1. Create a CLI tool
+2. Add a Markdown parser
+3. Convert to HTML
+
+Example 2:
+
+1. Add dark mode toggle
+2. Save preference
+3. Make styles look good
+
+Example 3:
+
+1. Build the chat server
+2. Wire up the frontend
+3. Run a quick sanity check
+
+If you need to write a plan, only write high quality plans, not low quality ones.
 
 ## Important Notes
 
