@@ -140,10 +140,18 @@ export const FALLBACK_MODELS: Record<DiscoveryProvider, DiscoveredModel[]> = {
     { id: 'gemini-2.5-flash', provider: 'gemini', name: 'Gemini 2.5 Flash' },
   ],
   // ChatGPT subscription backend — gpt-5.5 is only exposed here, not via /v1.
-  // Only usable when feature('CHATGPT_SUBSCRIPTION_AUTH') is enabled AND the
-  // user has run `void login chatgpt` to persist OAuth tokens.
+  // The live fetcher hits chatgpt.com/backend-api/codex/models with the
+  // user's OAuth access_token; this roster is the cold-start fallback until
+  // the first live fetch succeeds. Ordered by default preference:
+  // 5.5 first (frontier), then 5.4 tier, then codex coding variants, then
+  // legacy 5.2 for compatibility.
   chatgptSubscription: [
-    { id: 'gpt-5.5', provider: 'chatgptSubscription', name: 'GPT-5.5 (ChatGPT Plus/Pro)' },
+    { id: 'gpt-5.5', provider: 'chatgptSubscription', name: 'GPT-5.5' },
+    { id: 'gpt-5.4', provider: 'chatgptSubscription', name: 'GPT-5.4' },
+    { id: 'gpt-5.4-mini', provider: 'chatgptSubscription', name: 'GPT-5.4 Mini' },
+    { id: 'gpt-5.4-codex', provider: 'chatgptSubscription', name: 'GPT-5.4 Codex' },
+    { id: 'gpt-5.3-codex', provider: 'chatgptSubscription', name: 'GPT-5.3 Codex' },
+    { id: 'gpt-5.2', provider: 'chatgptSubscription', name: 'GPT-5.2' },
   ],
 }
 
@@ -280,21 +288,60 @@ async function fetchGitLab(ctx: FetchContext): Promise<DiscoveredModel[]> {
 }
 
 /**
- * ChatGPT-subscription "discovery" — there is no list endpoint on chatgpt.com
- * for the subscription-only models, so we short-circuit to the FALLBACK entry
- * whenever the user has persisted OAuth tokens. This keeps the catalog honest
- * without hitting the network.
+ * ChatGPT-subscription discovery — calls chatgpt.com/backend-api/codex/models
+ * with the persisted OAuth access_token, same endpoint Codex uses. The live
+ * response is authoritative (includes whatever models OpenAI has rolled out
+ * to this specific account, including gpt-5.5 + future rollouts). On any
+ * failure — network, auth, shape mismatch — we fall back to FALLBACK_MODELS
+ * so the model picker never goes empty.
  */
-async function fetchChatgptSubscription(_ctx: FetchContext): Promise<DiscoveredModel[]> {
+async function fetchChatgptSubscription(ctx: FetchContext): Promise<DiscoveredModel[]> {
   // Lazy-require to avoid circular imports at module load time.
-  const { loadTokens } = require('../../utils/auth/openaiTokenStore.js') as {
-    loadTokens: () => { access_token?: string } | null
+  const { getValidAccessToken } = require('../../utils/auth/openaiTokenStore.js') as {
+    getValidAccessToken: () => Promise<string | null>
   }
-  const tokens = loadTokens()
-  if (!tokens?.access_token) {
+  const accessToken = await getValidAccessToken().catch(() => null)
+  if (!accessToken) {
     throw new Error('No ChatGPT subscription tokens — run `void login chatgpt` first')
   }
-  return FALLBACK_MODELS.chatgptSubscription
+
+  try {
+    const res = await client(ctx).get(
+      'https://chatgpt.com/backend-api/codex/models',
+      {
+        headers: { Authorization: `Bearer ${accessToken}` },
+        timeout: ctx.timeoutMs ?? 15_000,
+      },
+    )
+    // Codex's response shape (mirrors ~/.codex/models_cache.json):
+    //   { models: [{ slug, display_name, description, visibility, ... }] }
+    const raw = res.data?.models
+    if (!Array.isArray(raw) || raw.length === 0) {
+      return FALLBACK_MODELS.chatgptSubscription
+    }
+    const discovered: DiscoveredModel[] = raw
+      .filter(
+        (m: any) =>
+          typeof m?.slug === 'string' &&
+          // Hide internal-only entries like codex-auto-review.
+          m?.visibility !== 'hide',
+      )
+      .map((m: any) => ({
+        id: m.slug as string,
+        provider: 'chatgptSubscription' as const,
+        name:
+          typeof m.display_name === 'string' && m.display_name !== m.slug
+            ? m.display_name
+            : undefined,
+        raw: m,
+      }))
+    return discovered.length > 0
+      ? discovered
+      : FALLBACK_MODELS.chatgptSubscription
+  } catch {
+    // Auth error, network hiccup, backend drift — keep the picker alive.
+    return FALLBACK_MODELS.chatgptSubscription
+  }
 }
 
 async function fetchGemini(ctx: FetchContext): Promise<DiscoveredModel[]> {

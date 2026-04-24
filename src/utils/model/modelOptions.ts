@@ -587,3 +587,70 @@ export async function getOpenRouterModelOptions(): Promise<ModelOption[]> {
     return []
   }
 }
+
+// ─── ChatGPT subscription ────────────────────────────────────────────────────
+
+// Human-friendly blurbs keyed by slug. The picker already shows the raw id,
+// so these just add a one-word-ish tier label. Unknown slugs fall back to
+// "ChatGPT Plus/Pro" which still groups them under the right section.
+const CHATGPT_MODEL_BLURBS: Record<string, string> = {
+  'gpt-5.5': 'frontier',
+  'gpt-5.4': 'flagship',
+  'gpt-5.4-mini': 'fast, cheaper',
+  'gpt-5.4-nano': 'cheapest, fastest',
+  'gpt-5.4-pro': 'max quality',
+  'gpt-5.4-codex': 'coding-tuned',
+  'gpt-5.3-codex': 'coding-tuned (5.3)',
+  'gpt-5.3': 'prior generation',
+  'gpt-5.2-codex': 'coding-tuned (5.2)',
+  'gpt-5.2': 'legacy',
+  'gpt-5.1-codex-max': 'coding, long-context',
+  'gpt-5.1-codex': 'coding-tuned (5.1)',
+  'gpt-5.1': 'legacy',
+  'gpt-5-codex': 'coding-tuned',
+  'gpt-5-pro': 'max quality',
+  'gpt-5-mini': 'fast',
+  'gpt-5-nano': 'fastest, cheapest',
+  'gpt-5': 'generic',
+}
+
+function chatgptSubscriptionModelToOption(m: {
+  id: string
+  name?: string
+}): ModelOption {
+  const blurb = CHATGPT_MODEL_BLURBS[m.id]
+  const descBits: string[] = ['ChatGPT Plus/Pro']
+  if (blurb) descBits.push(blurb)
+  else descBits.push('subscription')
+  return {
+    value: m.id,
+    label: m.name ?? m.id,
+    description: descBits.join(' · '),
+    descriptionForModel: `${m.id} via ChatGPT Plus/Pro subscription${blurb ? ` (${blurb})` : ''}`,
+  }
+}
+
+/**
+ * Fetch the ChatGPT-subscription catalog as ModelOptions for the picker.
+ * Returns [] when the user hasn't run `void login chatgpt`, so the picker
+ * cleanly omits the section instead of showing an error row.
+ */
+export async function getChatgptSubscriptionModelOptions(): Promise<
+  ModelOption[]
+> {
+  // Dynamic import — the catalog pulls in axios + the token store, both
+  // heavier than the picker wants to load eagerly. This keeps the cold
+  // path ($ void) fast when the user isn't on the subscription flow.
+  try {
+    const { PROVIDER_FETCHERS, FALLBACK_MODELS } = await import(
+      '../../services/modelDiscovery/catalog.js'
+    )
+    const fetcher = PROVIDER_FETCHERS.chatgptSubscription
+    const models = await fetcher({}).catch(
+      () => FALLBACK_MODELS.chatgptSubscription,
+    )
+    return models.map(chatgptSubscriptionModelToOption)
+  } catch {
+    return []
+  }
+}

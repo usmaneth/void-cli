@@ -53,10 +53,12 @@ import {
   parseUserSpecifiedModel,
 } from '../utils/model/model.js'
 import {
+  getChatgptSubscriptionModelOptions,
   getModelOptions,
   getOpenRouterModelOptions,
   type ModelOption,
 } from '../utils/model/modelOptions.js'
+import { feature } from '../bun-bundle-shim.js'
 import {
   getSettingsForSource,
   updateSettingsForSource,
@@ -191,6 +193,7 @@ export function ModelPicker({
 
   // ── Model sources ──────────────────────────────────────────────
   const [openRouterOptions, setOpenRouterOptions] = useState<ModelOption[]>([])
+  const [chatgptSubOptions, setChatgptSubOptions] = useState<ModelOption[]>([])
   const [providerList, setProviderList] = useState<string[]>([])
   const [favorites, setFavorites] = useState<Set<string>>(() => {
     const settings = getSettingsForSource('userSettings')
@@ -209,6 +212,20 @@ export function ModelPicker({
         new Set(opts.map(o => parseProvider(o.description)).filter(Boolean)),
       ).sort()
       setProviderList(providers)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  // Load ChatGPT-subscription catalog once (only when the feature is on
+  // AND the user has persisted tokens — the helper returns [] otherwise).
+  useEffect(() => {
+    if (!feature('CHATGPT_SUBSCRIPTION_AUTH')) return
+    let cancelled = false
+    void getChatgptSubscriptionModelOptions().then(opts => {
+      if (cancelled || opts.length === 0) return
+      setChatgptSubOptions(opts)
     })
     return () => {
       cancelled = true
@@ -237,6 +254,19 @@ export function ModelPicker({
     // Claude models — always shown, unfiltered by provider.
     out.push({ kind: 'section', id: `${SECTION_PREFIX}claude`, label: '● Claude' })
     out.push(...claudeOptions.map(o => toRow(o, false)))
+
+    // ChatGPT subscription models — only present when the user has run
+    // `void login chatgpt`. Placed before OpenRouter so gpt-5.5 is near
+    // the top of the picker.
+    if (chatgptSubOptions.length > 0) {
+      out.push({
+        kind: 'section',
+        id: `${SECTION_PREFIX}chatgpt`,
+        label: '◆ ChatGPT Plus/Pro',
+        description: `${chatgptSubOptions.length} models`,
+      })
+      out.push(...chatgptSubOptions.map(o => toRow(o, false)))
+    }
 
     // OpenRouter catalog (filtered).
     if (openRouterOptions.length > 0) {
@@ -281,7 +311,14 @@ export function ModelPicker({
     }
 
     return out
-  }, [claudeOptions, openRouterOptions, favorites, providerFilter, initial])
+  }, [
+    claudeOptions,
+    chatgptSubOptions,
+    openRouterOptions,
+    favorites,
+    providerFilter,
+    initial,
+  ])
 
   // ── Fuzzy rank (empty query = preserve curated order) ──────────
   const rankedItems = useMemo(() => {

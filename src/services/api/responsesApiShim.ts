@@ -537,7 +537,11 @@ export interface ResponsesApiShimConfig {
   conversationId?: string
 }
 
-const DEFAULT_BASE_URL = 'https://chatgpt.com/backend-api'
+// Codex's ChatGPT subscription endpoint. Per codex-rs/response-debug-context
+// the path segment is `/codex/responses` and `/codex/models` — not the bare
+// `/responses` the public Responses API uses. Keeping the `/codex/` prefix
+// in the default base URL means callers don't need to know about it.
+const DEFAULT_BASE_URL = 'https://chatgpt.com/backend-api/codex'
 const DEFAULT_TIMEOUT_MS = 10 * 60_000
 
 /**
