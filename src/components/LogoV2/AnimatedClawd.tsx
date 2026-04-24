@@ -36,7 +36,7 @@ export function AnimatedClawd({ compact = false }: Props = {}): React.ReactNode 
   // Drive shimmer + materialization on the shared ink clock.
   // Pass null to the frame hook after we're done animating so we stop
   // consuming the clock.
-  const isAnimating = !reducedMotion || !materializeDone
+  const isAnimating = !reducedMotion && !materializeDone
   const [, time] = useAnimationFrame(isAnimating ? SHIMMER_FRAME_MS : null)
 
   if (mountTimeRef.current === null && time > 0) {
