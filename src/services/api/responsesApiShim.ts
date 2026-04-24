@@ -585,13 +585,26 @@ export function createResponsesApiShimClient(config: ResponsesApiShimConfig): an
     if (toolChoice) body.tool_choice = toolChoice
     if (conversationId) body.prompt_cache_key = conversationId
 
-    // Anthropic `max_tokens` has no direct equivalent in the Responses API —
-    // it caps output via `max_output_tokens`. We forward it when set.
-    if (typeof params.max_tokens === 'number') {
-      ;(body as any).max_output_tokens = params.max_tokens
+    // NOTE: chatgpt.com/backend-api/codex is stricter than the public Responses
+    // API — it rejects max_output_tokens, temperature, and top_p with a 400:
+    //   {"detail":"Unsupported parameter: max_output_tokens"}
+    // Codex itself never sends these (see codex-rs/codex-api/src/common.rs
+    // ::ResponsesApiRequest — only model/instructions/input/tools/tool_choice/
+    // parallel_tool_calls/reasoning/store/stream/include/service_tier/
+    // prompt_cache_key/text/client_metadata). The backend applies its own
+    // output limit; effort is expressed via `reasoning.effort`, not sampling.
+    // Forward these params only when an explicit non-codex baseURL override
+    // tells us we're hitting the public Responses API surface.
+    const isSubscriptionBackend = /chatgpt\.com\/backend-api/.test(baseURL)
+    if (!isSubscriptionBackend) {
+      if (typeof params.max_tokens === 'number') {
+        ;(body as any).max_output_tokens = params.max_tokens
+      }
+      if (params.temperature !== undefined) {
+        ;(body as any).temperature = params.temperature
+      }
+      if (params.top_p !== undefined) (body as any).top_p = params.top_p
     }
-    if (params.temperature !== undefined) (body as any).temperature = params.temperature
-    if (params.top_p !== undefined) (body as any).top_p = params.top_p
 
     const accessToken = await getAccessToken()
     const accountId = getAccountId ? await getAccountId() : undefined
