@@ -27,8 +27,13 @@ export const DEFAULT_ISSUER = 'https://auth.openai.com'
 /** Callback port Codex uses; matching it lets the issuer's allowlist accept the redirect_uri. */
 export const DEFAULT_CALLBACK_PORT = 1455
 
-/** ChatGPT backend base URL for the Responses API (not the public /v1 endpoint). */
-export const DEFAULT_CHATGPT_BACKEND_BASE_URL = 'https://chatgpt.com/backend-api'
+/**
+ * ChatGPT backend base URL for the Responses API.
+ * Path segment is `/codex/...` (e.g. /codex/responses, /codex/models) — matches
+ * codex-rs/response-debug-context. Callers append `/responses`, `/models`, etc.
+ */
+export const DEFAULT_CHATGPT_BACKEND_BASE_URL =
+  'https://chatgpt.com/backend-api/codex'
 
 /** OAuth scopes (verbatim from Codex's build_authorize_url). */
 const AUTH_SCOPES =

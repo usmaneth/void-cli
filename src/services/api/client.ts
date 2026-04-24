@@ -302,6 +302,28 @@ export async function getAnthropicClient({
   // before falling back to OpenRouter. This avoids the OpenRouter middleman when
   // the user has a direct API key for the vendor.
 
+  // ChatGPT subscription routing: gpt-5.* models — the only models available on
+  // chatgpt.com/backend-api/codex, not the public /v1 endpoint — when the user
+  // has completed `/login chatgpt` and tokens are persisted.
+  // Bare `gpt-*` models + subscription tokens ⇒ subscription backend.
+  // Explicit `openai/` prefix (checked below) still forces the public API
+  // even when subscription tokens exist, for users who want to bill API
+  // credits instead of their subscription.
+  const isBareChatgptModel = model && /^gpt-5(\.|-)/i.test(model)
+  if (isBareChatgptModel) {
+    const { hasChatgptSubscriptionAuth, createChatgptSubscriptionClient } =
+      await import('../../providers/chatgptSubscription.js')
+    if (hasChatgptSubscriptionAuth()) {
+      return createChatgptSubscriptionClient({
+        defaultHeaders: {
+          ...defaultHeaders,
+          'User-Agent': getUserAgent(),
+        },
+        timeout: ARGS.timeout,
+      }) as unknown as Anthropic
+    }
+  }
+
   // Direct OpenAI routing: openai/* models -> OpenAI API
   // Strip the "openai/" prefix since OpenAI's API expects bare model names (e.g. "gpt-4o")
   if (model && model.startsWith('openai/')) {
