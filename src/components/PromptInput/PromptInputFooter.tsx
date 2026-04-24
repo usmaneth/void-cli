@@ -139,7 +139,7 @@ function PromptInputFooter({
     return <PromptInputHelpMenu dimColor={true} fixedWidth={true} paddingX={2} />;
   }
   return <>
-      {mode === 'prompt' && !isLoading && !isPasting && !isSearching && <SessionHUD />}
+      {mode === 'prompt' && !isLoading && !isPasting && !isSearching && <SessionHUD transcript={messages} />}
       {mode === 'prompt' && !isLoading && !isPasting && !isSearching && <CostFooter />}
       <Box flexDirection={isNarrow ? 'column' : 'row'} justifyContent={isNarrow ? 'flex-start' : 'space-between'} paddingX={2} gap={isNarrow ? 0 : 1}>
         <Box flexDirection="column" flexShrink={isNarrow ? 0 : 1}>

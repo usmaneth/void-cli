@@ -59,6 +59,9 @@ import resume from './commands/resume/index.js'
 import review, { ultrareview } from './commands/review.js'
 import diffReview from './review/command.js'
 import session from './commands/session/index.js'
+import handoff from './commands/session/handoffCommand.js'
+import outline from './commands/session/outlineCommand.js'
+import cockpit from './commands/session/cockpitCommand.js'
 import share from './commands/share/index.js'
 import skills from './commands/skills/index.js'
 import status from './commands/status/index.js'
@@ -381,6 +384,9 @@ const COMMANDS = memoize((): Command[] => [
   repomapCommand,
   resume,
   session,
+  handoff,
+  outline,
+  cockpit,
   skills,
   stats,
   status,

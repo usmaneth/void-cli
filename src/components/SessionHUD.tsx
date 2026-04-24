@@ -23,7 +23,9 @@ import {
 } from '../utils/context.js'
 import { renderModelName } from '../utils/model/model.js'
 import { getCurrentUsage } from '../utils/tokens.js'
+import type { Message } from '../types/message.js'
 import { LspStatus } from './LspStatus.js'
+import { ValidationStatus } from './ValidationStatus.js'
 
 // Visual bar characters
 const FILLED = '█'
@@ -83,11 +85,14 @@ type SessionHUDProps = {
   visible?: boolean
   /** Session start timestamp */
   sessionStartTime?: number
+  /** Full transcript messages for derived segments (ValidationStatus). */
+  transcript?: readonly Message[]
 }
 
 function SessionHUDImpl({
   visible = true,
   sessionStartTime,
+  transcript,
 }: SessionHUDProps): React.ReactNode {
   const { columns } = useTerminalSize()
   const model = useMainLoopModel()
@@ -173,6 +178,7 @@ function SessionHUDImpl({
         {formatUSD(sessionCost)}
       </Text>
       <LspStatus />
+      {transcript && <ValidationStatus messages={transcript} />}
       <Text dimColor>{' ─'}</Text>
     </Box>
   )
