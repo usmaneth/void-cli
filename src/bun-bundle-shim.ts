@@ -41,9 +41,12 @@ const DISABLED_FEATURES = new Set<string>([
   'KAIROS_DREAM',           // dream skill not in repo
   'REVIEW_ARTIFACT',        // hunter skill not in repo
   'RUN_SKILL_GENERATOR',    // runSkillGenerator not in repo
-  // ChatGPT Plus/Pro subscription auth (Codex-OAuth-client impersonation).
-  // Opt-in only: VOID_FEATURE_FLAGS=CHATGPT_SUBSCRIPTION_AUTH
-  'CHATGPT_SUBSCRIPTION_AUTH',
+  // Note: CHATGPT_SUBSCRIPTION_AUTH is ON by default. The feature reuses
+  // Codex's registered OAuth client_id to reach chatgpt.com/backend-api for
+  // subscription-billed inference (gpt-5.5 etc). OpenAI may rotate the
+  // client_id or tighten client verification; users who want to disable
+  // the option entirely can run with VOID_FEATURE_FLAGS=none or an explicit
+  // allowlist that omits CHATGPT_SUBSCRIPTION_AUTH.
 ])
 
 export function feature(name: string): boolean {
