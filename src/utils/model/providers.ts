@@ -11,6 +11,7 @@ export type APIProvider =
   | 'openrouter'
   | 'vercelGateway'
   | 'gitlab'
+  | 'chatgptSubscription'
 
 /**
  * Resolve the active API provider based on `VOID_USE_*` env flags. The order
@@ -24,6 +25,7 @@ export function getAPIProvider(): APIProvider {
   if (isEnvTruthy(process.env.VOID_USE_BEDROCK)) return 'bedrock'
   if (isEnvTruthy(process.env.VOID_USE_VERTEX)) return 'vertex'
   if (isEnvTruthy(process.env.VOID_USE_FOUNDRY)) return 'foundry'
+  if (isEnvTruthy(process.env.VOID_USE_CHATGPT_SUBSCRIPTION)) return 'chatgptSubscription'
   if (isEnvTruthy(process.env.VOID_USE_OPENAI)) return 'openai'
   if (isEnvTruthy(process.env.VOID_USE_GEMINI)) return 'gemini'
   if (isEnvTruthy(process.env.VOID_USE_OPENROUTER)) return 'openrouter'

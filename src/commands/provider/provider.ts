@@ -1,89 +1,35 @@
-import { execFileSync } from 'child_process'
-import { userInfo } from 'os'
 import type { LocalCommandCall } from '../../types/command.js'
 import { getClaudeAIOAuthTokens } from '../../utils/auth.js'
+import {
+  deleteProviderKeyFromKeychain,
+  getProviderKeychainServiceName,
+  getProviderKeyFromKeychainSync,
+  hasProviderEnvKey,
+  storeProviderKeyInKeychain,
+  type ProviderKeychainName,
+} from '../../utils/providerKeychain.js'
 
 const SUPPORTED_PROVIDERS = ['openrouter', 'openai', 'gemini'] as const
-type ProviderName = (typeof SUPPORTED_PROVIDERS)[number]
-
-const KEYCHAIN_SERVICE_PREFIX = 'Void'
+type ProviderName = ProviderKeychainName
 
 function getKeychainService(provider: ProviderName): string {
-  return `${KEYCHAIN_SERVICE_PREFIX}-${provider}`
-}
-
-function getUsername(): string {
-  try {
-    return process.env.USER || userInfo().username
-  } catch {
-    return 'void-cli-user'
-  }
+  return getProviderKeychainServiceName(provider)
 }
 
 function readKeyFromKeychain(provider: ProviderName): string | null {
-  if (process.platform !== 'darwin') return null
-  const service = getKeychainService(provider)
-  const username = getUsername()
-
-  for (const args of [
-    ['find-generic-password', '-s', service, '-a', username, '-w'],
-    ['find-generic-password', '-s', service, '-w'],
-  ]) {
-    try {
-      const result = execFileSync('security', args, {
-        encoding: 'utf-8',
-        stdio: ['pipe', 'pipe', 'pipe'],
-      })
-      return result.trim() || null
-    } catch {
-      continue
-    }
-  }
-
-  return null
+  return getProviderKeyFromKeychainSync(provider)
 }
 
 function storeKeyInKeychain(provider: ProviderName, key: string): boolean {
-  if (process.platform !== 'darwin') return false
-  try {
-    const service = getKeychainService(provider)
-    const username = getUsername()
-    execFileSync(
-      'security',
-      ['add-generic-password', '-s', service, '-a', username, '-w', key, '-U'],
-      { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] },
-    )
-    return true
-  } catch {
-    return false
-  }
+  return storeProviderKeyInKeychain(provider, key)
 }
 
 function deleteKeyFromKeychain(provider: ProviderName): boolean {
-  if (process.platform !== 'darwin') return false
-  try {
-    const service = getKeychainService(provider)
-    const username = getUsername()
-    execFileSync(
-      'security',
-      ['delete-generic-password', '-s', service, '-a', username],
-      { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] },
-    )
-    return true
-  } catch {
-    return false
-  }
+  return deleteProviderKeyFromKeychain(provider)
 }
 
 function hasEnvKey(provider: ProviderName): boolean {
-  switch (provider) {
-    case 'openrouter':
-      return !!process.env.OPENROUTER_API_KEY
-    case 'openai':
-      return !!process.env.OPENAI_API_KEY
-    case 'gemini':
-      return !!process.env.GEMINI_API_KEY
-  }
+  return hasProviderEnvKey(provider)
 }
 
 function getProviderStatus(provider: ProviderName): string {

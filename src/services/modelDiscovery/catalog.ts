@@ -22,6 +22,10 @@ export type DiscoveryProvider =
   | 'vercel'
   | 'gitlab'
   | 'gemini'
+  // ChatGPT Plus/Pro subscription backend (chatgpt.com/backend-api).
+  // Gated behind feature('CHATGPT_SUBSCRIPTION_AUTH') — gpt-5.5 is only
+  // available here, not on the public /v1 OpenAI endpoint.
+  | 'chatgptSubscription'
 
 export interface DiscoveredModel {
   id: string
@@ -135,6 +139,12 @@ export const FALLBACK_MODELS: Record<DiscoveryProvider, DiscoveredModel[]> = {
     { id: 'gemini-3-pro-latest', provider: 'gemini', name: 'Gemini 3 Pro' },
     { id: 'gemini-2.5-flash', provider: 'gemini', name: 'Gemini 2.5 Flash' },
   ],
+  // ChatGPT subscription backend — gpt-5.5 is only exposed here, not via /v1.
+  // Only usable when feature('CHATGPT_SUBSCRIPTION_AUTH') is enabled AND the
+  // user has run `void login chatgpt` to persist OAuth tokens.
+  chatgptSubscription: [
+    { id: 'gpt-5.5', provider: 'chatgptSubscription', name: 'GPT-5.5 (ChatGPT Plus/Pro)' },
+  ],
 }
 
 export interface FetchContext {
@@ -153,6 +163,7 @@ export const PROVIDER_FETCHERS: Record<DiscoveryProvider, Fetcher> = {
   vercel: fetchVercel,
   gitlab: fetchGitLab,
   gemini: fetchGemini,
+  chatgptSubscription: fetchChatgptSubscription,
 }
 
 function client(ctx: FetchContext): AxiosInstance {
@@ -268,6 +279,24 @@ async function fetchGitLab(ctx: FetchContext): Promise<DiscoveredModel[]> {
     }))
 }
 
+/**
+ * ChatGPT-subscription "discovery" — there is no list endpoint on chatgpt.com
+ * for the subscription-only models, so we short-circuit to the FALLBACK entry
+ * whenever the user has persisted OAuth tokens. This keeps the catalog honest
+ * without hitting the network.
+ */
+async function fetchChatgptSubscription(_ctx: FetchContext): Promise<DiscoveredModel[]> {
+  // Lazy-require to avoid circular imports at module load time.
+  const { loadTokens } = require('../../utils/auth/openaiTokenStore.js') as {
+    loadTokens: () => { access_token?: string } | null
+  }
+  const tokens = loadTokens()
+  if (!tokens?.access_token) {
+    throw new Error('No ChatGPT subscription tokens — run `void login chatgpt` first')
+  }
+  return FALLBACK_MODELS.chatgptSubscription
+}
+
 async function fetchGemini(ctx: FetchContext): Promise<DiscoveredModel[]> {
   const apiKey = process.env.GEMINI_API_KEY
   if (!apiKey) {
@@ -322,6 +351,17 @@ export function providersWithCredentials(): DiscoveryProvider[] {
   }
   if (process.env.GITLAB_TOKEN) list.push('gitlab')
   if (process.env.GEMINI_API_KEY) list.push('gemini')
+  // ChatGPT subscription is credentialed via persisted OAuth tokens at
+  // ~/.void/chatgpt-auth.json. We probe lazily to avoid loading the token
+  // store at module init time.
+  try {
+    const { loadTokens } = require('../../utils/auth/openaiTokenStore.js') as {
+      loadTokens: () => { access_token?: string } | null
+    }
+    if (loadTokens()?.access_token) list.push('chatgptSubscription')
+  } catch {
+    // non-fatal — just skip
+  }
   return list
 }
 

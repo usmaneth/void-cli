@@ -217,6 +217,60 @@ export function getAnthropicApiKey(): null | string {
   return key
 }
 
+/**
+ * Path to the ChatGPT subscription token store, written by
+ * src/utils/auth/openaiTokenStore.ts in the other agent's worktree.
+ * Kept inline (rather than importing the module) so this file compiles
+ * before that worktree merges.
+ */
+const CHATGPT_SUBSCRIPTION_AUTH_PATH = join(
+  process.env.HOME || '',
+  '.void',
+  'auth.json',
+)
+
+/**
+ * Detect a ChatGPT-subscription auth file on disk. Intentionally a bare
+ * existence + non-empty check — we don't parse the file here to avoid
+ * coupling to the other agent's storage format.
+ */
+export async function hasChatgptSubscriptionAuth(): Promise<boolean> {
+  if (!process.env.HOME) return false
+  try {
+    const s = await stat(CHATGPT_SUBSCRIPTION_AUTH_PATH)
+    return s.isFile() && s.size > 0
+  } catch {
+    return false
+  }
+}
+
+/**
+ * True if ANY provider the /login picker supports is authenticated.
+ * Covers: Anthropic (env/OAuth/apiKeyHelper), OpenAI (env/keychain),
+ * OpenRouter (env/keychain), Gemini (env/keychain), ChatGPT
+ * subscription (~/.void/auth.json).
+ *
+ * Used by the first-run auth prompt — if this returns false, we show
+ * the provider picker before dropping the user into the REPL.
+ */
+export async function hasAnyProviderAuth(): Promise<boolean> {
+  if (hasAnthropicApiKeyAuth()) return true
+
+  const {
+    PROVIDER_KEYCHAIN_NAMES,
+    hasProviderEnvKey,
+    getProviderKeyFromKeychain,
+  } = await import('./providerKeychain.js')
+  for (const p of PROVIDER_KEYCHAIN_NAMES) {
+    if (hasProviderEnvKey(p)) return true
+    const key = await getProviderKeyFromKeychain(p)
+    if (key) return true
+  }
+
+  if (await hasChatgptSubscriptionAuth()) return true
+  return false
+}
+
 export function hasAnthropicApiKeyAuth(): boolean {
   const { key, source } = getAnthropicApiKeyWithSource({
     skipRetrievingKeyFromApiKeyHelper: true,

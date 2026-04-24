@@ -7,8 +7,9 @@ export default () =>
     type: 'local-jsx',
     name: 'login',
     description: hasAnthropicApiKeyAuth()
-      ? 'Switch Anthropic accounts'
-      : 'Sign in with your Anthropic account',
+      ? 'Switch accounts or sign in to another provider'
+      : 'Sign in to a provider (Anthropic, ChatGPT, OpenAI, OpenRouter, Gemini)',
+    argumentHint: '[anthropic|chatgpt|openrouter|openai|gemini]',
     isEnabled: () => !isEnvTruthy(process.env.DISABLE_LOGIN_COMMAND),
     load: () => import('./login.js'),
   }) satisfies Command

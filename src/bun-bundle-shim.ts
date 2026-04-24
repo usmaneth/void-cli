@@ -41,6 +41,9 @@ const DISABLED_FEATURES = new Set<string>([
   'KAIROS_DREAM',           // dream skill not in repo
   'REVIEW_ARTIFACT',        // hunter skill not in repo
   'RUN_SKILL_GENERATOR',    // runSkillGenerator not in repo
+  // ChatGPT Plus/Pro subscription auth (Codex-OAuth-client impersonation).
+  // Opt-in only: VOID_FEATURE_FLAGS=CHATGPT_SUBSCRIPTION_AUTH
+  'CHATGPT_SUBSCRIPTION_AUTH',
 ])
 
 export function feature(name: string): boolean {

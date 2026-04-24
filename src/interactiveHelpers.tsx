@@ -20,6 +20,7 @@ import { onChangeAppState } from './state/onChangeAppState.js';
 import {
   getAnthropicApiKeyWithSource,
   getAuthTokenSource,
+  hasAnyProviderAuth,
   isAnthropicAuthEnabled,
   isUsing3PServices,
 } from './utils/auth.js';
@@ -129,6 +130,21 @@ export async function showSetupScreens(root: Root, permissionMode: PermissionMod
     } = await import('./components/Onboarding.js');
     await showSetupDialog(root, done => <Onboarding onDone={() => {
       completeOnboarding();
+      void done();
+    }} />, {
+      onChangeAppState
+    });
+  }
+
+  // First-run multi-provider auth prompt. If the user skipped (or doesn't
+  // need) Anthropic-specific onboarding and STILL has no credentials for
+  // any supported provider (Anthropic OAuth, OpenAI/OpenRouter/Gemini via
+  // env or keychain, or ChatGPT subscription at ~/.void/auth.json), show
+  // the unified /login picker before dropping them into the REPL.
+  if (!(await hasAnyProviderAuth())) {
+    onboardingShown = true;
+    const { LoginRouter } = await import('./commands/login/login.js');
+    await showSetupDialog(root, done => <LoginRouter initialProvider={null} onDone={() => {
       void done();
     }} />, {
       onChangeAppState

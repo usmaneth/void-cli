@@ -56,6 +56,12 @@ const FRIENDLY_MODEL_SPECS: FriendlyModelSpec[] = [
     resolve: 'google/gemini-2.5-flash-preview',
   },
   {
+    pattern: /\bgpt[\s-]*5[\.\s]*5\b/i,
+    // gpt-5.5 is only served by chatgpt.com/backend-api — route through the
+    // chatgptSubscription provider. See src/providers/chatgptSubscription.ts.
+    resolve: 'gpt-5.5',
+  },
+  {
     pattern: /\bgpt[\s-]*5[\.\s]*4\b/i,
     resolve: 'openai/gpt-5.4',
   },
