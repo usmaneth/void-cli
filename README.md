@@ -254,7 +254,7 @@ Mention files inline to inject their content as context:
 | `-r, --resume` | Resume by session ID or pick interactively |
 | `--model <model>` | Choose model (e.g., `opus`, `sonnet`, `openai/gpt-4o`) |
 | `--add-dir <dirs>` | Add directories to the context |
-| `--dangerously-skip-permissions` | Skip all permission prompts |
+| `--dangerously-skip-permissions` / `--yolo` | Skip all permission prompts |
 | `--verbose` | Show detailed operation logs |
 | `-v, --version` | Print version |
 
