@@ -107,3 +107,99 @@ Singularity flash: at t=0.88, render a single full-bright `◆` with maximum tex
 - Audio. Tempting (terminal bell on singularity flash) but out of scope — cross-platform audio in a TUI is its own project.
 - Alternate themes that swap the animation style. Portal and black hole are *the* void treatment. Later themes reskin colors, not motion.
 - Mid-session re-triggering (e.g., `/portal` command to replay the entry). Cute but purposeless.
+
+---
+
+## v2 · Locked implementation decisions
+
+These replace the hand-wavy prose above. Written concrete enough that the implementation plan has no remaining design calls to make.
+
+### 1. Synthetic particles, not buffer capture
+
+Exit does NOT read the terminal state. Instead, particles are spawned from three synthetic sources:
+
+- **Banner perimeter** — 48 particles distributed around the banner's bounding box (12 per side), sampled glyphs from `['◆', '▲', '▼', '·']`
+- **Status-line row** — 24 particles spread along the bottom status line position
+- **Random interior scatter** — 32 particles at random (x, y) within the viewport, Perlin-noise seeded for repeatable test output
+
+Total particle cap: **104**. Always bounded regardless of terminal size. Performance predictable. Skips the entire "how to read terminal state" problem.
+
+### 2. Ring characters (portal)
+
+Four concentric rings, radii 3 / 6 / 10 / 14 cells. Each ring is a pre-computed set of (x, y, char) tuples from Bresenham's circle. Character assignment by cell-angle:
+
+- Cardinal points (N/E/S/W, ±5° slack): `◆`
+- Mid-cardinals (NE/SE/SW/NW): `▲` (NE/SE) or `▼` (SW/NW)
+- All other cells: `·`
+
+Gives the rings structured asymmetry — reads as "diamond-y" rather than generic circle. Matches void's existing banner vocabulary.
+
+### 3. Blur approximation (character density mapping)
+
+Banner characters classified into three density tiers:
+
+| Tier | Chars | Blur replacement |
+|---|---|---|
+| Dense | `█ ▓ ◆ ▲ ▼` | Stays — these survive blur |
+| Medium | `│ ─ ┌ ┐ └ ┘ V O I D` | Replace with `·` during blur |
+| Light | `· space punctuation` | Replace with space during blur |
+
+Banner fades in via three-phase progression: all-blurred (frames 0-10) → medium-tier-sharp (frames 11-18) → dense-tier-sharp (frames 19-24) → full resolution (frames 25+).
+
+### 4. Ring color progression
+
+Linear interpolation between three waypoints across the ring's lifecycle (frames 0 → totalRingFrames):
+
+- t=0.0: `#ffffff` (bright white)
+- t=0.5: `#7dcfff` (cyan)
+- t=1.0: `#bb9af7` with opacity 0 (violet, fading out)
+
+Ink renders color changes via text color property. Opacity approximated by downshifting to `#3d4266` (dim variant) at t>0.85, then omitting render at t>0.95.
+
+### 5. compress(spec, factor) helper shape
+
+```typescript
+type AnimationSpec = {
+  totalFrames: number
+  keyframes: Array<{ atFrame: number; state: FrameState }>
+  onFrame: (index: number, total: number) => void
+}
+
+function compress(spec: AnimationSpec, factor: number): AnimationSpec
+```
+
+Returns a new spec with `totalFrames *= factor` and each keyframe's `atFrame *= factor`. Callers re-invoke `onFrame` against the scaled indices. Pure function, easy to test.
+
+Compressed-variant factor for both animations: `0.18` (yields ~0.5s from 2.2-2.8s source). Matches the "compressed" cadence rule in the trigger table.
+
+### 6. Glyph rotation rate (black hole)
+
+For each particle at frame index `f / totalFrames = t`:
+
+```
+swapEvery = max(1, round(18 * (1 - t)))
+```
+
+At t=0: particle glyph swaps every 18 frames (slow). At t=0.5: every 9. At t=0.9: every 2 (rapid). At t=1.0: every 1 frame (hyperspeed).
+
+Glyph rotation cycle: `◆ → ▲ → ▼ → · → ◆`. Index into the cycle increments by 1 each swap. Visual effect: particles "spin faster" as they approach the singularity.
+
+### 7. Terminal size scaling
+
+All pixel-like values computed from terminal dimensions:
+
+- `ringRadii = baseRadii.map(r => r * (cols / 80))` — the reference design assumes 80-col terminal
+- `centerCol = floor(cols / 2)`, `centerRow = floor(rows / 2)` — animations always center-anchor
+- Minimum renderable: 40 cols × 15 rows (below that, cinema skips per the trigger matrix)
+- Maximum useful: 200 cols. Beyond that, rings clamp at radius 25 so the animation doesn't feel lost in empty space.
+
+### 8. Performance safeguards
+
+- **Frame budget**: if any single `onFrame` call exceeds 40ms wall-time, abort the animation. Log to debug. Fall through to static banner (entry) or immediate exit (exit).
+- **Total-runtime cap**: animation must complete within `duration * 1.3`. If it hasn't, force-complete and call `onDone()`. Prevents pathological slow terminals from hanging session start/end.
+- **Render-loop interval**: `setInterval(16ms)` is the target; Ink's batched renderer will coalesce. Actual achieved framerate logged to debug on exit for tuning.
+
+### Open questions — resolved
+
+- **Window-close `SIGHUP` exit** — resolved: skip cinema on SIGHUP. Window close is already a mini-cinema (the terminal closing); adding our own on top is redundant.
+- **`/exit --quiet` flag** — resolved: ship it. One line to add. Scripts that pipe output benefit.
