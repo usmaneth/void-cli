@@ -118,6 +118,14 @@ export type Theme = {
 }
 
 /**
+ * String-valued theme color keys — excludes the nested `palette` namespace.
+ * Use this anywhere you need to index a flat color slot from Theme.
+ * For semantic palette tokens (palette.brand.diamond, etc.), use getPalette()
+ * from `src/theme` instead.
+ */
+export type ThemeColorKey = Exclude<keyof Theme, 'palette'>
+
+/**
  * Built-in void theme names (compile-time tuple).
  *
  * Opencode-ported themes are loaded dynamically from
