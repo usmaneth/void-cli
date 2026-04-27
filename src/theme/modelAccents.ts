@@ -25,7 +25,7 @@ export type AccentFamily =
   | 'gemini'
   | 'xai'
   | 'deepseek'
-  | 'eastasian'
+  | 'eastAsian'
   | 'local'
 
 export const MODEL_ACCENTS: Record<AccentFamily, string> = {
@@ -35,7 +35,7 @@ export const MODEL_ACCENTS: Record<AccentFamily, string> = {
   gemini: '#7aa2f7',
   xai: '#ff7eb6',
   deepseek: '#ff9e64',
-  eastasian: '#e0af68',
+  eastAsian: '#e0af68',
   local: '#9aa5ce',
 }
 
@@ -53,7 +53,7 @@ const LOCAL_SUFFIX = /-local$/i
  *   3. Local-runner patterns (`*-local` suffix or `ollama/`, `lmstudio/`,
  *      `local/` prefix) → `local`.
  *   4. Otherwise delegate to `resolveModelFamily` and fold qwen/kimi/glm
- *      into the shared `eastasian` accent.
+ *      into the shared `eastAsian` accent.
  */
 export function resolveModelAccent(model: string | null | undefined): string {
   if (!model) return MODEL_ACCENTS.anthropic
@@ -83,7 +83,7 @@ export function resolveModelAccent(model: string | null | undefined): string {
     case 'qwen':
     case 'kimi':
     case 'glm':
-      return MODEL_ACCENTS.eastasian
+      return MODEL_ACCENTS.eastAsian
     default:
       return MODEL_ACCENTS.anthropic
   }

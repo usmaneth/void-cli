@@ -55,9 +55,10 @@
   "scripts": {
     "build": "tsc && node scripts/postbuild.js",
     "postinstall": "node scripts/postbuild.js 2>/dev/null || true",
-    "check": "tsc --noEmit && oxlint && vitest run",
+    "check": "tsc --noEmit && oxlint && bun run lint:colors && vitest run",
     "typecheck": "tsc --noEmit",
     "lint": "oxlint",
+    "lint:colors": "bun run scripts/check-no-raw-colors.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",

@@ -9,7 +9,7 @@ describe('modelAccents', () => {
     expect(MODEL_ACCENTS.gemini).toBe('#7aa2f7')
     expect(MODEL_ACCENTS.xai).toBe('#ff7eb6')
     expect(MODEL_ACCENTS.deepseek).toBe('#ff9e64')
-    expect(MODEL_ACCENTS.eastasian).toBe('#e0af68')
+    expect(MODEL_ACCENTS.eastAsian).toBe('#e0af68')
     expect(MODEL_ACCENTS.local).toBe('#9aa5ce')
   })
 
