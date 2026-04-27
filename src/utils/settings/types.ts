@@ -1208,6 +1208,39 @@ export const SettingsSchema = lazySchema(() =>
             'are auto-discovered and appended as workspace-layer instructions. ' +
             'Set to false to opt out.',
         ),
+      speculativePrefetch: z
+        .object({
+          enabled: z
+            .boolean()
+            .optional()
+            .describe(
+              'When true, Void runs a fixed set of read-only shell commands ' +
+                '(by default: `git status --short`, `git log --oneline -5`, ' +
+                '`git diff --stat HEAD`) on every prompt submit and injects ' +
+                'their stdout as additional context. Defaults to false.',
+            ),
+          commands: z
+            .array(z.string())
+            .optional()
+            .describe(
+              'Override the default prefetch command list. Each command is ' +
+                'executed via `sh -c` in the session cwd with per-command ' +
+                'timeout. stderr is discarded; only stdout is surfaced.',
+            ),
+          timeoutMs: z
+            .number()
+            .int()
+            .positive()
+            .optional()
+            .describe(
+              'Per-command timeout in milliseconds. Defaults to 5000.',
+            ),
+        })
+        .optional()
+        .describe(
+          'Speculative prefetch: pre-load cheap git/lint output as context ' +
+            'on every prompt submit. Opt-in via enabled: true.',
+        ),
       swarm: z
         .object({
           coordinatorModel: z

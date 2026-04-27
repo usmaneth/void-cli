@@ -36,12 +36,14 @@ import {
   getAttachmentMessages,
 } from '../attachments.js'
 import type { PastedContent } from '../config.js'
+import { getCwd } from '../cwd.js'
 import type { EffortValue } from '../effort.js'
 import { toArray } from '../generators.js'
 import {
   executeUserPromptSubmitHooks,
   getUserPromptSubmitHookBlockingMessage,
 } from '../hooks.js'
+import { runSpeculativePrefetch } from '../hooks/speculativePrefetch.js'
 import {
   createImageMetadataText,
   maybeResizeAndDownsampleImageBlock,
@@ -53,6 +55,7 @@ import {
   createUserMessage,
 } from '../messages.js'
 import { queryCheckpoint } from '../queryProfiler.js'
+import { getInitialSettings } from '../settings/settings.js'
 import { parseSlashCommand } from '../slashCommandParsing.js'
 import {
   hasUltraplanKeyword,
@@ -292,6 +295,33 @@ export async function processUserInput({
       }
     }
   }
+  // Speculative prefetch: piggyback on the UserPromptSubmit hook boundary so
+  // the model sees prefetched git state inside the same additionalContext
+  // attachment channel that user-configured hooks already use. Opt-in via
+  // settings.speculativePrefetch.enabled — returns null when disabled or when
+  // cwd isn't a git worktree, so this is a no-op for the default config.
+  try {
+    const settings = getInitialSettings()
+    const prefetchBlock = await runSpeculativePrefetch(
+      getCwd(),
+      settings.speculativePrefetch,
+    )
+    if (prefetchBlock) {
+      result.messages.push(
+        createAttachmentMessage({
+          type: 'hook_additional_context',
+          content: [applyTruncation(prefetchBlock)],
+          hookName: 'SpeculativePrefetch',
+          toolUseID: `prefetch-${randomUUID()}`,
+          hookEvent: 'UserPromptSubmit',
+        }),
+      )
+    }
+  } catch {
+    // Best-effort: prefetch must never break prompt submission. Swallow
+    // failures — the model still gets the user's original input.
+  }
+
   queryCheckpoint('query_hooks_end')
 
   // Happy path: onQuery will clear userInputOnProcessing via startTransition

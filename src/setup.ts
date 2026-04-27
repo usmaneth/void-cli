@@ -366,6 +366,9 @@ export async function setup(
     void import('./utils/sessionFileAccessHooks.js').then(m =>
       m.registerSessionFileAccessHooks(),
     ) // Register session file access analytics hooks
+    void import('./utils/autoContextHook.js').then(m =>
+      m.registerAutoContextHook(),
+    ) // Register the auto-context SessionStart nudge
     if (feature('TEAMMEM')) {
       void import('./services/teamMemorySync/watcher.js').then(m =>
         m.startTeamMemoryWatcher(),
