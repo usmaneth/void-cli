@@ -1,124 +1,99 @@
 /**
- * Replay a single prompt against a void subprocess and capture metrics.
+ * Replay a single prompt against a tool subprocess and capture metrics.
  *
- * Spawns `voidBin -p "<prompt>" --model <model> --output-format json`, parses
- * the SDK result JSON from stdout, and returns a ReplayResult. Honors a hard
- * timeout via AbortController. Never throws — failures become `ok: false`
- * entries so the caller can continue processing the batch.
+ * Each tool gets its own argv builder (via `buildArgv` below) and its own
+ * stdout parser (via parsers.ts). Wall-clock latency is always measured
+ * here; tool-reported metrics (cost, API latency, turns) come from the
+ * parser when the tool emits them.
+ *
+ * Never throws — failures become `ok: false` entries so the caller can
+ * continue processing the batch.
  */
 
 import { spawn } from 'child_process'
+import { parseToolOutput } from './parsers.js'
 import {
   type ReplayResult,
-  type SDKResultJson,
+  type Variant,
   DEFAULT_TIMEOUT_MS,
 } from './types.js'
 
 export type ReplayOptions = {
   prompt: string
-  model: string
+  variant: Variant
   timeoutMs?: number
-  voidBin: string
   /** Injected for tests; defaults to Node's `spawn`. */
   spawnFn?: typeof spawn
 }
 
-/** Extract the last SDK-result JSON object from mixed stdout. */
-export function parseSdkResultFromStdout(
-  stdout: string,
-): SDKResultJson | null {
-  // --output-format json emits a single JSON object when verbose=false.
-  // Try parsing the full stdout first — happy path.
-  const trimmed = stdout.trim()
-  if (trimmed.length === 0) return null
-  const direct = tryParseAsSdkResult(trimmed)
-  if (direct !== null) return direct
-
-  // Fallback: scan for the last `{"type":"result"` object. Useful if the
-  // user has a hook that prepends banner text before the JSON.
-  const marker = '{"type":"result"'
-  const lastIdx = trimmed.lastIndexOf(marker)
-  if (lastIdx === -1) return null
-  // Heuristic: balance braces from that position to find the object end.
-  let depth = 0
-  let inStr = false
-  let esc = false
-  for (let i = lastIdx; i < trimmed.length; i++) {
-    const ch = trimmed[i]!
-    if (esc) {
-      esc = false
-      continue
-    }
-    if (ch === '\\' && inStr) {
-      esc = true
-      continue
-    }
-    if (ch === '"') inStr = !inStr
-    if (inStr) continue
-    if (ch === '{') depth++
-    else if (ch === '}') {
-      depth--
-      if (depth === 0) {
-        const candidate = trimmed.slice(lastIdx, i + 1)
-        return tryParseAsSdkResult(candidate)
+/**
+ * Build the argv for a given tool + prompt + optional model override.
+ * Each tool's headless flag set is different — claude/void share, codex
+ * uses subcommand `exec`, opencode is a placeholder.
+ */
+export function buildArgv(variant: Variant, prompt: string): string[] {
+  switch (variant.tool) {
+    case 'void':
+    case 'claude': {
+      const argv = [
+        '-p',
+        prompt,
+        '--output-format',
+        'json',
+        '--no-session-persistence',
+      ]
+      if (variant.model && variant.model.length > 0 && variant.model !== 'default') {
+        argv.push('--model', variant.model)
       }
+      return argv
+    }
+    case 'codex': {
+      // `codex exec` is the non-interactive entrypoint. --json emits
+      // JSONL events to stdout; --full-auto skips approvals and runs
+      // sandboxed; --skip-git-repo-check + --ephemeral keep the run from
+      // mutating user state.
+      const argv = [
+        'exec',
+        '--json',
+        '--full-auto',
+        '--skip-git-repo-check',
+        '--ephemeral',
+      ]
+      if (variant.model && variant.model.length > 0 && variant.model !== 'default') {
+        argv.push('-m', variant.model)
+      }
+      argv.push(prompt)
+      return argv
+    }
+    case 'opencode': {
+      // Best-guess minimal invocation. opencode's headless surface isn't
+      // pinned in this repo — treat the prompt as a positional arg and let
+      // the user override via $OPENCODE_BIN if needed.
+      return [prompt]
     }
   }
-  return null
 }
 
-function tryParseAsSdkResult(text: string): SDKResultJson | null {
-  let parsed: unknown
-  try {
-    parsed = JSON.parse(text)
-  } catch {
-    return null
-  }
-  if (typeof parsed !== 'object' || parsed === null) return null
-  const obj = parsed as Record<string, unknown>
-  if (obj['type'] !== 'result') return null
-  const fields = [
-    'subtype',
-    'duration_ms',
-    'duration_api_ms',
-    'num_turns',
-    'total_cost_usd',
-    'session_id',
-  ] as const
-  for (const f of fields) {
-    if (!(f in obj)) return null
-  }
-  return {
-    type: 'result',
-    subtype: String(obj['subtype']),
-    duration_ms: Number(obj['duration_ms']),
-    duration_api_ms: Number(obj['duration_api_ms']),
-    is_error: Boolean(obj['is_error']),
-    num_turns: Number(obj['num_turns']),
-    result: typeof obj['result'] === 'string' ? obj['result'] : undefined,
-    total_cost_usd: Number(obj['total_cost_usd']),
-    session_id: String(obj['session_id']),
-  }
-}
-
-/** Convert a parsed SDK result + wall-clock time into a ReplayResult. */
-export function buildReplayResultFromSdk(
+/** Build a ReplayResult with sentinel values, ready to fill in from a parser. */
+function emptyResultFor(
+  variant: Variant,
   prompt: string,
-  model: string,
-  sdk: SDKResultJson,
-  exitCode: number,
+  startedAt: number,
 ): ReplayResult {
   return {
     prompt,
-    model,
-    ok: !sdk.is_error,
-    costUsd: sdk.total_cost_usd,
-    latencyMs: sdk.duration_ms,
-    apiLatencyMs: sdk.duration_api_ms,
-    numTurns: sdk.num_turns,
-    finalMessageChars: sdk.result ? sdk.result.length : 0,
-    sessionId: sdk.session_id,
-    rawExitCode: exitCode,
+    variantId: variant.id,
+    tool: variant.tool,
+    version: variant.version,
+    ok: false,
+    costUsd: 0,
+    costAvailable: false,
+    latencyMs: Date.now() - startedAt,
+    apiLatencyMs: -1,
+    numTurns: -1,
+    finalMessageChars: 0,
+    sessionId: '',
+    rawExitCode: -1,
   }
 }
 
@@ -132,25 +107,14 @@ export async function replayPrompt(
   const timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT_MS
   const spawnFn = opts.spawnFn ?? spawn
   const startedAt = Date.now()
+  const argv = buildArgv(opts.variant, opts.prompt)
 
   return await new Promise<ReplayResult>(resolve => {
     const controller = new AbortController()
-    const child = spawnFn(
-      opts.voidBin,
-      [
-        '-p',
-        opts.prompt,
-        '--model',
-        opts.model,
-        '--output-format',
-        'json',
-        '--no-session-persistence',
-      ],
-      {
-        stdio: ['ignore', 'pipe', 'pipe'],
-        signal: controller.signal,
-      },
-    )
+    const child = spawnFn(opts.variant.binary, argv, {
+      stdio: ['ignore', 'pipe', 'pipe'],
+      signal: controller.signal,
+    })
 
     let stdout = ''
     let stderr = ''
@@ -171,61 +135,71 @@ export async function replayPrompt(
     child.stdout?.setEncoding('utf8')
     child.stderr?.setEncoding('utf8')
     child.stdout?.on('data', chunk => {
-      stdout += chunk
+      // Cap stdout at 1MB to avoid pathological output blowing memory.
+      if (stdout.length < 1024 * 1024) stdout += chunk
     })
     child.stderr?.on('data', chunk => {
-      stderr += chunk
+      if (stderr.length < 64 * 1024) stderr += chunk
     })
+
     child.on('error', err => {
       finish({
-        prompt: opts.prompt,
-        model: opts.model,
-        ok: false,
-        costUsd: 0,
+        ...emptyResultFor(opts.variant, opts.prompt, startedAt),
         latencyMs: Date.now() - startedAt,
-        apiLatencyMs: 0,
-        numTurns: 0,
-        finalMessageChars: 0,
-        sessionId: '',
         error: err.message,
-        rawExitCode: -1,
       })
     })
+
     child.on('close', code => {
-      const sdk = parseSdkResultFromStdout(stdout)
-      if (sdk !== null) {
-        finish(buildReplayResultFromSdk(opts.prompt, opts.model, sdk, code ?? -1))
+      const latencyMs = Date.now() - startedAt
+      const partial = parseToolOutput(opts.variant.tool, stdout)
+      const exitCode = code ?? -1
+
+      if (partial !== null) {
+        finish({
+          prompt: opts.prompt,
+          variantId: opts.variant.id,
+          tool: opts.variant.tool,
+          version: opts.variant.version,
+          ok: partial.ok && exitCode === 0,
+          costUsd: partial.costUsd,
+          costAvailable: partial.costAvailable,
+          latencyMs,
+          apiLatencyMs: partial.apiLatencyMs,
+          numTurns: partial.numTurns,
+          finalMessageChars: partial.finalMessage.length,
+          sessionId: partial.sessionId,
+          rawExitCode: exitCode,
+        })
         return
       }
+
+      // Parser couldn't find anything structured. Fall back to wall-clock-
+      // only metrics: success determined by exit code, error message from
+      // stderr.
       const errMsg =
         code === null
           ? `timeout after ${timeoutMs}ms`
-          : stderr.trim() || `exit ${code} (no JSON result in stdout)`
+          : stderr.trim() ||
+            `exit ${exitCode} (no parseable output from ${opts.variant.tool})`
       finish({
-        prompt: opts.prompt,
-        model: opts.model,
-        ok: false,
-        costUsd: 0,
-        latencyMs: Date.now() - startedAt,
-        apiLatencyMs: 0,
-        numTurns: 0,
-        finalMessageChars: 0,
-        sessionId: '',
-        error: errMsg,
-        rawExitCode: code ?? -1,
+        ...emptyResultFor(opts.variant, opts.prompt, startedAt),
+        latencyMs,
+        ok: exitCode === 0,
+        error: exitCode === 0 ? undefined : errMsg,
+        rawExitCode: exitCode,
       })
     })
   })
 }
 
 /**
- * Replay an array of (prompt, model) pairs with bounded concurrency.
+ * Replay an array of (prompt, variant) pairs with bounded concurrency.
  * Never throws — any per-pair failure becomes an `ok: false` result.
  */
 export async function replayBatch(
-  pairs: Array<{ prompt: string; model: string }>,
+  pairs: Array<{ prompt: string; variant: Variant }>,
   opts: {
-    voidBin: string
     timeoutMs: number
     parallel: number
     spawnFn?: typeof spawn
@@ -242,8 +216,7 @@ export async function replayBatch(
       const pair = pairs[i]!
       results[i] = await replayPrompt({
         prompt: pair.prompt,
-        model: pair.model,
-        voidBin: opts.voidBin,
+        variant: pair.variant,
         timeoutMs: opts.timeoutMs,
         ...(opts.spawnFn ? { spawnFn: opts.spawnFn } : {}),
       })
@@ -254,3 +227,7 @@ export async function replayBatch(
   await Promise.all(workers)
   return results
 }
+
+// Backward-compat: re-export the parser so the original module surface is
+// preserved for any external callers. New code should import from parsers.ts.
+export { parseClaudeOrVoidOutput as parseSdkResultFromStdout } from './parsers.js'
