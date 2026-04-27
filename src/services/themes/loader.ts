@@ -382,6 +382,18 @@ export function mapToVoidTheme(resolved: ResolvedOpenCodeTheme): Theme {
     rainbow_blue_shimmer: rgb(lighten(rainbow.blue, 0.2)),
     rainbow_indigo_shimmer: rgb(lighten(rainbow.indigo, 0.2)),
     rainbow_violet_shimmer: rgb(lighten(rainbow.violet, 0.2)),
+    // Visual identity palette — stable across themes (matches darkTheme).
+    palette: {
+      brand: { diamond: '#7dcfff', accent: '#bb9af7' },
+      role: { you: '#bb9af7', voidProse: '#7dcfff', voidWrite: '#e0af68' },
+      state: {
+        success: '#9ece6a',
+        failure: '#f7768e',
+        warning: '#e0af68',
+        confident: '#ffffff',
+      },
+      text: { default: '#9aa5ce', dim: '#565f89', dimmer: '#3d4266' },
+    },
   }
 }
 

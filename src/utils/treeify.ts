@@ -12,9 +12,9 @@ export type TreeifyOptions = {
   useColors?: boolean
   themeName?: ThemeName
   treeCharColors?: {
-    treeChar?: keyof Theme // Color for tree characters (├ └ │)
-    key?: keyof Theme // Color for property names
-    value?: keyof Theme // Color for values
+    treeChar?: Exclude<keyof Theme, 'palette'> // Color for tree characters (├ └ │)
+    key?: Exclude<keyof Theme, 'palette'> // Color for property names
+    value?: Exclude<keyof Theme, 'palette'> // Color for values
   }
 }
 
@@ -47,7 +47,7 @@ export function treeify(obj: TreeNode, options: TreeifyOptions = {}): string {
   const lines: string[] = []
   const visited = new WeakSet<object>()
 
-  function colorize(text: string, colorKey?: keyof Theme): string {
+  function colorize(text: string, colorKey?: Exclude<keyof Theme, 'palette'>): string {
     if (!colorKey) return text
     return color(colorKey, themeName)(text)
   }
