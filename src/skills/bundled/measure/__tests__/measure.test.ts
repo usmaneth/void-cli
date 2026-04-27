@@ -40,6 +40,8 @@ const CODEX_TOOL: DetectedTool = {
 describe('parseMeasureArgs', () => {
   it('returns defaults when given no args', () => {
     expect(parseMeasureArgs('')).toEqual({
+      mode: 'measure',
+      modeArg: undefined,
       n: DEFAULT_N,
       tools: 'auto',
       models: [],
@@ -47,6 +49,30 @@ describe('parseMeasureArgs', () => {
       timeoutMs: DEFAULT_TIMEOUT_MS,
       list: false,
     })
+  })
+
+  it('parses the suggest mode without a positional arg', () => {
+    expect(parseMeasureArgs('suggest').mode).toBe('suggest')
+  })
+
+  it('parses the apply mode with a plan-id positional arg', () => {
+    const out = parseMeasureArgs('apply 2026-04-27-1234')
+    expect(out.mode).toBe('apply')
+    expect(out.modeArg).toBe('2026-04-27-1234')
+  })
+
+  it('parses the loop mode', () => {
+    expect(parseMeasureArgs('loop').mode).toBe('loop')
+  })
+
+  it('treats unknown first tokens as flags, not modes', () => {
+    expect(parseMeasureArgs('-n 5').mode).toBe('measure')
+  })
+
+  it('keeps mode-mode flag combinations: `suggest --tools claude,void`', () => {
+    const out = parseMeasureArgs('suggest --tools claude,void')
+    expect(out.mode).toBe('suggest')
+    expect(out.tools).toEqual(['claude', 'void'])
   })
 
   it('parses -n and --count interchangeably', () => {
