@@ -49,6 +49,7 @@ const EXEMPT_GLOBS = [
   'src/services/themes/**',
   'src/components/design-system/color.ts',
   'src/tools/AgentTool/agentColorManager.ts', // AgentColorName enum + theme-key map — source of truth, not a consumer
+  'src/tools/AgentTool/built-in/**', // built-in agent definitions: `color: 'orange'` is an AgentColorName key, not a render color
   'src/commands/color/color.ts', // RESET_ALIASES contains color keywords as user-input strings
   'src/ink/colorize.ts',
   'src/ink/termio/**',
