@@ -266,10 +266,20 @@ describe('milestoneMarker / milestoneColor', () => {
     expect(markers.size).toBeGreaterThanOrEqual(kinds.length - 2) // allow small overlap
   })
 
-  it('colors failures red and validations yellow', () => {
-    expect(milestoneColor('failure')).toBe('red')
-    expect(milestoneColor('validation')).toBe('yellow')
-    expect(milestoneColor('approval')).toBe('green')
+  it('returns palette hex tokens for state-bearing kinds', () => {
+    // milestoneColor now sources hex values from the active theme's
+    // palette (see src/theme/palette.ts) instead of Ink-named colors.
+    // Assertion is loose: any hex string is acceptable so we don't
+    // couple the test to specific theme values.
+    const failure = milestoneColor('failure')
+    const validation = milestoneColor('validation')
+    const approval = milestoneColor('approval')
+    expect(failure).toMatch(/^#[0-9a-f]{3,6}$/i)
+    expect(validation).toMatch(/^#[0-9a-f]{3,6}$/i)
+    expect(approval).toMatch(/^#[0-9a-f]{3,6}$/i)
+    // Distinct mappings — failures, warnings, and approvals must not
+    // collapse to the same token.
+    expect(new Set([failure, validation, approval]).size).toBe(3)
   })
 })
 

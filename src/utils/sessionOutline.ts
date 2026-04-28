@@ -16,6 +16,8 @@
  * necessary) to match the project's loose message types.
  */
 
+import { getPalette } from '../theme/index.js'
+
 export type MilestoneKind =
   | 'user_prompt'
   | 'user_command' // slash-command
@@ -490,33 +492,43 @@ export function milestoneMarker(kind: MilestoneKind): string {
   }
 }
 
-export function milestoneColor(kind: MilestoneKind):
-  | 'red'
-  | 'yellow'
-  | 'green'
-  | 'cyan'
-  | 'magenta'
-  | 'blue'
-  | 'gray'
-  | undefined {
+/**
+ * Return a palette-sourced hex color for a milestone kind, suitable for
+ * passing to `<Text color={...}>` in Ink. Returns `undefined` for kinds
+ * that should render in the default text color.
+ *
+ * The mapping is theme-aware: it pulls hex values from the active palette
+ * via `getPalette()` so the outline follows the user's theme. Previous
+ * behavior used hardcoded Ink-named colors (e.g. 'red', 'cyan'); the named
+ * tokens are recorded inline as legacy reference.
+ */
+export function milestoneColor(kind: MilestoneKind): string | undefined {
+  const p = getPalette()
   switch (kind) {
     case 'failure':
-      return 'red'
+      // legacy: 'red'
+      return p.state.failure
     case 'validation':
-      return 'yellow'
+      // legacy: 'yellow'
+      return p.state.warning
     case 'approval':
-      return 'green'
+      // legacy: 'green'
+      return p.state.success
     case 'user_prompt':
     case 'user_command':
-      return 'cyan'
+      // legacy: 'cyan' — user role accent
+      return p.role.you
     case 'file_edit':
     case 'file_write':
-      return 'magenta'
+      // legacy: 'magenta' — write-action accent
+      return p.role.voidWrite
     case 'search':
     case 'file_read':
-      return 'blue'
+      // legacy: 'blue' — read/prose accent
+      return p.role.voidProse
     case 'compact_boundary':
-      return 'gray'
+      // legacy: 'gray'
+      return p.text.dim
     default:
       return undefined
   }
