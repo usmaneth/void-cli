@@ -2,6 +2,7 @@ import { feature } from '../../bun-bundle-shim.js';
 import { spawnSync } from 'child_process';
 import sample from 'lodash-es/sample.js';
 import * as React from 'react';
+import { playExit, resolveCinemaMode } from '../../components/cinema/index.js';
 import { ExitFlow } from '../../components/ExitFlow.js';
 import type { LocalJSXCommandOnDone } from '../../types/command.js';
 import { isBgSession } from '../../utils/concurrentSessions.js';
@@ -10,6 +11,25 @@ import { getCurrentWorktreeSession } from '../../utils/worktree.js';
 const GOODBYE_MESSAGES = ['Goodbye!', 'See ya!', 'Bye!', 'Catch you later!'];
 function getRandomGoodbyeMessage(): string {
   return sample(GOODBYE_MESSAGES) ?? 'Goodbye!';
+}
+async function maybePlayCinemaExit(): Promise<void> {
+  const isTTY = Boolean(process.stdout.isTTY)
+  const cols = process.stdout.columns ?? 80
+  const rows = process.stdout.rows ?? 24
+  const envNoCinema = process.env.VOID_NO_CINEMA === '1'
+  // Exit always uses full unless skipped — same matrix minus the
+  // first-of-day rule. We pin introFlag='full' so the only branch is
+  // skip vs full (never compressed for exit).
+  const mode = resolveCinemaMode({
+    isTTY,
+    cols,
+    rows,
+    introFlag: 'full',
+    envNoCinema,
+    lastBootMtimeMs: undefined,
+    nowMs: Date.now(),
+  })
+  await playExit({ mode, cols, rows })
 }
 export async function call(onDone: LocalJSXCommandOnDone): Promise<React.ReactNode> {
   // Inside a `claude --bg` tmux session: detach instead of kill. The REPL
@@ -27,6 +47,7 @@ export async function call(onDone: LocalJSXCommandOnDone): Promise<React.ReactNo
     return <ExitFlow showWorktree={showWorktree} onDone={onDone} onCancel={() => onDone()} />;
   }
   onDone(getRandomGoodbyeMessage());
+  await maybePlayCinemaExit();
   await gracefulShutdown(0, 'prompt_input_exit');
   return null;
 }
