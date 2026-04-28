@@ -1,4 +1,5 @@
 import chalk from 'chalk'
+import { getPalette } from '../theme/index.js'
 import type { DailyActivity } from './stats.js'
 import { toDateString } from './statsCache.js'
 
@@ -150,14 +151,15 @@ export function generateHeatmap(
   }
 
   // Legend
+  const legendAccent = accent()
   lines.push('')
   lines.push(
     '    Less ' +
       [
-        claudeOrange('░'),
-        claudeOrange('▒'),
-        claudeOrange('▓'),
-        claudeOrange('█'),
+        legendAccent('░'),
+        legendAccent('▒'),
+        legendAccent('▓'),
+        legendAccent('█'),
       ].join(' ') +
       ' More',
   )
@@ -177,21 +179,27 @@ function getIntensity(
   return 1
 }
 
-// Claude orange color (hex #da7756)
-const claudeOrange = chalk.hex('#da7756')
+// Heatmap accent — sourced from the active theme's palette so the
+// GitHub-style activity grid follows the user's brand accent across themes.
+// Resolved lazily on each call so theme changes are picked up without
+// needing to reload the module.
+function accent(): (text: string) => string {
+  return chalk.hex(getPalette().brand.accent)
+}
 
 function getHeatmapChar(intensity: number): string {
+  const a = accent()
   switch (intensity) {
     case 0:
       return chalk.gray('·')
     case 1:
-      return claudeOrange('░')
+      return a('░')
     case 2:
-      return claudeOrange('▒')
+      return a('▒')
     case 3:
-      return claudeOrange('▓')
+      return a('▓')
     case 4:
-      return claudeOrange('█')
+      return a('█')
     default:
       return chalk.gray('·')
   }
