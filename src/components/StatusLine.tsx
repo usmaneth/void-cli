@@ -28,6 +28,7 @@ import { getCurrentSessionTitle } from '../utils/sessionStorage.js';
 import { doesMostRecentAssistantMessageExceed200k, getCurrentUsage } from '../utils/tokens.js';
 import { getCurrentWorktreeSession } from '../utils/worktree.js';
 import { isVimModeEnabled } from './PromptInput/utils.js';
+import { getPalette } from '../theme/index.js';
 export function statusLineShouldDisplay(settings: ReadonlySettings): boolean {
   // Assistant mode: statusline fields (model, permission mode, cwd) reflect the
   // REPL/daemon process, not what the agent child is actually running. Hide it.
@@ -141,6 +142,7 @@ function StatusLineInner({
   lastAssistantMessageId,
   vimMode
 }: Props): React.ReactNode {
+  const palette = getPalette();
   const abortControllerRef = useRef<AbortController | undefined>(undefined);
   const permissionMode = useAppState(s => s.toolPermissionContext.mode);
   const additionalWorkingDirectories = useAppState(s => s.toolPermissionContext.additionalWorkingDirectories);
@@ -336,7 +338,7 @@ function StatusLineInner({
         <Box flexDirection="row" gap={3}>
           <Box flexDirection="row">
             <Text dimColor>void › </Text>
-            <Text color="cyan">{breadcrumb}</Text>
+            <Text color={palette.brand.diamond}>{breadcrumb}</Text>
           </Box>
           <ContextGauge percentage={contextPercentages.used} />
         </Box>
