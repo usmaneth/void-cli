@@ -1,6 +1,7 @@
 import * as React from 'react'
 import { Box, Text } from '../ink.js'
 import { useTerminalSize } from '../hooks/useTerminalSize.js'
+import { getPalette, resolveModelAccent } from '../theme/index.js'
 import type { SwarmPhase, SwarmState, Workstream, WorkstreamTask } from './types.js'
 
 type SwarmRendererProps = {
@@ -36,53 +37,50 @@ const PHASE_LABEL: Record<SwarmPhase, string> = {
   failed: 'FAILED',
 }
 
-function phaseColor(phase: SwarmPhase): string {
+function phaseColor(phase: SwarmPhase, palette: ReturnType<typeof getPalette>): string {
   switch (phase) {
-    case 'awaiting_approval': return '#fbbf24'
-    case 'working': return '#a78bfa'
-    case 'merging': return '#fbbf24'
-    case 'reviewing': return '#38bdf8'
-    case 'complete': return '#22c55e'
-    case 'failed': return '#ef4444'
-    default: return '#a78bfa'
+    case 'awaiting_approval': return palette.state.warning
+    case 'working': return palette.brand.accent
+    case 'merging': return palette.state.warning
+    case 'reviewing': return palette.brand.diamond
+    case 'complete': return palette.state.success
+    case 'failed': return palette.state.failure
+    default: return palette.brand.accent
   }
 }
 
-function modelColor(model: string, i: number): string {
-  if (model.startsWith('google/')) return '#22c55e'
-  if (model.startsWith('openai/')) return '#38bdf8'
-  if (model.startsWith('claude') || model.startsWith('anthropic/')) return '#a78bfa'
-  const palette = ['#a78bfa', '#38bdf8', '#22c55e', '#fbbf24', '#f472b6'] as const
-  return palette[i % palette.length]!
+function modelColor(model: string): string {
+  return resolveModelAccent(model)
 }
 
-function statusArrow(status: string): { icon: string; color: string } {
+function statusArrow(status: string, palette: ReturnType<typeof getPalette>): { icon: string; color: string } {
   switch (status) {
-    case 'running': return { icon: '▶', color: 'yellow' }
-    case 'done': return { icon: '✓', color: 'green' }
-    case 'failed': return { icon: '✕', color: 'red' }
-    default: return { icon: '○', color: 'gray' }
+    case 'running': return { icon: '▶', color: palette.state.warning }
+    case 'done': return { icon: '✓', color: palette.state.success }
+    case 'failed': return { icon: '✕', color: palette.state.failure }
+    default: return { icon: '○', color: palette.text.dim }
   }
 }
 
-function taskIcon(task: WorkstreamTask): { ch: string; color: string } {
+function taskIcon(task: WorkstreamTask, palette: ReturnType<typeof getPalette>): { ch: string; color: string } {
   switch (task.status) {
-    case 'done': return { ch: '●', color: 'green' }
-    case 'in-progress': return { ch: '◐', color: 'yellow' }
-    case 'failed': return { ch: '✕', color: 'red' }
-    default: return { ch: '○', color: 'gray' }
+    case 'done': return { ch: '●', color: palette.state.success }
+    case 'in-progress': return { ch: '◐', color: palette.state.warning }
+    case 'failed': return { ch: '✕', color: palette.state.failure }
+    default: return { ch: '○', color: palette.text.dim }
   }
 }
 
 // ── Progress bar (pure text, no dependency) ─────────────────────────────────
 
 function ProgressText({ ratio, width }: { ratio: number; width: number }): React.JSX.Element {
+  const palette = getPalette()
   const filled = Math.round(ratio * width)
   const empty = width - filled
   return (
     <Text>
-      <Text color="#22c55e">{'█'.repeat(filled)}</Text>
-      <Text color="#374151">{'░'.repeat(empty)}</Text>
+      <Text color={palette.state.success}>{'█'.repeat(filled)}</Text>
+      <Text color={palette.text.dimmer}>{'░'.repeat(empty)}</Text>
     </Text>
   )
 }
@@ -91,7 +89,6 @@ function ProgressText({ ratio, width }: { ratio: number; width: number }): React
 
 function WorkerPanel({
   ws,
-  index,
   message,
 }: {
   key?: React.Key
@@ -99,8 +96,9 @@ function WorkerPanel({
   index: number
   message?: string
 }): React.JSX.Element {
-  const color = modelColor(ws.model, index)
-  const sa = statusArrow(ws.status)
+  const palette = getPalette()
+  const color = modelColor(ws.model)
+  const sa = statusArrow(ws.status, palette)
   const done = ws.tasks.filter(t => t.status === 'done').length
   const branch = ws.worktreeBranch ? `worktree: ${ws.worktreeBranch}` : ''
 
@@ -125,7 +123,7 @@ function WorkerPanel({
 
       {/* Task list */}
       {ws.tasks.map((task, ti) => {
-        const ti2 = taskIcon(task)
+        const ti2 = taskIcon(task, palette)
         return (
           <Text key={`${ws.id}-${ti}`}>
             <Text color={color}>{'  │ '}</Text>
@@ -149,6 +147,7 @@ export function SwarmRenderer({
   workerMessages,
   isConfiguringModels = false,
 }: SwarmRendererProps): React.JSX.Element {
+  const palette = getPalette()
   const { columns } = useTerminalSize()
 
   if (!state) {
@@ -190,15 +189,15 @@ export function SwarmRenderer({
     <Box
       flexDirection="column"
       borderStyle="double"
-      borderColor="#7c3aed"
+      borderColor={palette.brand.accent}
       paddingX={1}
       paddingY={0}
       width={columns}
     >
       {/* Title bar */}
       <Box justifyContent="space-between">
-        <Text bold color="#7c3aed">{'◈ S W A R M'}</Text>
-        <Text bold color={phaseColor(state.phase)}>{PHASE_LABEL[state.phase]}</Text>
+        <Text bold color={palette.brand.accent}>{'◈ S W A R M'}</Text>
+        <Text bold color={phaseColor(state.phase, palette)}>{PHASE_LABEL[state.phase]}</Text>
       </Box>
 
       {/* Coordinator + description */}
@@ -227,7 +226,7 @@ export function SwarmRenderer({
       <Box>
         <Text dimColor>{'Progress: '}</Text>
         <ProgressText ratio={ratio} width={barW} />
-        <Text bold color={phaseColor(state.phase)}>{' '}{pct}%</Text>
+        <Text bold color={phaseColor(state.phase, palette)}>{' '}{pct}%</Text>
       </Box>
 
       {/* Stats line */}
@@ -238,7 +237,7 @@ export function SwarmRenderer({
       {/* Approval prompt */}
       {state.phase === 'awaiting_approval' ? (
         <Box marginTop={1}>
-          <Text bold color="#fbbf24">
+          <Text bold color={palette.state.warning}>
             {isConfiguringModels
               ? 'Set worker model overrides, then press Enter to save them'
               : 'Press Enter to approve, press M to configure models, or Ctrl+C to cancel'}
