@@ -23,6 +23,7 @@ import {
 } from '../utils/context.js'
 import { renderModelName } from '../utils/model/model.js'
 import { getCurrentUsage } from '../utils/tokens.js'
+import { getPalette } from '../theme/index.js'
 import type { Message } from '../types/message.js'
 import { LspStatus } from './LspStatus.js'
 import { ValidationStatus } from './ValidationStatus.js'
@@ -54,22 +55,24 @@ function formatTokenCount(n: number): string {
 
 function getContextColor(
   percent: number,
-): 'green' | 'yellow' | 'red' | 'gray' {
-  if (percent >= 90) return 'red'
-  if (percent >= 70) return 'yellow'
-  if (percent > 0) return 'green'
-  return 'gray'
+  palette: ReturnType<typeof getPalette>,
+): string {
+  if (percent >= 90) return palette.state.failure
+  if (percent >= 70) return palette.state.warning
+  if (percent > 0) return palette.state.success
+  return palette.text.dim
 }
 
 function getSessionHealthColor(
   minutes: number,
   contextPercent: number,
-): 'green' | 'yellow' | 'red' {
+  palette: ReturnType<typeof getPalette>,
+): string {
   // Red if context is critically full regardless of time
-  if (contextPercent >= 90) return 'red'
+  if (contextPercent >= 90) return palette.state.failure
   // Yellow if session is getting long or context is filling
-  if (minutes > 60 || contextPercent >= 70) return 'yellow'
-  return 'green'
+  if (minutes > 60 || contextPercent >= 70) return palette.state.warning
+  return palette.state.success
 }
 
 function renderBar(percent: number): string {
@@ -94,6 +97,7 @@ function SessionHUDImpl({
   sessionStartTime,
   transcript,
 }: SessionHUDProps): React.ReactNode {
+  const palette = getPalette()
   const { columns } = useTerminalSize()
   const model = useMainLoopModel()
   const [now, setNow] = useState(Date.now())
@@ -148,15 +152,15 @@ function SessionHUDImpl({
   const sessionDuration = now - startTimeRef.current
   const sessionMinutes = Math.floor(sessionDuration / 60_000)
 
-  const contextColor = getContextColor(displayPercent)
-  const sessionColor = getSessionHealthColor(sessionMinutes, displayPercent)
+  const contextColor = getContextColor(displayPercent, palette)
+  const sessionColor = getSessionHealthColor(sessionMinutes, displayPercent, palette)
 
   const width = Math.min(columns, 120)
 
   return (
     <Box paddingX={2}>
       <Text dimColor>{'─ '}</Text>
-      <Text bold color="cyan">
+      <Text bold color={palette.brand.diamond}>
         {modelName}
       </Text>
       <Text dimColor>{' · '}</Text>
@@ -174,7 +178,7 @@ function SessionHUDImpl({
         {formatDuration(sessionDuration)}
       </Text>
       <Text dimColor>{' · '}</Text>
-      <Text color={sessionCost > 1 ? 'yellow' : undefined}>
+      <Text color={sessionCost > 1 ? palette.state.warning : undefined}>
         {formatUSD(sessionCost)}
       </Text>
       <LspStatus />
