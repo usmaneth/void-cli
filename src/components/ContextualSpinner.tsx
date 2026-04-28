@@ -6,6 +6,28 @@ import * as React from 'react'
 import { memo } from 'react'
 import { Box, Text, useTheme } from '../ink.js'
 import { resolveToolCardType, type ToolCardType } from './ToolCard.js'
+import { CategorySpinner } from './ambientMotion/index.js'
+import type { MotionCategory } from './ambientMotion/index.js'
+
+function resolveMotionCategory(toolName: string): MotionCategory | undefined {
+  switch (toolName) {
+    case 'Bash':
+      return 'bash'
+    case 'Edit':
+    case 'Write':
+    case 'Read':
+    case 'Glob':
+    case 'Grep':
+      return 'fileEdit'
+    case 'Agent':
+      return 'subagent'
+    case 'WebFetch':
+    case 'WebSearch':
+      return 'web'
+    default:
+      return undefined
+  }
+}
 
 const TOOL_MESSAGES: Record<string, string> = {
   Bash: 'Running command...',
@@ -93,10 +115,12 @@ function ContextualSpinnerImpl({
 
   const message = TOOL_MESSAGES[toolName] ?? 'Working...'
   const target = extractTarget(toolName, input)
+  const category = resolveMotionCategory(toolName)
 
   return (
     <Box>
-      <Text dimColor>⟳ {message}</Text>
+      {category ? <CategorySpinner category={category} /> : <Text dimColor>⟳</Text>}
+      <Text dimColor>{' ' + message}</Text>
       {target && (
         <>
           <Text> </Text>
