@@ -1,6 +1,7 @@
 import * as React from 'react'
 import { Box, Text } from '../ink.js'
 import { useTerminalSize } from '../hooks/useTerminalSize.js'
+import { getPalette, resolveModelAccent } from '../theme/index.js'
 import type { DeliberationState, ModelResponse } from './types.js'
 
 export type ModelStatus = 'waiting' | 'streaming' | 'done' | 'error'
@@ -33,29 +34,31 @@ function formatTokens(n: number): string {
 
 // ── Colors ──────────────────────────────────────────────────────────────────
 
-const PALETTE = ['#a78bfa', '#22c55e', '#38bdf8', '#fbbf24', '#f472b6'] as const
-
-function modelColor(index: number): string {
-  return PALETTE[index % PALETTE.length]!
+function modelColor(modelId: string): string {
+  return resolveModelAccent(modelId)
 }
 
-function convergenceLabel(state: DeliberationState): { color: string; text: string } {
-  if (state.status === 'converged') return { color: '#22c55e', text: 'CONVERGED' }
-  if (state.status === 'complete') return { color: '#22c55e', text: 'COMPLETE' }
-  if (state.status === 'stopped') return { color: '#fbbf24', text: 'STOPPED' }
+function convergenceLabel(
+  state: DeliberationState,
+  palette: ReturnType<typeof getPalette>,
+): { color: string; text: string } {
+  if (state.status === 'converged') return { color: palette.state.success, text: 'CONVERGED' }
+  if (state.status === 'complete') return { color: palette.state.success, text: 'COMPLETE' }
+  if (state.status === 'stopped') return { color: palette.state.warning, text: 'STOPPED' }
   const last = state.rounds.at(-1)
-  if (last?.converged) return { color: '#22c55e', text: 'ALIGNING' }
-  return { color: '#fbbf24', text: 'DEBATING' }
+  if (last?.converged) return { color: palette.state.success, text: 'ALIGNING' }
+  return { color: palette.state.warning, text: 'DEBATING' }
 }
 
 // ── Progress bar ────────────────────────────────────────────────────────────
 
 function ProgressText({ ratio, width }: { ratio: number; width: number }): React.JSX.Element {
+  const palette = getPalette()
   const filled = Math.round(ratio * width)
   return (
     <Text>
-      <Text color="#7c3aed">{'█'.repeat(filled)}</Text>
-      <Text color="#374151">{'░'.repeat(width - filled)}</Text>
+      <Text color={palette.brand.accent}>{'█'.repeat(filled)}</Text>
+      <Text color={palette.text.dimmer}>{'░'.repeat(width - filled)}</Text>
     </Text>
   )
 }
@@ -111,13 +114,14 @@ function StreamingCard({
   content: string
   color: string
 }): React.JSX.Element {
+  const palette = getPalette()
   const lines = content.split('\n').slice(-10) // Show last 10 lines
   return (
     <Box flexDirection="column" marginBottom={0}>
       <Text>
         <Text color={color}>{'  ┌ '}</Text>
         <Text bold color={color}>{model}</Text>
-        <Text bold color="yellow">{' STREAMING'}</Text>
+        <Text bold color={palette.state.warning}>{' STREAMING'}</Text>
       </Text>
       {lines.map((line, i) => (
         <Text key={i}>
@@ -127,7 +131,7 @@ function StreamingCard({
       ))}
       <Text>
         <Text color={color}>{'  │ '}</Text>
-        <Text color="yellow">{'▌'}</Text>
+        <Text color={palette.state.warning}>{'▌'}</Text>
       </Text>
       <Text color={color}>{'  └'}</Text>
     </Box>
@@ -142,13 +146,14 @@ export function DeliberationRenderer({
   streamingContent,
   currentModel,
 }: DeliberationRendererProps): React.JSX.Element {
+  const palette = getPalette()
   const { columns } = useTerminalSize()
 
   if (!state) {
     return <Box paddingX={1}><Text dimColor>Initializing deliberation...</Text></Box>
   }
 
-  const conv = convergenceLabel(state)
+  const conv = convergenceLabel(state, palette)
   const roundProgress = state.config.maxRounds === 0
     ? 0
     : state.currentRound / state.config.maxRounds
@@ -159,14 +164,14 @@ export function DeliberationRenderer({
     <Box
       flexDirection="column"
       borderStyle="double"
-      borderColor="#7c3aed"
+      borderColor={palette.brand.accent}
       paddingX={1}
       paddingY={0}
       width={columns}
     >
       {/* Title bar */}
       <Box justifyContent="space-between">
-        <Text bold color="#7c3aed">{'◈ D E L I B E R A T I O N   R O O M'}</Text>
+        <Text bold color={palette.brand.accent}>{'◈ D E L I B E R A T I O N   R O O M'}</Text>
         <Text bold color={conv.color}>{conv.text}</Text>
       </Box>
 
@@ -197,17 +202,13 @@ export function DeliberationRenderer({
         <Box key={`r-${round.number}`} flexDirection="column">
           <Box>
             <Text bold dimColor>{'Round '}{round.number}</Text>
-            {round.converged ? <Text bold color="green">{' · convergence detected'}</Text> : null}
+            {round.converged ? <Text bold color={palette.state.success}>{' · convergence detected'}</Text> : null}
           </Box>
           {round.responses.map((response, ri) => (
             <ResponseCard
               key={`${round.number}-${ri}`}
               response={response}
-              color={modelColor(
-                state.config.models.indexOf(response.model) >= 0
-                  ? state.config.models.indexOf(response.model)
-                  : ri
-              )}
+              color={modelColor(response.model)}
               roundNum={round.number}
             />
           ))}
@@ -219,7 +220,7 @@ export function DeliberationRenderer({
         <StreamingCard
           model={currentModel}
           content={streamingContent.get(currentModel)!}
-          color={modelColor(state.config.models.indexOf(currentModel))}
+          color={modelColor(currentModel)}
         />
       ) : null}
 
