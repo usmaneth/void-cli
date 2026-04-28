@@ -1,5 +1,11 @@
 import '../macros.js';
 import { feature } from '../bun-bundle-shim.js';
+import {
+  playEntry,
+  resolveCinemaMode,
+  readBootMtimeMs,
+  type IntroFlag,
+} from '../components/cinema/index.js';
 
 // NOTE: The void wrapper cd's to ~/void-cli for module resolution.
 // We do NOT chdir back to the user's launch dir here — doing so causes
@@ -301,8 +307,52 @@ async function main(): Promise<void> {
     main: cliMain
   } = await import('../main.js');
   profileCheckpoint('cli_after_main_import');
+
+  // Portal entry cinema — plays before REPL mount. resolveCinemaMode
+  // returns 'skip' for non-TTY / tiny terminals / --intro=off / VOID_NO_CINEMA=1,
+  // so this is a near-zero-cost no-op in CI, pipes, and headless contexts.
+  await maybePlayCinemaEntry();
+
   await cliMain();
   profileCheckpoint('cli_after_main_complete');
+}
+
+function parseIntroFlag(argv: readonly string[]): IntroFlag {
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i] ?? '';
+    if (a === '--intro' && i + 1 < argv.length) {
+      const v = argv[i + 1]!;
+      if (v === 'off' || v === 'quick' || v === 'full' || v === 'auto') return v;
+    }
+    if (a.startsWith('--intro=')) {
+      const v = a.slice('--intro='.length);
+      if (v === 'off' || v === 'quick' || v === 'full' || v === 'auto') return v;
+    }
+  }
+  return 'auto';
+}
+
+async function maybePlayCinemaEntry(): Promise<void> {
+  const isTTY = Boolean(process.stdout.isTTY);
+  const cols = process.stdout.columns ?? 80;
+  const rows = process.stdout.rows ?? 24;
+  const introFlag = parseIntroFlag(process.argv);
+  // eslint-disable-next-line custom-rules/no-process-env-top-level
+  const envNoCinema = process.env.VOID_NO_CINEMA === '1';
+  const lastBootMtimeMs = await readBootMtimeMs();
+  const nowMs = Date.now();
+
+  const mode = resolveCinemaMode({
+    isTTY,
+    cols,
+    rows,
+    introFlag,
+    envNoCinema,
+    lastBootMtimeMs,
+    nowMs,
+  });
+
+  await playEntry({ mode, cols, rows });
 }
 
 // eslint-disable-next-line custom-rules/no-top-level-side-effects
