@@ -109,8 +109,12 @@ Exempt paths (rule does not fire):
 - `src/utils/theme.ts`
 - `src/services/themes/**`
 - `src/components/design-system/color.ts`
+- `src/tools/AgentTool/agentColorManager.ts` (AgentColorName enum + theme-key map — source of truth)
+- `src/commands/color/color.ts` (RESET_ALIASES contains color keywords as user-input strings)
 - `src/ink/colorize.ts`
 - `src/ink/termio/**` (ANSI parser data, not theme decisions)
+- `src/utils/swarm/backends/TmuxBackend.ts` (tmux protocol color values, not Ink colors)
+- `src/utils/words.ts` (worker name word list — `coral`/`gray` are nature names, false positives)
 - Test files (`**/__tests__/**`, `**/*.test.ts`, `**/*.test.tsx`)
 - `scripts/**`
 
