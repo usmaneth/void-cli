@@ -8,6 +8,7 @@ import * as React from 'react'
 import { memo, useState, useEffect } from 'react'
 import { Box, Text, useTheme } from '../ink.js'
 import { useTerminalSize } from '../hooks/useTerminalSize.js'
+import { getPalette, resolveModelAccent } from '../theme/index.js'
 import type {
   CouncilEvent,
   CouncilMember,
@@ -17,17 +18,26 @@ import type {
 
 // ── Member Colors ─────────────────────────────────────────────────────────
 
-const MEMBER_COLORS: string[] = [
-  'cyan',
-  'magenta',
-  'yellow',
-  'green',
-  'blue',
-  'red',
-]
+/**
+ * Council members are accented with their resolved model-family color when
+ * a model id is available, falling back to a stable rotation across the
+ * brand/role/state palette tokens for index-only callers.
+ */
+function memberRotation(palette: ReturnType<typeof getPalette>): string[] {
+  return [
+    palette.brand.diamond,
+    palette.brand.accent,
+    palette.role.voidWrite,
+    palette.state.success,
+    palette.role.voidProse,
+    palette.state.failure,
+  ]
+}
 
-function getMemberColor(index: number): string {
-  return MEMBER_COLORS[index % MEMBER_COLORS.length]!
+function getMemberColor(index: number, member?: CouncilMember): string {
+  if (member?.model) return resolveModelAccent(member.model)
+  const rotation = memberRotation(getPalette())
+  return rotation[index % rotation.length]!
 }
 
 // ── Status Indicators ─────────────────────────────────────────────────────
@@ -77,6 +87,7 @@ function CouncilHeaderImpl({
   members,
   statuses,
 }: CouncilHeaderProps): React.ReactNode {
+  const palette = getPalette()
   const { columns } = useTerminalSize()
   const width = Math.min(columns - 4, 100)
   const divider = '─'.repeat(width)
@@ -85,7 +96,7 @@ function CouncilHeaderImpl({
     <Box flexDirection="column" paddingX={1}>
       <Text dimColor>{divider}</Text>
       <Box>
-        <Text bold color="cyan">
+        <Text bold color={palette.brand.diamond}>
           {'⚡ COUNCIL MODE'}
         </Text>
         <Text dimColor>
@@ -97,15 +108,15 @@ function CouncilHeaderImpl({
         {members.map((member, i) => {
           const status = statuses.get(member.id) ?? 'pending'
           const icon = STATUS_ICONS[status]
-          const color = getMemberColor(i)
+          const color = getMemberColor(i, member)
           return (
             <Box key={member.id}>
               <Text
                 color={
                   status === 'error'
-                    ? 'red'
+                    ? palette.state.failure
                     : status === 'complete'
-                      ? 'green'
+                      ? palette.state.success
                       : color
                 }
               >
@@ -151,6 +162,7 @@ function MemberResponseCardImpl({
   isWinner,
   maxPreviewLines = 8,
 }: MemberResponseCardProps): React.ReactNode {
+  const palette = getPalette()
   const color = getMemberColor(memberIndex)
   const { columns } = useTerminalSize()
   const maxWidth = Math.min(columns - 6, 100)
@@ -168,7 +180,7 @@ function MemberResponseCardImpl({
       {/* Header */}
       <Box>
         {isWinner && (
-          <Text color="green" bold>
+          <Text color={palette.state.success} bold>
             {'★ '}
           </Text>
         )}
@@ -187,7 +199,7 @@ function MemberResponseCardImpl({
 
       {/* Response preview */}
       <Box marginLeft={2} flexDirection="column">
-        <Text color={isWinner ? undefined : 'gray'}>{preview}</Text>
+        <Text color={isWinner ? undefined : palette.text.dim}>{preview}</Text>
         {hasMore && (
           <Text dimColor>
             {'... '}
@@ -210,6 +222,7 @@ type ConsensusSummaryProps = {
 function ConsensusSummaryImpl({
   result,
 }: ConsensusSummaryProps): React.ReactNode {
+  const palette = getPalette()
   const { columns } = useTerminalSize()
   const width = Math.min(columns - 4, 100)
   const divider = '─'.repeat(width)
@@ -218,7 +231,7 @@ function ConsensusSummaryImpl({
     <Box flexDirection="column" paddingX={1}>
       <Text dimColor>{divider}</Text>
       <Box>
-        <Text bold color="green">
+        <Text bold color={palette.state.success}>
           {'✓ CONSENSUS'}
         </Text>
         <Text dimColor>
@@ -239,7 +252,7 @@ function ConsensusSummaryImpl({
           .sort((a, b) => b.score - a.score)
           .map((score, i) => (
             <Box key={score.memberId}>
-              <Text color={i === 0 ? 'green' : undefined} bold={i === 0}>
+              <Text color={i === 0 ? palette.state.success : undefined} bold={i === 0}>
                 {i === 0 ? '★' : ' '} {score.memberId}
               </Text>
               <Text dimColor>
@@ -267,6 +280,7 @@ type CouncilDisplayProps = {
 function CouncilDisplayImpl({
   events,
 }: CouncilDisplayProps): React.ReactNode {
+  const palette = getPalette()
   // Derive state from events
   const members: CouncilMember[] = []
   const statuses = new Map<string, MemberStatus>()
@@ -311,7 +325,7 @@ function CouncilDisplayImpl({
       {/* Error messages */}
       {Array.from(errors.entries()).map(([id, error]) => (
         <Box key={id} paddingX={2}>
-          <Text color="red">
+          <Text color={palette.state.failure}>
             {'✗ '}
             {id}: {error}
           </Text>
@@ -352,6 +366,7 @@ function CouncilStatusLineImpl({
   members,
   statuses,
 }: CouncilStatusLineProps): React.ReactNode {
+  const palette = getPalette()
   const completed = Array.from(statuses.values()).filter(
     (s) => s === 'complete',
   ).length
@@ -361,7 +376,7 @@ function CouncilStatusLineImpl({
 
   return (
     <Box>
-      <Text bold color="cyan">
+      <Text bold color={palette.brand.diamond}>
         {'⚡ Council'}
       </Text>
       <Text dimColor>
@@ -369,7 +384,7 @@ function CouncilStatusLineImpl({
         {completed}/{members.length} complete
       </Text>
       {errored > 0 && (
-        <Text color="red">
+        <Text color={palette.state.failure}>
           {' '}
           ({errored} failed)
         </Text>

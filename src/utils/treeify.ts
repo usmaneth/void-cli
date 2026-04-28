@@ -1,6 +1,6 @@
 import figures from 'figures'
 import { color } from '../components/design-system/color.js'
-import type { Theme, ThemeName } from './theme.js'
+import type { ThemeColorKey, ThemeName } from './theme.js'
 
 export type TreeNode = {
   [key: string]: TreeNode | string | undefined
@@ -12,9 +12,9 @@ export type TreeifyOptions = {
   useColors?: boolean
   themeName?: ThemeName
   treeCharColors?: {
-    treeChar?: keyof Theme // Color for tree characters (├ └ │)
-    key?: keyof Theme // Color for property names
-    value?: keyof Theme // Color for values
+    treeChar?: ThemeColorKey // Color for tree characters (├ └ │)
+    key?: ThemeColorKey // Color for property names
+    value?: ThemeColorKey // Color for values
   }
 }
 
@@ -47,7 +47,7 @@ export function treeify(obj: TreeNode, options: TreeifyOptions = {}): string {
   const lines: string[] = []
   const visited = new WeakSet<object>()
 
-  function colorize(text: string, colorKey?: keyof Theme): string {
+  function colorize(text: string, colorKey?: ThemeColorKey): string {
     if (!colorKey) return text
     return color(colorKey, themeName)(text)
   }

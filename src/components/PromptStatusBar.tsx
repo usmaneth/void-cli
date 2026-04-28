@@ -17,6 +17,7 @@ import { useTerminalSize } from '../hooks/useTerminalSize.js'
 import { Box, Text, useTheme } from '../ink.js'
 import { getContextWindowForModel } from '../utils/context.js'
 import { renderModelName } from '../utils/model/model.js'
+import { getPalette } from '../theme/index.js'
 
 const FILLED = '█'
 const EMPTY = '░'
@@ -30,9 +31,10 @@ function renderBar(percent: number): string {
 
 function getPermissionColor(
   mode: string | undefined,
-): 'green' | 'yellow' | undefined {
-  if (mode === 'auto') return 'green'
-  if (mode === 'plan') return 'yellow'
+  palette: ReturnType<typeof getPalette>,
+): string | undefined {
+  if (mode === 'auto') return palette.state.success
+  if (mode === 'plan') return palette.state.warning
   return undefined
 }
 
@@ -51,6 +53,7 @@ function PromptStatusBarImpl({
   permissionMode,
   gitBranch,
 }: PromptStatusBarProps): React.ReactNode {
+  const palette = getPalette()
   const { columns } = useTerminalSize()
   const [_theme] = useTheme()
   const model = useMainLoopModel()
@@ -66,19 +69,26 @@ function PromptStatusBarImpl({
     : 0
   const remaining = 100 - tokenPercent
 
-  const permColor = getPermissionColor(permissionMode)
+  const permColor = getPermissionColor(permissionMode, palette)
   const permLabel = getPermissionLabel(permissionMode)
+
+  const tokenColor =
+    tokenPercent >= 90
+      ? palette.state.failure
+      : tokenPercent >= 70
+        ? palette.state.warning
+        : palette.state.success
 
   return (
     <Box paddingX={1}>
-      <Text bold color="cyan">
+      <Text bold color={palette.brand.diamond}>
         {modelName}
       </Text>
 
       {gitBranch ? (
         <>
           <Text dimColor>{'  '}</Text>
-          <Text color="magenta" backgroundColor="bashMessageBackgroundColor" bold> ⎇ {gitBranch} </Text>
+          <Text color={palette.brand.accent} backgroundColor="bashMessageBackgroundColor" bold> ⎇ {gitBranch} </Text>
         </>
       ) : null}
 
@@ -87,10 +97,10 @@ function PromptStatusBarImpl({
 
       <Text dimColor>{' · '}</Text>
       <Text dimColor>tok:</Text>
-      <Text color={tokenPercent >= 90 ? 'red' : tokenPercent >= 70 ? 'yellow' : 'green'}>
+      <Text color={tokenColor}>
         [{renderBar(remaining)}]
       </Text>
-      <Text color={tokenPercent >= 90 ? 'red' : tokenPercent >= 70 ? 'yellow' : 'green'}>
+      <Text color={tokenColor}>
         {remaining}%
       </Text>
     </Box>

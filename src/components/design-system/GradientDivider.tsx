@@ -1,13 +1,16 @@
 import * as React from 'react'
 import { Box, Text } from '../../ink.js'
 import { useTerminalSize } from '../../hooks/useTerminalSize.js'
+import { getPalette } from '../../theme/index.js'
 
 interface GradientDividerProps {
   color?: string
   width?: number | string
 }
 
-export function GradientDivider({ color = 'cyan', width = '100%' }: GradientDividerProps) {
+export function GradientDivider({ color, width = '100%' }: GradientDividerProps) {
+  const palette = getPalette()
+  const resolvedColor = color ?? palette.brand.diamond
   const { columns } = useTerminalSize()
   const w = typeof width === 'number' ? width : Math.max(10, columns - 2)
   
@@ -34,7 +37,7 @@ export function GradientDivider({ color = 'cyan', width = '100%' }: GradientDivi
   
   return (
     <Box width={width} paddingY={0} paddingX={1}>
-      <Text dimColor color={color}>{pattern}</Text>
+      <Text dimColor color={resolvedColor}>{pattern}</Text>
     </Box>
   )
 }

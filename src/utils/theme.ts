@@ -91,7 +91,39 @@ export type Theme = {
   rainbow_blue_shimmer: string
   rainbow_indigo_shimmer: string
   rainbow_violet_shimmer: string
+  // Visual identity palette — semantic tokens shared across themes.
+  // See `phase-0-foundation` rollup: stable hex values per spec.
+  palette: {
+    brand: {
+      diamond: string
+      accent: string
+    }
+    role: {
+      you: string
+      voidProse: string
+      voidWrite: string
+    }
+    state: {
+      success: string
+      failure: string
+      warning: string
+      confident: string
+    }
+    text: {
+      default: string
+      dim: string
+      dimmer: string
+    }
+  }
 }
+
+/**
+ * String-valued theme color keys — excludes the nested `palette` namespace.
+ * Use this anywhere you need to index a flat color slot from Theme.
+ * For semantic palette tokens (palette.brand.diamond, etc.), use getPalette()
+ * from `src/theme` instead.
+ */
+export type ThemeColorKey = Exclude<keyof Theme, 'palette'>
 
 /**
  * Built-in void theme names (compile-time tuple).
@@ -225,6 +257,17 @@ const lightTheme: Theme = {
   rainbow_blue_shimmer: 'rgb(180,205,240)',
   rainbow_indigo_shimmer: 'rgb(195,180,230)',
   rainbow_violet_shimmer: 'rgb(230,180,210)',
+  palette: {
+    brand: { diamond: '#7dcfff', accent: '#bb9af7' },
+    role: { you: '#bb9af7', voidProse: '#7dcfff', voidWrite: '#e0af68' },
+    state: {
+      success: '#9ece6a',
+      failure: '#f7768e',
+      warning: '#e0af68',
+      confident: '#ffffff',
+    },
+    text: { default: '#9aa5ce', dim: '#565f89', dimmer: '#3d4266' },
+  },
 }
 
 /**
@@ -306,6 +349,17 @@ const lightAnsiTheme: Theme = {
   rainbow_blue_shimmer: 'ansi:cyanBright',
   rainbow_indigo_shimmer: 'ansi:blueBright',
   rainbow_violet_shimmer: 'ansi:magentaBright',
+  palette: {
+    brand: { diamond: '#7dcfff', accent: '#bb9af7' },
+    role: { you: '#bb9af7', voidProse: '#7dcfff', voidWrite: '#e0af68' },
+    state: {
+      success: '#9ece6a',
+      failure: '#f7768e',
+      warning: '#e0af68',
+      confident: '#ffffff',
+    },
+    text: { default: '#9aa5ce', dim: '#565f89', dimmer: '#3d4266' },
+  },
 }
 
 /**
@@ -387,6 +441,17 @@ const darkAnsiTheme: Theme = {
   rainbow_blue_shimmer: 'ansi:cyanBright',
   rainbow_indigo_shimmer: 'ansi:blueBright',
   rainbow_violet_shimmer: 'ansi:magentaBright',
+  palette: {
+    brand: { diamond: '#7dcfff', accent: '#bb9af7' },
+    role: { you: '#bb9af7', voidProse: '#7dcfff', voidWrite: '#e0af68' },
+    state: {
+      success: '#9ece6a',
+      failure: '#f7768e',
+      warning: '#e0af68',
+      confident: '#ffffff',
+    },
+    text: { default: '#9aa5ce', dim: '#565f89', dimmer: '#3d4266' },
+  },
 }
 
 /**
@@ -468,6 +533,17 @@ const lightDaltonizedTheme: Theme = {
   rainbow_blue_shimmer: 'rgb(180,205,240)',
   rainbow_indigo_shimmer: 'rgb(195,180,230)',
   rainbow_violet_shimmer: 'rgb(230,180,210)',
+  palette: {
+    brand: { diamond: '#7dcfff', accent: '#bb9af7' },
+    role: { you: '#bb9af7', voidProse: '#7dcfff', voidWrite: '#e0af68' },
+    state: {
+      success: '#9ece6a',
+      failure: '#f7768e',
+      warning: '#e0af68',
+      confident: '#ffffff',
+    },
+    text: { default: '#9aa5ce', dim: '#565f89', dimmer: '#3d4266' },
+  },
 }
 
 /**
@@ -544,6 +620,17 @@ const darkTheme: Theme = {
   rainbow_blue_shimmer: 'rgb(180,205,240)',
   rainbow_indigo_shimmer: 'rgb(195,180,230)',
   rainbow_violet_shimmer: 'rgb(230,180,210)',
+  palette: {
+    brand: { diamond: '#7dcfff', accent: '#bb9af7' },
+    role: { you: '#bb9af7', voidProse: '#7dcfff', voidWrite: '#e0af68' },
+    state: {
+      success: '#9ece6a',
+      failure: '#f7768e',
+      warning: '#e0af68',
+      confident: '#ffffff',
+    },
+    text: { default: '#9aa5ce', dim: '#565f89', dimmer: '#3d4266' },
+  },
 }
 
 /**
@@ -625,6 +712,17 @@ const darkDaltonizedTheme: Theme = {
   rainbow_blue_shimmer: 'rgb(180,205,240)',
   rainbow_indigo_shimmer: 'rgb(195,180,230)',
   rainbow_violet_shimmer: 'rgb(230,180,210)',
+  palette: {
+    brand: { diamond: '#7dcfff', accent: '#bb9af7' },
+    role: { you: '#bb9af7', voidProse: '#7dcfff', voidWrite: '#e0af68' },
+    state: {
+      success: '#9ece6a',
+      failure: '#f7768e',
+      warning: '#e0af68',
+      confident: '#ffffff',
+    },
+    text: { default: '#9aa5ce', dim: '#565f89', dimmer: '#3d4266' },
+  },
 }
 
 /**
@@ -705,6 +803,17 @@ const voidCyberTheme: Theme = {
   rainbow_blue_shimmer: 'rgb(102,220,255)',
   rainbow_indigo_shimmer: 'rgb(150,80,255)',
   rainbow_violet_shimmer: 'rgb(210,80,255)',
+  palette: {
+    brand: { diamond: '#7dcfff', accent: '#bb9af7' },
+    role: { you: '#bb9af7', voidProse: '#7dcfff', voidWrite: '#e0af68' },
+    state: {
+      success: '#9ece6a',
+      failure: '#f7768e',
+      warning: '#e0af68',
+      confident: '#ffffff',
+    },
+    text: { default: '#9aa5ce', dim: '#565f89', dimmer: '#3d4266' },
+  },
 }
 
 /**
@@ -785,6 +894,17 @@ const voidMonoTheme: Theme = {
   rainbow_blue_shimmer: 'rgb(200,200,200)',
   rainbow_indigo_shimmer: 'rgb(180,180,180)',
   rainbow_violet_shimmer: 'rgb(210,210,210)',
+  palette: {
+    brand: { diamond: '#7dcfff', accent: '#bb9af7' },
+    role: { you: '#bb9af7', voidProse: '#7dcfff', voidWrite: '#e0af68' },
+    state: {
+      success: '#9ece6a',
+      failure: '#f7768e',
+      warning: '#e0af68',
+      confident: '#ffffff',
+    },
+    text: { default: '#9aa5ce', dim: '#565f89', dimmer: '#3d4266' },
+  },
 }
 
 

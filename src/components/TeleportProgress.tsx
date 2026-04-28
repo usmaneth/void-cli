@@ -6,6 +6,7 @@ import type { Root } from '../ink.js';
 import { Box, Text, useAnimationFrame } from '../ink.js';
 import { AppStateProvider } from '../state/AppState.js';
 import { checkOutTeleportedSessionBranch, processMessagesForTeleportResume, type TeleportProgressStep, type TeleportResult, teleportResumeCodeSession } from '../utils/teleport.js';
+import { getPalette } from '../theme/index.js';
 type Props = {
   currentStep: TeleportProgressStep;
   sessionId?: string;
@@ -29,6 +30,7 @@ const STEPS: {
 }];
 export function TeleportProgress(t0) {
   const $ = _c(16);
+  const palette = getPalette();
   const {
     currentStep,
     sessionId
@@ -71,7 +73,7 @@ export function TeleportProgress(t0) {
       let color;
       if (isComplete) {
         icon = figures.tick;
-        color = "green";
+        color = palette.state.success;
       } else {
         if (isCurrent) {
           icon = SPINNER_FRAMES[frame];

@@ -23,6 +23,7 @@ import {
   type VoidexLaunchOptions,
   type VoidexMode,
 } from '../../utils/voidexLauncher.js'
+import { getPalette } from '../../theme/index.js'
 
 type VoidexArgs = {
   mode: VoidexMode
@@ -74,6 +75,7 @@ function VoidexLauncher({
   args: VoidexArgs
   onDone: LocalJSXCommandOnDone
 }) {
+  const palette = getPalette()
   const [phase, setPhase] = useState<Phase>('launching')
   const [detail, setDetail] = useState<string>('')
 
@@ -111,7 +113,7 @@ function VoidexLauncher({
   if (phase === 'error') {
     return (
       <Box flexDirection="column" paddingX={2}>
-        <Text color="red">Voidex failed to launch</Text>
+        <Text color={palette.state.failure}>Voidex failed to launch</Text>
         <Text dimColor>{detail}</Text>
       </Box>
     )

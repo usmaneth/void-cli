@@ -19,6 +19,7 @@
 import * as React from 'react'
 import { memo } from 'react'
 import { Box, Text } from '../ink.js'
+import { getPalette } from '../theme/index.js'
 import type { Message } from '../types/message.js'
 import {
   getLatestValidation,
@@ -32,10 +33,18 @@ type Props = {
   messages: readonly Message[]
 }
 
-const STATE_COLOR: Record<ValidationState, 'green' | 'yellow' | 'red'> = {
-  pass: 'green',
-  running: 'yellow',
-  fail: 'red',
+function stateColor(
+  state: ValidationState,
+  palette: ReturnType<typeof getPalette>,
+): string {
+  switch (state) {
+    case 'pass':
+      return palette.state.success
+    case 'running':
+      return palette.state.warning
+    case 'fail':
+      return palette.state.failure
+  }
 }
 
 const STATE_GLYPH: Record<ValidationState, string> = {
@@ -68,7 +77,8 @@ function ValidationChipImpl({
 }: {
   record: ValidationRecord
 }): React.ReactNode {
-  const color = STATE_COLOR[record.state]
+  const palette = getPalette()
+  const color = stateColor(record.state, palette)
   const glyph = STATE_GLYPH[record.state]
   const label = KIND_LABEL[record.kind]
 

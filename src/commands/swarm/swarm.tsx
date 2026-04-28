@@ -41,6 +41,7 @@ import {
   renderModelName,
 } from '../../utils/model/model.js'
 import { getSettingsForSource } from '../../utils/settings/settings.js'
+import { getPalette } from '../../theme/index.js'
 
 // ---------------------------------------------------------------------------
 // Argument parsing
@@ -482,6 +483,7 @@ function SwarmRunner({
   settings: ResolvedSwarmSettings
   onDone: LocalJSXCommandOnDone
 }): React.ReactNode {
+  const palette = getPalette()
   const { columns } = useTerminalSize()
   const repoRoot = process.cwd()
   const parsedRef = useRef(parsed)
@@ -908,19 +910,19 @@ function SwarmRunner({
       {awaitingApproval && configuringModels ? (
         <Box
           borderStyle="round"
-          borderColor="yellow"
+          borderColor={palette.state.warning}
           flexDirection="column"
           marginTop={1}
           paddingX={1}
         >
-          <Text bold color="yellow">
+          <Text bold color={palette.state.warning}>
             Configure worker models
           </Text>
           {state?.workstreams && state.workstreams.length > 0 ? (
             <Box flexDirection="column" marginY={1}>
               {state.workstreams.map(workstream => (
                 <Text key={workstream.id}>
-                  <Text color="cyan">{workstream.domain.padEnd(10)}</Text>
+                  <Text color={palette.brand.diamond}>{workstream.domain.padEnd(10)}</Text>
                   <Text dimColor>{' -> '}</Text>
                   <Text>{workstream.model}</Text>
                 </Text>

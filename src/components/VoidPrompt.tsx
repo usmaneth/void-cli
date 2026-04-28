@@ -1,5 +1,6 @@
 import * as React from 'react'
 import { Text } from '../ink.js'
+import { getPalette } from '../theme/index.js'
 
 interface VoidPromptProps {
   model?: string
@@ -31,7 +32,9 @@ function getShortModelName(model: string): string {
   return parts[parts.length - 1]?.split('-')[0] ?? 'void'
 }
 
-export function VoidPrompt({ model, mode, symbol = '›', accentColor = '#00E5FF' }: VoidPromptProps) {
+export function VoidPrompt({ model, mode, symbol = '›', accentColor }: VoidPromptProps) {
+  const palette = getPalette()
+  const resolvedAccent = accentColor ?? palette.brand.diamond
   const promptStr = getPromptString(model, mode, symbol)
   const symbolIndex = promptStr.lastIndexOf(symbol)
   const before = promptStr.slice(0, symbolIndex)
@@ -40,7 +43,7 @@ export function VoidPrompt({ model, mode, symbol = '›', accentColor = '#00E5FF
   return (
     <Text>
       <Text bold>{before}</Text>
-      <Text color={accentColor}>{symbol}</Text>
+      <Text color={resolvedAccent}>{symbol}</Text>
       <Text>{after}</Text>
     </Text>
   )

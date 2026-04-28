@@ -20,6 +20,7 @@ import * as React from 'react'
 import { memo, useCallback, useEffect, useMemo, useState } from 'react'
 import { Box, Text, useInput } from '../ink.js'
 import { useTerminalSize } from '../hooks/useTerminalSize.js'
+import { getPalette } from '../theme/index.js'
 import {
   buildSessionOutline,
   type Milestone,
@@ -60,6 +61,7 @@ function SessionOutlineImpl({
   title = 'Session outline',
   maxRows,
 }: Props): React.ReactNode {
+  const palette = getPalette()
   const { rows: terminalRows, columns } = useTerminalSize()
   const milestones = useMemo(
     () => buildSessionOutline(messages, { expandCollapsed }),
@@ -213,17 +215,17 @@ function SessionOutlineImpl({
           const color = milestoneColor(m.kind)
           return (
             <Box key={`${m.uuid ?? 'm'}-${absoluteIdx}`} flexDirection="row">
-              <Text color={selected ? 'cyan' : undefined} bold={selected}>
+              <Text color={selected ? palette.brand.diamond : undefined} bold={selected}>
                 {selected ? '▸' : ' '}
               </Text>
               <Text> </Text>
-              <Text color={color ?? (m.isError ? 'red' : undefined)} bold={m.isError || m.kind === 'validation'}>
+              <Text color={color ?? (m.isError ? palette.state.failure : undefined)} bold={m.isError || m.kind === 'validation'}>
                 {marker}
               </Text>
               <Text> </Text>
               <Box width={labelColWidth}>
                 <Text
-                  color={selected ? 'white' : undefined}
+                  color={selected ? palette.state.confident : undefined}
                   bold={selected}
                   wrap="truncate-end"
                 >

@@ -10,6 +10,7 @@
 
 import * as React from 'react'
 import { Box, Text } from '../../ink.js'
+import { getPalette } from '../../theme/index.js'
 import type { ToolCardType } from '../ToolCard.js'
 import { useToolPartStream } from './useToolPartStream.js'
 import {
@@ -79,10 +80,11 @@ function Spinner({
   show: boolean
   label: string
 }): React.ReactNode {
+  const palette = getPalette()
   if (!show) return null
   return (
     <Box flexDirection="row" gap={1}>
-      <Text color="cyan">{STREAM_GLYPH}</Text>
+      <Text color={palette.brand.diamond}>{STREAM_GLYPH}</Text>
       <Text dimColor>{label}</Text>
     </Box>
   )
@@ -93,10 +95,11 @@ function Interrupted({
 }: {
   show: boolean
 }): React.ReactNode {
+  const palette = getPalette()
   if (!show) return null
   return (
     <Box>
-      <Text color="red">◆ interrupted</Text>
+      <Text color={palette.state.failure}>◆ interrupted</Text>
     </Box>
   )
 }
@@ -106,6 +109,7 @@ function BashView({
 }: {
   view: Extract<StreamingView, { kind: 'bash' }>
 }): React.ReactNode {
+  const palette = getPalette()
   return (
     <Box flexDirection="column">
       {view.hiddenCount > 0 && (
@@ -118,7 +122,7 @@ function BashView({
       )}
       {view.visible.map((text, i) => (
         <Box key={`line-${i}`}>
-          <Text color={view.streams[i] === 'stderr' ? 'red' : undefined}>
+          <Text color={view.streams[i] === 'stderr' ? palette.state.failure : undefined}>
             {text}
           </Text>
         </Box>
@@ -164,6 +168,7 @@ function EditView({
 }: {
   view: Extract<StreamingView, { kind: 'edit' }>
 }): React.ReactNode {
+  const palette = getPalette()
   return (
     <Box flexDirection="column">
       {view.path && (
@@ -181,12 +186,12 @@ function EditView({
         <Box key={`h-${i}`} flexDirection="column">
           {h.before && (
             <Box>
-              <Text color="red">- {truncate(h.before, 80)}</Text>
+              <Text color={palette.state.failure}>- {truncate(h.before, 80)}</Text>
             </Box>
           )}
           {h.after && (
             <Box>
-              <Text color="green">+ {truncate(h.after, 80)}</Text>
+              <Text color={palette.state.success}>+ {truncate(h.after, 80)}</Text>
             </Box>
           )}
         </Box>

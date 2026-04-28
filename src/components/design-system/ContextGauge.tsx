@@ -1,5 +1,6 @@
 import * as React from 'react'
 import { Box, Text } from '../../ink.js'
+import { getPalette } from '../../theme/index.js'
 
 interface ContextGaugeProps {
   percentage: number
@@ -7,21 +8,22 @@ interface ContextGaugeProps {
 }
 
 export function ContextGauge({ percentage, label = 'ctx' }: ContextGaugeProps) {
+  const palette = getPalette()
   // We want: [████████░░] 45% ctx
   const totalBlocks = 10
   const filledBlocks = Math.max(0, Math.min(totalBlocks, Math.round((percentage / 100) * totalBlocks)))
   const emptyBlocks = totalBlocks - filledBlocks
-  
+
   const filledChar = '█'
   const emptyChar = '░'
-  
+
   const filledStr = filledChar.repeat(filledBlocks)
   const emptyStr = emptyChar.repeat(emptyBlocks)
-  
-  // Color zones: green -> yellow -> red
-  let color = 'green'
-  if (percentage >= 90) color = 'red'
-  else if (percentage >= 70) color = 'yellow'
+
+  // Color zones: success -> warning -> failure
+  let color = palette.state.success
+  if (percentage >= 90) color = palette.state.failure
+  else if (percentage >= 70) color = palette.state.warning
   
   return (
     <Box flexDirection="row" gap={1}>

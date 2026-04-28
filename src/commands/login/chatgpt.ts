@@ -26,6 +26,7 @@ import {
   loadTokens,
   saveTokens,
 } from '../../utils/auth/openaiTokenStore.js'
+import { getPalette } from '../../theme/index.js'
 
 function isFeatureOn(): boolean {
   return feature('CHATGPT_SUBSCRIPTION_AUTH')
@@ -109,6 +110,7 @@ function ChatgptLoginFlow({
 }: {
   onDone: (success: boolean) => void
 }): React.ReactElement {
+  const palette = getPalette()
   const [status, setStatus] = useState<FlowStatus>({ kind: 'starting' })
 
   useEffect(() => {
@@ -172,7 +174,7 @@ function ChatgptLoginFlow({
       { flexDirection: 'column' },
       React.createElement(
         Text,
-        { color: 'green' },
+        { color: palette.state.success },
         `✓ Signed in as ${who} (${plan}).`,
       ),
       React.createElement(
@@ -187,7 +189,7 @@ function ChatgptLoginFlow({
     { flexDirection: 'column' },
     React.createElement(
       Text,
-      { color: 'red' },
+      { color: palette.state.failure },
       `ChatGPT login failed: ${status.message}`,
     ),
   )
@@ -207,7 +209,7 @@ export async function call(
     onDone(false)
     return React.createElement(
       Text,
-      { color: 'yellow' },
+      { color: getPalette().state.warning },
       'ChatGPT subscription auth is disabled. Enable with VOID_FEATURE_FLAGS=CHATGPT_SUBSCRIPTION_AUTH.',
     )
   }
