@@ -21,6 +21,7 @@ import {
   handlePlanApprovalResponse,
 } from '../utils/inProcessTeammateHelpers.js'
 import { createAssistantMessage } from '../utils/messages.js'
+import { getPalette } from '../theme/index.js'
 import {
   permissionModeFromString,
   toExternalPermissionMode,
@@ -289,7 +290,7 @@ export function useInboxPoller({
             permissionPromptStartTimeMs: Date.now(),
             workerBadge: {
               name: parsed.agent_id,
-              color: 'cyan',
+              color: getPalette().brand.diamond,
             },
             onUserInteraction() {
               // No-op for tmux workers (no classifier auto-approval)
