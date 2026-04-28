@@ -1,5 +1,6 @@
 import * as React from 'react'
 import { Text } from '../../ink.js'
+import { getPalette } from '../../theme/index.js'
 
 interface SparklineProps {
   data: number[]
@@ -8,8 +9,10 @@ interface SparklineProps {
 
 const BRAILLE_CHARS = [' ', '⡀', '⡄', '⡆', '⡇', '⣇', '⣧', '⣷', '⣿']
 
-export function Sparkline({ data, color = 'cyan' }: SparklineProps) {
-  if (!data || data.length === 0) return <Text color={color}> </Text>
+export function Sparkline({ data, color }: SparklineProps) {
+  const palette = getPalette()
+  const resolvedColor = color ?? palette.brand.diamond
+  if (!data || data.length === 0) return <Text color={resolvedColor}> </Text>
   
   const max = Math.max(...data, 1) // prevent division by zero
   const min = Math.min(...data)
@@ -27,5 +30,5 @@ export function Sparkline({ data, color = 'cyan' }: SparklineProps) {
     return BRAILLE_CHARS[index]
   }).join('')
 
-  return <Text color={color}>{sparkline}</Text>
+  return <Text color={resolvedColor}>{sparkline}</Text>
 }
