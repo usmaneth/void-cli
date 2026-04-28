@@ -26,6 +26,7 @@ import {
   type HandoffSummary,
 } from '../commands/session/handoffData.js'
 import { logForDebugging } from '../utils/debug.js'
+import { getPalette } from '../theme/index.js'
 
 type Props = {
   messages: readonly Message[]
@@ -124,6 +125,7 @@ function ValidationHistoryImpl({
 }: {
   records: readonly ValidationRecord[]
 }): React.ReactNode {
+  const palette = getPalette()
   return (
     <Box
       flexDirection="column"
@@ -146,10 +148,10 @@ function ValidationHistoryImpl({
           {records.map((r, i) => {
             const color =
               r.state === 'pass'
-                ? 'green'
+                ? palette.state.success
                 : r.state === 'fail'
-                  ? 'red'
-                  : 'yellow'
+                  ? palette.state.failure
+                  : palette.state.warning
             const glyph =
               r.state === 'pass' ? '✓' : r.state === 'fail' ? '✗' : '⋯'
             return (
