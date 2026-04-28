@@ -9,6 +9,7 @@ import {
   validateProviderKey,
   type ProviderKeychainName,
 } from '../../utils/providerKeychain.js'
+import { getPalette } from '../../theme/index.js'
 
 type Props = {
   provider: ProviderKeychainName
@@ -34,6 +35,7 @@ const GET_KEY_URL: Record<ProviderKeychainName, string> = {
 }
 
 export function ApiKeyEntry({ provider, onDone }: Props): React.ReactNode {
+  const palette = getPalette()
   const [value, setValue] = useState('')
   const [cursorOffset, setCursorOffset] = useState(0)
   const [error, setError] = useState<string | null>(null)
@@ -95,7 +97,7 @@ export function ApiKeyEntry({ provider, onDone }: Props): React.ReactNode {
             mask="*"
           />
         </Box>
-        {error && <Text color="red">{error}</Text>}
+        {error && <Text color={palette.state.failure}>{error}</Text>}
         <Text dimColor>
           The key is stored in the macOS keychain under service{' '}
           {getProviderKeychainServiceName(provider)}.
