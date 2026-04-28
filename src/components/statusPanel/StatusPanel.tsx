@@ -18,6 +18,7 @@ import { getPalette, resolveModelAccent } from '../../theme/index.js'
 import { ContextBar } from './ContextBar.js'
 import { EffortDot } from './EffortDot.js'
 import { heroSpaceModelName } from './heroSpaceModelName.js'
+import { IdleDiamond } from '../ambientMotion/IdleDiamond.js'
 import {
   resolvePanelLayout,
   type PanelLayoutMode,
@@ -191,7 +192,8 @@ export function StatusPanel(props: StatusPanelProps): React.ReactNode {
         {mode === 'full' && (
           <Text color={palette.text.dim}>{`    session ${formatDuration(props.sessionDurationMs)}`}</Text>
         )}
-        {mode === 'full' && <Text color={accent}>  ─╯</Text>}
+        {mode === 'full' && <Text color={accent}>  ─╯ </Text>}
+        <IdleDiamond streamActive={props.streamActive} />
       </Box>
     </Box>
   )
