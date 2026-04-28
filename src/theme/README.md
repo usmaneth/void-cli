@@ -46,7 +46,7 @@ const frameIndex = useFrame(8, 1200)  // 8 frames over 1.2 seconds
 - Importing from `src/theme/palette.ts` directly — go through `index.ts`
 - Adding new tokens without updating the spec at `docs/superpowers/specs/2026-04-27-palette-design.md` first
 
-## The 11 semantic tokens
+## The 12 semantic tokens
 
 | Token | Hex | When to use |
 |---|---|---|

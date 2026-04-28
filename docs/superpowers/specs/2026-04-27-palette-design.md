@@ -10,7 +10,7 @@ This is foundational. It ships **before** any of the other specs touch code, so 
 
 ## The semantic palette
 
-11 named tokens. Every component pulls from these — no raw hex codes anywhere else in the visual code.
+12 named tokens. Every component pulls from these — no raw hex codes anywhere else in the visual code.
 
 | Token | Hex | Meaning |
 |---|---|---|
@@ -56,7 +56,7 @@ Reuses the existing `resolveModelFamily(model: string)` helper. Each family maps
 
 ```
 src/theme/
-  palette.ts        — the 11 semantic tokens (typed const)
+  palette.ts        — the 12 semantic tokens (typed const)
   modelAccents.ts   — the family-to-accent map
   index.ts          — exports + ThemeProvider context
 ```
@@ -127,7 +127,7 @@ The architecture supports multiple themes by replacing the palette object at the
 
 ## Testing
 
-- Snapshot test: `palette.ts` exports the exact 11 tokens. Catches accidental token additions/renames.
+- Snapshot test: `palette.ts` exports the exact 12 tokens. Catches accidental token additions/renames.
 - `resolveModelFamily(model)` already has tests from the per-provider prompt spec; we extend it to assert each family resolves to a defined accent.
 - Lint test: CI runs the `no-color-literals` rule and fails on any new hex/color-name outside `src/theme/`.
 - Manual contrast check on a representative dark terminal — iTerm2 default profile + 3 popular themes (Dracula, Solarized Dark, Tokyo Night).
