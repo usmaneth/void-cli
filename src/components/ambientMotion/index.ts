@@ -1,0 +1,7 @@
+export { CategorySpinner } from './CategorySpinner.js'
+export { IdleDiamond } from './IdleDiamond.js'
+export { LoadingPhrase } from './LoadingPhrase.js'
+export { MOTIONS } from './motionLibrary.js'
+export type { MotionCategory } from './motionLibrary.js'
+export { pickPhrase, PHRASES, EASTER_EGGS } from './phraseLibrary.js'
+export type { PhraseCategory } from './phraseLibrary.js'
