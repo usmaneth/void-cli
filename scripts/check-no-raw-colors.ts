@@ -54,6 +54,7 @@ const EXEMPT_GLOBS = [
   'src/ink/termio/**',
   'src/utils/swarm/backends/TmuxBackend.ts', // tmux protocol color values, not Ink colors
   'src/utils/words.ts', // worker name word list — `coral`/`gray` are nature names, false positives
+  'src/components/design-system/RichFileHeader.tsx', // language-identity colors (TS blue, Rust orange, etc.), not Void theme decisions
   '**/__tests__/**',
   '**/*.test.ts',
   '**/*.test.tsx',
