@@ -10,10 +10,11 @@
  * branches — the upper boundary still renders before the ring extinguishes.
  */
 
+import { getPalette } from '../../../theme/index.js'
+
 const WHITE = { r: 0xff, g: 0xff, b: 0xff }
 const CYAN = { r: 0x7d, g: 0xcf, b: 0xff }
 const VIOLET = { r: 0xbb, g: 0x9a, b: 0xf7 }
-const DIM = '#3d4266'
 
 function lerp(a: number, b: number, t: number): number {
   return Math.round(a + (b - a) * t)
@@ -25,9 +26,10 @@ function toHex(r: number, g: number, b: number): string {
 }
 
 export function resolveRingColor(t: number): string | null {
-  if (t === 1) return '#bb9af7'
+  const palette = getPalette()
+  if (t === 1) return palette.brand.accent
   if (t > 0.95) return null
-  if (t > 0.85) return DIM
+  if (t > 0.85) return palette.text.dimmer
 
   const clamped = Math.max(0, Math.min(1, t))
   if (clamped <= 0.5) {
