@@ -115,6 +115,8 @@ Exempt paths (rule does not fire):
 - `src/ink/termio/**` (ANSI parser data, not theme decisions)
 - `src/utils/swarm/backends/TmuxBackend.ts` (tmux protocol color values, not Ink colors)
 - `src/utils/words.ts` (worker name word list — `coral`/`gray` are nature names, false positives)
+- `src/components/design-system/RichFileHeader.tsx` (language-identity colors — TS blue, Rust orange, Python yellow — not Void theme decisions)
+- `src/tools/AgentTool/built-in/**` (`color: 'orange'` is an AgentColorName enum key, not a render color)
 - Test files (`**/__tests__/**`, `**/*.test.ts`, `**/*.test.tsx`)
 - `scripts/**`
 
