@@ -49,6 +49,7 @@ const EXEMPT_GLOBS = [
   'src/services/themes/**',
   'src/components/design-system/color.ts',
   'src/ink/colorize.ts',
+  'src/ink/termio/**',
   '**/__tests__/**',
   '**/*.test.ts',
   '**/*.test.tsx',
