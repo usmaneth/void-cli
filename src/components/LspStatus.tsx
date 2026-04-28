@@ -22,10 +22,12 @@ import {
   type DiagnosticCounts,
 } from '../services/lsp/diagnostics.js'
 import { Text } from '../ink.js'
+import { getPalette } from '../theme/index.js'
 
 export function LspStatus(): React.ReactNode {
   if (!isLspServerEnabled()) return null
 
+  const palette = getPalette()
   const [counts, setCounts] = useState<DiagnosticCounts>(() => getCounts())
 
   useEffect(() => {
@@ -45,10 +47,10 @@ export function LspStatus(): React.ReactNode {
     <>
       <Text dimColor>{' · lsp:'}</Text>
       {counts.errors > 0 && (
-        <Text color="red">{' ' + counts.errors + 'E'}</Text>
+        <Text color={palette.state.failure}>{' ' + counts.errors + 'E'}</Text>
       )}
       {counts.warnings > 0 && (
-        <Text color="yellow">{' ' + counts.warnings + 'W'}</Text>
+        <Text color={palette.state.warning}>{' ' + counts.warnings + 'W'}</Text>
       )}
     </>
   )
