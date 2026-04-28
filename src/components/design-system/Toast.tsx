@@ -1,5 +1,6 @@
 import * as React from 'react'
 import { Box, Text } from '../../ink.js'
+import { getPalette } from '../../theme/index.js'
 
 interface ToastProps {
   title: string
@@ -9,10 +10,11 @@ interface ToastProps {
 }
 
 export function Toast({ title, message, icon, type = 'success' }: ToastProps) {
+  const palette = getPalette()
   const colorMap = {
-    success: 'green',
-    info: 'cyan',
-    warning: 'yellow',
+    success: palette.state.success,
+    info: palette.brand.diamond,
+    warning: palette.state.warning,
   }
   
   const defaultIconMap = {
