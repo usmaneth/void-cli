@@ -20,6 +20,7 @@ import { PressEnterToContinue } from './PressEnterToContinue.js';
 import { ThemePicker } from './ThemePicker.js';
 import { VoidBootSequence } from './VoidBootSequence.js';
 import { OrderedList } from './ui/OrderedList.js';
+import { getPalette } from '../theme/index.js';
 type StepId = 'preflight' | 'theme' | 'oauth' | 'api-key' | 'security' | 'terminal-setup';
 interface OnboardingStep {
   id: StepId;
@@ -31,6 +32,7 @@ type Props = {
 export function Onboarding({
   onDone
 }: Props): React.ReactNode {
+  const palette = getPalette();
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [bootSequenceComplete, setBootSequenceComplete] = useState(false);
   const [skipOAuth, setSkipOAuth] = useState(false);
@@ -207,7 +209,7 @@ export function Onboarding({
     isActive: currentStep?.id === 'terminal-setup'
   });
   if (!bootSequenceComplete) {
-    return <VoidBootSequence onComplete={handleBootSequenceComplete} accentColor="cyan" />;
+    return <VoidBootSequence onComplete={handleBootSequenceComplete} accentColor={palette.brand.diamond} />;
   }
   return <Box flexDirection="column">
       <WelcomeV2 />
