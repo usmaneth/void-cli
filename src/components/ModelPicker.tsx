@@ -67,6 +67,7 @@ import { Byline } from './design-system/Byline.js'
 import { KeyboardShortcutHint } from './design-system/KeyboardShortcutHint.js'
 import { ConfigurableShortcutHint } from './ConfigurableShortcutHint.js'
 import { effortLevelToSymbol } from './EffortIndicator.js'
+import { getPalette, resolveModelAccent } from '../theme/index.js'
 
 export type Props = {
   initial: string | null
@@ -179,6 +180,7 @@ export function ModelPicker({
   headerText,
   skipSettingsWrite,
 }: Props): React.ReactNode {
+  const palette = getPalette()
   const setAppState = useSetAppState()
   const exitState = useExitOnCtrlCDWithKeybindings()
   const isFastMode = useAppState(s =>
@@ -589,13 +591,13 @@ export function ModelPicker({
     <Box
       flexDirection="column"
       borderStyle="double"
-      borderColor="#7c3aed"
+      borderColor={palette.brand.accent}
       paddingX={1}
       paddingY={0}
       width={frameWidth}
     >
       {/* Title */}
-      <Text bold color="#7c3aed">
+      <Text bold color={palette.brand.accent}>
         ◈ M O D E L   B R O W S E R
       </Text>
 
@@ -612,8 +614,8 @@ export function ModelPicker({
 
       {/* Search input */}
       <Box>
-        <Text color="#a78bfa">Search: </Text>
-        <Text backgroundColor="#1e293b" color="#e2e8f0">
+        <Text color={palette.brand.accent}>Search: </Text>
+        <Text backgroundColor={palette.text.dimmer} color={palette.state.confident}>
           {query ? ` ${query}▌ ` : ' ▌ '}
         </Text>
       </Box>
@@ -629,7 +631,7 @@ export function ModelPicker({
             const active =
               (tab === 'All' && !providerFilter) || tab === providerFilter
             return active ? (
-              <Text key={tab} backgroundColor="#7c3aed" color="white">
+              <Text key={tab} backgroundColor={palette.brand.accent} color={palette.state.confident}>
                 {` ${tab} `}
               </Text>
             ) : (
@@ -654,7 +656,7 @@ export function ModelPicker({
             if (row.kind === 'section') {
               return (
                 <Box key={row.id} flexDirection="row" marginTop={i === 0 ? 0 : 1}>
-                  <Text color="#a78bfa" bold>
+                  <Text color={palette.brand.accent} bold>
                     {row.label}
                   </Text>
                   {row.description ? (
@@ -663,15 +665,21 @@ export function ModelPicker({
                 </Box>
               )
             }
+            // Use the model's resolved family accent for focused rows so
+            // each row visually carries its own provider identity.
+            const rowAccent =
+              row.kind === 'item' && row.value !== NO_PREFERENCE
+                ? resolveModelAccent(resolveOptionModel(row.value))
+                : palette.brand.accent
             return (
               <Box key={row.id} flexDirection="row">
-                <Text color={isFocused ? '#7c3aed' : undefined}>
+                <Text color={isFocused ? rowAccent : undefined}>
                   {isFocused ? '❯ ' : '  '}
                 </Text>
-                <Text color={row.isFavorite ? '#fbbf24' : undefined}>
+                <Text color={row.isFavorite ? palette.role.voidWrite : undefined}>
                   {row.isFavorite ? '★ ' : '  '}
                 </Text>
-                <Text color={isFocused ? '#e2e8f0' : undefined} bold={isFocused}>
+                <Text color={isFocused ? palette.state.confident : undefined} bold={isFocused}>
                   {row.label}
                 </Text>
                 {row.description ? (
