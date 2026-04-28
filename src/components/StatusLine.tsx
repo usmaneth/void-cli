@@ -29,6 +29,15 @@ import { doesMostRecentAssistantMessageExceed200k, getCurrentUsage } from '../ut
 import { getCurrentWorktreeSession } from '../utils/worktree.js';
 import { isVimModeEnabled } from './PromptInput/utils.js';
 import { getPalette } from '../theme/index.js';
+import { StatusPanel, type PermissionsMode as StatusPanelPermissionsMode } from './statusPanel/index.js';
+import { isSubscriptionProvider } from '../utils/model/isSubscriptionProvider.js';
+import { useTerminalSize } from '../hooks/useTerminalSize.js';
+
+function mapPermissionMode(mode: PermissionMode): StatusPanelPermissionsMode {
+  if (mode === 'plan') return 'plan';
+  if (mode === 'bypassPermissions') return 'bypass';
+  return 'normal';
+}
 export function statusLineShouldDisplay(settings: ReadonlySettings): boolean {
   // Assistant mode: statusline fields (model, permission mode, cwd) reflect the
   // REPL/daemon process, not what the agent child is actually running. Hide it.
@@ -143,6 +152,7 @@ function StatusLineInner({
   vimMode
 }: Props): React.ReactNode {
   const palette = getPalette();
+  const { columns: terminalCols } = useTerminalSize();
   const abortControllerRef = useRef<AbortController | undefined>(undefined);
   const permissionMode = useAppState(s => s.toolPermissionContext.mode);
   const additionalWorkingDirectories = useAppState(s => s.toolPermissionContext.additionalWorkingDirectories);
@@ -327,6 +337,31 @@ function StatusLineInner({
   const worktreeSession = getCurrentWorktreeSession();
   const cwdPath = getCwd().split('/').pop() || '';
   const breadcrumb = worktreeSession ? `${worktreeSession.worktreeBranch || worktreeSession.originalBranch || ''} › ${cwdPath}` : cwdPath;
+
+  // New StatusPanel render path. Users with a custom `statusLine.command`
+  // keep their shell-out (handled below by `statusLineText`). Power users
+  // who want neither can opt out via `statusLine: { command: '' }` plus
+  // an empty result, or by unsetting `statusLine` entirely (the parent's
+  // `statusLineShouldDisplay` then skips rendering this component).
+  const hasUserCommand = (settings?.statusLine?.command ?? '').length > 0;
+  if (!hasUserCommand) {
+    return <Box paddingX={paddingX} flexDirection="column" marginTop={1} paddingBottom={1} borderBottom={true} borderColor="subtle" borderStyle="dashed">
+        <StatusPanel
+          model={runtimeModel}
+          isSubscription={isSubscriptionProvider(runtimeModel)}
+          streamActive={false}
+          contextRatio={Math.min(1, contextPercentages.used / 100)}
+          inputTokens={getTotalInputTokens()}
+          outputTokens={getTotalOutputTokens()}
+          cost={getTotalCost()}
+          sessionDurationMs={getTotalDuration()}
+          cwd={getCwd()}
+          permissionsMode={mapPermissionMode(permissionMode)}
+          effortLabel={settings?.outputStyle ?? 'high'}
+          cols={terminalCols}
+        />
+      </Box>;
+  }
 
   return <Box paddingX={paddingX} flexDirection="column" marginTop={1} paddingBottom={1} borderBottom={true} borderColor="subtle" borderStyle="dashed">
       <Box flexDirection="row" justifyContent="space-between" width="100%">
