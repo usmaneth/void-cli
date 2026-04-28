@@ -1,6 +1,7 @@
 import * as React from 'react'
 import { memo } from 'react'
 import { Box, Text } from '../ink.js'
+import { getPalette } from '../theme/index.js'
 import { renderSparkline } from './charts.js'
 import { renderProgressBar } from './charts.js'
 
@@ -32,11 +33,12 @@ export const InlineSparkline = memo(function InlineSparklineImpl({
   values: number[]
   label?: string
 }): React.ReactNode {
+  const palette = getPalette()
   const chart = renderSparkline(values)
   return (
     <Box>
       {label && <Text dimColor>{label}: </Text>}
-      <Text color="cyan">{chart}</Text>
+      <Text color={palette.brand.diamond}>{chart}</Text>
     </Box>
   )
 })
