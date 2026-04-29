@@ -35,12 +35,22 @@ export type Role =
   | 'success'
   | 'failure'
 
-const palette = getPalette()
-
-export const ROLE_COLORS: Record<Role, string> = {
-  you: palette.role.you,
-  voidProse: palette.role.voidProse,
-  voidWrite: palette.role.voidWrite,
-  success: palette.state.success,
-  failure: palette.state.failure,
+/**
+ * Lazy role → palette-color lookup. Must be called at render time, not
+ * at module load — getPalette reads config which is gated on app boot.
+ */
+export function getRoleColor(role: Role): string {
+  const p = getPalette()
+  switch (role) {
+    case 'you':
+      return p.role.you
+    case 'voidProse':
+      return p.role.voidProse
+    case 'voidWrite':
+      return p.role.voidWrite
+    case 'success':
+      return p.state.success
+    case 'failure':
+      return p.state.failure
+  }
 }

@@ -8,7 +8,7 @@
  */
 import * as React from 'react'
 import { Text } from '../../ink.js'
-import { ROLE_COLORS } from './glyphGrammar.js'
+import { getRoleColor } from './glyphGrammar.js'
 import { resolveEventGlyph, type GutterEvent } from './eventStream.js'
 import type { Density } from './densityResolver.js'
 
@@ -24,7 +24,7 @@ export type RailLineState = {
 
 export function computeRailLine(input: RailLineInput): RailLineState {
   const tuple = resolveEventGlyph(input.event)
-  const color = ROLE_COLORS[tuple.role]
+  const color = getRoleColor(tuple.role)
 
   if (input.density === 'minimal') {
     return { glyph: '│', color }

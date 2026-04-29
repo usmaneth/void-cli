@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   HEARTBEAT_GLYPHS,
   FRAMING_GLYPHS,
-  ROLE_COLORS,
+  getRoleColor,
   type HeartbeatEvent,
   type Role,
 } from './glyphGrammar.js'
@@ -34,25 +34,26 @@ describe('FRAMING_GLYPHS', () => {
   })
 })
 
-describe('ROLE_COLORS', () => {
-  const palette = getPalette()
-
+describe('getRoleColor', () => {
   it('maps all 5 roles to palette tokens', () => {
     const roles: Role[] = ['you', 'voidProse', 'voidWrite', 'success', 'failure']
     for (const r of roles) {
-      expect(ROLE_COLORS[r]).toMatch(/^#[0-9a-f]{6}$/i)
+      expect(getRoleColor(r)).toMatch(/^#[0-9a-f]{6}$/i)
     }
   })
 
   it('you = palette.role.you', () => {
-    expect(ROLE_COLORS.you).toBe(palette.role.you)
+    const palette = getPalette()
+    expect(getRoleColor('you')).toBe(palette.role.you)
   })
 
   it('voidProse = palette.role.voidProse', () => {
-    expect(ROLE_COLORS.voidProse).toBe(palette.role.voidProse)
+    const palette = getPalette()
+    expect(getRoleColor('voidProse')).toBe(palette.role.voidProse)
   })
 
   it('failure = palette.state.failure', () => {
-    expect(ROLE_COLORS.failure).toBe(palette.state.failure)
+    const palette = getPalette()
+    expect(getRoleColor('failure')).toBe(palette.state.failure)
   })
 })

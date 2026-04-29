@@ -3,7 +3,7 @@ export type { GutterRailProps, RailLineInput, RailLineState } from './GutterRail
 export {
   HEARTBEAT_GLYPHS,
   FRAMING_GLYPHS,
-  ROLE_COLORS,
+  getRoleColor,
   type HeartbeatEvent,
   type Role,
 } from './glyphGrammar.js'
