@@ -311,6 +311,13 @@ async function main(): Promise<void> {
   // Portal entry cinema — plays before REPL mount. resolveCinemaMode
   // returns 'skip' for non-TTY / tiny terminals / --intro=off / VOID_NO_CINEMA=1,
   // so this is a near-zero-cost no-op in CI, pipes, and headless contexts.
+  //
+  // Cinema mounts an Ink tree, which is wrapped in ThemeProvider, which
+  // reads the saved theme via getGlobalConfig. enableConfigs() must run
+  // first or the read throws "Config accessed before allowed". cliMain
+  // calls enableConfigs again — idempotent, so this is safe.
+  const { enableConfigs } = await import('../utils/config.js');
+  enableConfigs();
   await maybePlayCinemaEntry();
 
   await cliMain();
