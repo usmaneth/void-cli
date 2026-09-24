@@ -2,6 +2,7 @@ node_modules/
 dist/
 *.tsbuildinfo
 .claude/
+.superpowers/
 coverage/
 .vitest-cache/
 
